@@ -20,3 +20,4 @@ STAR_REP='/projects/ps-yeolab4/software/eclip/0.7.0/examples/inputs/star_2_7_hom
 STAR_DROS='/projects/ps-yeolab3/bay001/annotations/dm6/star_2_7_6a_release6_sjdb'
 
 ADAPTOR_PATH='/projects/ps-yeolab4/software/eclip/0.7.0/examples/inputs/'
+

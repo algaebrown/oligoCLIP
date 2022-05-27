@@ -3,7 +3,7 @@ import os
 import sys
 import glob
 from snakeDros_config import *
-#snakemake -s snakeDros.py -j 16 --cluster "qsub -l walltime={params.run_time} -l nodes=1:ppn={params.cores} -q home-yeo" --directory=/home/hsher/scratch/katie_drosphila
+#snakemake -s snakeDros.py -j 16 --cluster "qsub -l walltime={params.run_time} -l nodes=1:ppn={params.cores} -q home-yeo" --directory=/home/hsher/scratch/katie_drosphila --keep-going -n
  
 
 include: "snakeDros_config.py"
@@ -25,10 +25,16 @@ print(os.path.join(ADAPTOR_PATH,
 rule all:
     input:
         expand("bams/repeat/{sample_label}.Aligned.out.sort.bam.bai", sample_label = sample_labels)+
-        expand("fastqc/{sample_label}.umi.fqTrTr_fastqc.html", sample_label = sample_labels)+
-        expand("bams/genome/{sample_label}.genome-mappedSoSo.rmDupSo.Aligned.out.bam.bai", sample_label = sample_labels)
+        expand("bams/genome/{sample_label}.genome-mappedSoSo.rmDupSo.Aligned.out.bam.bai", sample_label = sample_labels),
+        "QC/dros_mapping_stats.csv",
+        "QC/repeat_mapping_stats.csv",
+        "QC/genome_mapping_stats.csv",
+        "QC/dup_level.txt",
+        'QC/cutadapt_log1.csv',
+        'QC/cutadapt_log2.csv',
+        "QC/dros_featureCount.txt"
     output:
-        "snakeLeaf.txt"
+        "snakeDROS.txt"
     params:
         error_out_file = "error_files/all",
         run_time = "00:04:00",
@@ -38,9 +44,6 @@ rule all:
     shell:
         "echo $(date)  > {output};"
         "echo created by Evan Boyle and the Yeo lab >> {output}"
-
-
-
 
 
 rule extract_umi:
@@ -88,7 +91,7 @@ rule cutadapt_round_one:
     benchmark: "benchmarks/cutadapt/{sample_label}.extract.txt"
     shell:
         """
-        module load eclip;
+        module load cutadapt/2.8;
         cutadapt -O 1 \
             -f fastq \
             --match-read-wildcards \
@@ -114,7 +117,7 @@ rule cutadapt_round_two:
     benchmark: "benchmarks/cutadapt/{sample_label}.extract_round2.txt"
     shell:
         """
-        module load eclip;
+        module load cutadapt/2.8;
         cutadapt -O 5 \
             -f fastq \
             --match-read-wildcards \
@@ -126,6 +129,27 @@ rule cutadapt_round_two:
             -a file:{params.InvRNA} \
             {input.fq_trimmed} > {output.metrics}
         """
+
+rule gather_trimming_stat:
+    input:
+        tr2=expand("fastqs/umi/{sample_label}.umi.r1.fqTrTr.metrics", sample_label = sample_labels),
+        tr1=expand("fastqs/umi/{sample_label}.umi.r1.fqTr.metrics", sample_label = sample_labels)
+    output:
+        tr1='QC/cutadapt_log1.csv',
+        tr2='QC/cutadapt_log2.csv',
+    params:
+        run_time = "00:10:00",
+        cores="1",
+        files2=','.join(expand("fastqs/umi/{sample_label}.umi.r1.fqTrTr.metrics", sample_label = sample_labels)),
+        files1=','.join(expand("fastqs/umi/{sample_label}.umi.r1.fqTr.metrics", sample_label = sample_labels)),
+    conda:
+        "envs/metadensity.yaml"
+    shell:
+        """
+        python /home/hsher/projects/QC_tools/trimming_stat.py {params.files1} {output.tr1}
+        python /home/hsher/projects/QC_tools/trimming_stat.py {params.files2} {output.tr2}
+        """
+
 rule sort_and_gzip_fastq:
     input:
         fq_trimmed_twice="fastqs/umi/{sample_label}.umi.fqTrTr.gz",
@@ -146,8 +170,10 @@ rule fastqc_post_trim:
     input:
         "fastqs/umi/{sample_label}.umi.fqTrTr.gz"
     output:
-        "fastqc/{sample_label}.umi.fqTrTr_fastqc.html"
+        "fastqc/{sample_label}.umi.fqTrTr_fastqc/fastqc_data.txt"
     threads: 2
+    conda:
+        "envs/metadensity.yaml"
     params:
         outdir="fastqc",
         run_time = "01:09:00",
@@ -160,13 +186,33 @@ rule fastqc_post_trim:
         module load fastqc;
         fastqc {input} --extract --outdir {params.outdir} -t {threads}
         """
+
+rule gather_fastqc_report:
+    input:
+        expand("fastqc/{sample_label}.umi.fqTrTr_fastqc/fastqc_data.txt", sample_label = sample_labels)
+    output:
+        basic='QC/fastQC_basic_summary.csv',
+        passfail='QC/fastQC_passfail.csv'
+    params:
+        error_out_file = "error_files/mapstat",
+        run_time = "00:40:00",
+        cores = "1",
+        memory = "10000",
+        job_name = "gather_stat",
+        files = ','.join(expand("fastqc/{sample_label}.umi.fqTrTr_fastqc/fastqc_data.txt", 
+            sample_label = sample_labels))
+    shell:
+        """
+        python /home/hsher/projects/QC_tools/fastqc_io.py -i {params.files} -p {output.passfail} -b {output.basic}
+        """
+
 rule align_reads_to_Drosophila:
     input:
         fq_1 = "fastqs/umi/{sample_label}.umi.fqTrTr.sorted.fq.gz",
     output:
-        ubam = "bams/dros/{sample_label}_dros_mapped.Aligned.out.bam",
-        unmqpped= "bams/dros/{sample_label}_dros_mapped.Unmapped.out.mate1",
-        log= "bams/dros/{sample_label}_dros_mapped.Log.final.out",
+        ubam = "bams/dros/{sample_label}.Aligned.out.bam",
+        unmqpped= "bams/dros/{sample_label}.Unmapped.out.mate1",
+        log= "bams/dros/{sample_label}.Log.final.out",
     params:
         error_out_file = "error_files/{sample_label}_align_dros_reads",
         run_time = "08:40:00",
@@ -174,7 +220,7 @@ rule align_reads_to_Drosophila:
         memory = "10000",
         job_name = "align_reads",
         star_sjdb = STAR_DROS,
-        outprefix = "bams/dros/{sample_label}_dros_mapped.",
+        outprefix = "bams/dros/{sample_label}.",
     benchmark: "benchmarks/align/{sample_label}.align_dros_reads.txt"
     shell:
         """
@@ -201,10 +247,49 @@ rule align_reads_to_Drosophila:
             --runMode alignReads \
             --runThreadN 8
         """
+rule featureCount_dros:
+    input:
+        expand("bams/dros/{sample_label}.Aligned.out.bam", sample_label = sample_labels),
+    output:
+        "QC/dros_featureCount.txt"
+    params:
+        error_out_file = "error_files/featcount",
+        run_time = "08:40:00",
+        cores = "4",
+        memory = "10000",
+        job_name = "featureCount",
+        GFF='/home/hsher/gencode_coords/GCF_000001215.4_Release_6_plus_ISO1_MT_genomic.gff',
+    shell:
+        """
+        module load subreadfeaturecounts 
+        featureCounts -s 1 -a {params.GFF} -o {output} {input}
+        """
+
+rule gather_DROSOPHILA_mapstat:
+    input:
+        #find_all_files("{libname}/bams/repeat/{sample_label}.Log.final.out", libs)
+        expand("bams/dros/{sample_label}.Log.final.out", sample_label = sample_labels)
+    output:
+        "QC/dros_mapping_stats.csv"
+    conda:
+        "envs/metadensity.yaml"
+    params:
+        error_out_file = "error_files/mapstat",
+        run_time = "00:40:00",
+        cores = "1",
+        memory = "10000",
+        job_name = "gather_stat",
+        files = ','.join(expand("bams/dros/{sample_label}.Log.final.out", sample_label = sample_labels))
+    shell:
+        """
+        python /home/hsher/projects/QC_tools/star_mapping_stat_io.py -i {params.files} -o {output}
+        """
+
 
 rule align_reads_to_REPEAT:
     input:
-        fq_1 = "bams/dros/{sample_label}_dros_mapped.Unmapped.out.mate1"
+        #fq_1 = "bams/dros/{sample_label}.Unmapped.out.mate1"
+        fq_1 = "fastqs/umi/{sample_label}.umi.fqTrTr.sorted.fq.gz"
     output:
         ubam = "bams/repeat/{sample_label}.Aligned.out.bam",
         unmqpped= "bams/repeat/{sample_label}.Unmapped.out.mate1",
@@ -227,7 +312,7 @@ rule align_reads_to_REPEAT:
             --genomeLoad NoSharedMemory \
             --outBAMcompression 10 \
             --outFileNamePrefix {params.outprefix} \
-            --outFilterMultimapNmax 1 \
+            --outFilterMultimapNmax 30 \
             --outFilterMultimapScoreRange 1 \
             --outFilterScoreMin 10 \
             --outFilterType BySJout \
@@ -239,9 +324,31 @@ rule align_reads_to_REPEAT:
             --outSAMunmapped Within \
             --outStd Log \
             --readFilesIn {input.fq_1} \
+            --readFilesCommand zcat \
             --runMode alignReads \
             --runThreadN 8
         """
+
+rule gather_REPEAT_mapstat:
+    input:
+        #find_all_files("{libname}/bams/repeat/{sample_label}.Log.final.out", libs)
+        expand("bams/repeat/{sample_label}.Log.final.out", sample_label = sample_labels)
+    output:
+        "QC/repeat_mapping_stats.csv"
+    conda:
+        "envs/metadensity.yaml"
+    params:
+        error_out_file = "error_files/mapstat",
+        run_time = "00:40:00",
+        cores = "1",
+        memory = "10000",
+        job_name = "gather_stat",
+        files = ','.join(expand("bams/repeat/{sample_label}.Log.final.out", sample_label = sample_labels))
+    shell:
+        """
+        python /home/hsher/projects/QC_tools/star_mapping_stat_io.py -i {params.files} -o {output}
+        """
+
 rule align_to_GENOME:
     input:
         fq= "bams/repeat/{sample_label}.Unmapped.out.mate1",
@@ -280,9 +387,29 @@ rule align_to_GENOME:
         --outStd Log \
         --readFilesIn {input.fq} \
         --runMode alignReads \
-        --runThreadN 8
+        --runThreadN 8s
 
         """
+rule gather_GENOME_mapstat:
+    input:
+        #find_all_files("{libname}/bams/genome/{sample_label}.genome-mapped.Log.final.out", libs)
+        expand("bams/genome/{sample_label}.genome-mapped.Log.final.out", sample_label = sample_labels)
+    output:
+        "QC/genome_mapping_stats.csv"
+    conda:
+        "envs/metadensity.yaml"
+    params:
+        error_out_file = "error_files/mapstat",
+        run_time = "00:40:00",
+        cores = "1",
+        memory = "10000",
+        job_name = "gather_stat",
+        files = ','.join(expand("bams/genome/{sample_label}.genome-mapped.Log.final.out", sample_label = sample_labels))
+    shell:
+        """
+        python /home/hsher/projects/QC_tools/star_mapping_stat_io.py -i {params.files} -o {output}
+        """
+
 rule sort_bams:
     input:
         bam="bams/genome/{sample_label}.genome-mapped.Aligned.out.bam",
@@ -360,6 +487,7 @@ rule umi_dedup:
             --output-stats {params.prefix} \
             -S {output.bam_dedup}
         """
+
 rule index_genome_bams:
     input:
         bam = "bams/genome/{sample_label}.genome-mappedSoSo.rmDup.Aligned.out.bam"
@@ -377,3 +505,23 @@ rule index_genome_bams:
         "module load samtools;"
         "samtools sort -o {output.sbam} {input.bam} ;"
         "samtools index {output.sbam};"
+
+rule duplication_level:
+    input:
+        dup=expand("bams/genome/{sample_label}.genome-mappedSoSo.Aligned.out.bam", sample_label = sample_labels),
+        dupbai=expand("bams/genome/{sample_label}.genome-mappedSoSo.Aligned.out.bam.bai", sample_label = sample_labels),
+        rmdup=expand("bams/genome/{sample_label}.genome-mappedSoSo.rmDupSo.Aligned.out.bam", sample_label = sample_labels),
+        rmdupbai=expand("bams/genome/{sample_label}.genome-mappedSoSo.rmDupSo.Aligned.out.bam.bai", sample_label = sample_labels),
+    output:
+        "QC/dup_level.txt"
+    params:
+        run_time = "00:40:00",
+        cores = "1",
+        dupfiles=','.join(expand("bams/genome/{sample_label}.genome-mappedSoSo.Aligned.out.bam", sample_label = sample_labels)),
+        rmdupfiles=','.join(expand("bams/genome/{sample_label}.genome-mappedSoSo.rmDupSo.Aligned.out.bam", sample_label = sample_labels))
+    conda:
+        "envs/metadensity.yaml"
+    shell:
+        """
+        python /home/hsher/projects/QC_tools/dup_level.py {params.dupfiles} {params.rmdupfiles} {output}
+        """

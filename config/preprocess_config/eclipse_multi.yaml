@@ -1,4 +1,4 @@
-fastq_menifest: /home/hsher/projects/oligoCLIP/multiplex1.csv 
+fastq_menifest: /home/hsher/projects/oligoCLIP/config/fastq_csv/multiplex1.csv 
 
 barcode: /projects/ps-yeolab5/hsher/barcodes.csv
 

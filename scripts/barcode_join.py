@@ -6,7 +6,7 @@ if __name__=='__main__':
     whitelist = sys.argv[2]
     out = sys.argv[3]
 
-    barcode=pd.read_csv(barcode_csv, header = None, sep = '\t', names = ['RBP', 'barcode'])
+    barcode=pd.read_csv(barcode_csv)
     whitelist=pd.read_csv(whitelist, sep = '\t', comment = '#', 
         header = None, 
         names = ['barcode', 'alternative', 'occurence', 'alt_occurence'],

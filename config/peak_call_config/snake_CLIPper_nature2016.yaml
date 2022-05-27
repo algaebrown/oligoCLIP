@@ -1,0 +1,10 @@
+
+SCRIPT_PATH: /home/hsher/projects/oligoCLIP/scripts/
+SPECIES: GRCh38v35noalt
+MANIFEST: /home/hsher/projects/oligo_results/nature2016_hek_full.csv
+WORKDIR: /home/hsher/scratch/nature2016_v35_peaks
+
+GTF: /home/hsher/gencode_coords/gencode.v35.gtf.db
+ANNOTATOR_SPECIES: GRCh38
+GENOMEFA: /home/hsher/gencode_coords/GRCh38.p13.genome.fa
+CLIPper_pvalthes: 0.001

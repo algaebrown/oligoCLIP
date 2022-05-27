@@ -1,0 +1,16 @@
+fastq_menifest: /home/hsher/projects/oligoCLIP/config/fastq_csv/multiplex2.csv 
+barcode: /projects/ps-yeolab5/hsher/ABC011_K562_10plex.csv
+
+ADAPTOR_PATH: /projects/ps-yeolab4/software/eclip/0.7.0/examples/inputs
+adaptor: InvRiL19
+
+# Resources
+CHROM_SIZES: /projects/ps-yeolab3/eboyle/resources/hg38.chrom.sizes
+STAR_DIR: /projects/ps-yeolab4/software/eclip/0.7.0/examples/inputs/star_2_7_gencode29_sjdb
+STAR_REP: /projects/ps-yeolab4/software/eclip/0.7.0/examples/inputs/star_2_7_homo_sapiens_repbase_fixed_v2
+
+
+PYTHON3_PATH: /home/hsher/miniconda3/bin/python # TODO: containerize
+TOOL_PATH: /home/hsher/projects/oligoCLIP
+
+umi_pattern: XXXXXNNNNN
