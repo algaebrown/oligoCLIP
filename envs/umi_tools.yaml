@@ -1,6 +1,0 @@
-name: umi_tools
-channels:
-  - bioconda
-dependencies:
-  - umi_tools
-prefix: /home/hsher/miniconda3/envs/umi_tools
