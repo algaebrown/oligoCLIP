@@ -14,3 +14,17 @@ QC_TOOLS_PATH: /home/hsher/projects/QC_tools
 
 JAVA_PATH: /projects/ps-yeolab3/eboyle/software/jdk-18.0.1.1/bin/java
 UMICOLLAPSE_PATH: /projects/ps-yeolab3/eboyle/software/UMICollapse/umicollapse.jar
+
+# region caller
+PARTITION: /projects/ps-yeolab3/eboyle/encode/pipeline/01_20211115/input/tx_annotations/gencode.v38.annotation.hek293t_totalrna.gt1.tiled_partition.bed
+FEATURE_ANNOTATIONS: /projects/ps-yeolab3/eboyle/encode/pipeline/01_20211115/input/tx_annotations/gencode.v38.annotation.hek293t_totalrna.gt1.tiled_partition.features.tsv
+ACCESSION_RANKINGS: /projects/ps-yeolab3/eboyle/encode/pipeline/01_20211115/input/accession_type_ranking.txt
+CHROM_SIZES: /home/hsher/gencode_coords/GRCh38.primary_assembly.chrom.sizes
+GENOMEFA: /home/hsher/gencode_coords/GRCh38.primary_assembly.genome.fa
+AS_INPUT: IgG_Rb # this must be one of the rows in barcode_csv
+R_EXE: /projects/ps-yeolab4/software/R-4.1.2/bin/Rscript
+
+SCRIPT_PATH: /home/hsher/projects/oligoCLIP/scripts/
+
+# 
+MAKE_TRACK: /home/hsher/projects/make_tracks/Snake_CLIP_track.py
