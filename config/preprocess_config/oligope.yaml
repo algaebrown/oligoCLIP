@@ -28,3 +28,4 @@ SCRIPT_PATH: /home/hsher/projects/oligoCLIP/scripts/
 
 # 
 MAKE_TRACK: /home/hsher/projects/make_tracks/Snake_CLIP_track.py
+trackhub_genome: GRCh38

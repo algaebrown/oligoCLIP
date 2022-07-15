@@ -17,7 +17,8 @@ rule trim_adaptor:
         cores="4",
         adaptor_fwd = config['adaptor_fwd'],
         adaptor_rev = config['adaptor_rev'],
-        error_out_file = "error_files/trim_adaptor.{libname}.txt"
+        error_out_file = "error_files/trim_adaptor.{libname}.txt",
+        quality_cutoff = config['QUALTITY_CUTOFF']
     conda:
         "envs/cutadapt.yaml"
     benchmark: "benchmarks/trim_adaptor.{libname}"
@@ -27,7 +28,7 @@ rule trim_adaptor:
             -A {params.adaptor_rev} \
             --times 2 \
             -e 0.1 \
-            --quality-cutoff 6 \
+            --quality-cutoff {params.quality_cutoff} \
             -m 23 \
             -o {output.fq1} \
             -p {output.fq2} \
@@ -95,7 +96,7 @@ rule demultiplex:
         """
         cd {params.prefix}
         ultraplex -i all.Tr.umi.fq2.gz -i2 all.Tr.umi.fq1.gz -b {input.barcode_csv}  \
-            -m5 1 -m3 0 -t {params.cores} --ultra -a XX -a2 XX 
+            -m5 1 -m3 0 -t {params.cores} -a XX -a2 XX 
         sleep 600
         """
 
