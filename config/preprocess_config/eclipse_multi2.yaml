@@ -14,3 +14,5 @@ PYTHON3_PATH: /home/hsher/miniconda3/bin/python # TODO: containerize
 TOOL_PATH: /home/hsher/projects/oligoCLIP
 
 umi_pattern: XXXXXNNNNN
+
+WORKDIR: /home/hsher/scratch/ABC_reprocess2/

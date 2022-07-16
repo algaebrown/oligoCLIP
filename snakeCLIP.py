@@ -6,8 +6,8 @@ import sys
 import glob
 #snakemake -s snakeCLIP.py -j 12 --keep-going --cluster "qsub -l walltime={params.run_time} -l nodes=1:ppn={params.cores} -q home-yeo" --directory /home/hsher/scratch/ABC_reprocess/ {K562_SLBP_rep1,K562_SLBP_rep2}/bams/genome/SLBP.genome-mappedSoSo.rmDupSo.Aligned.out.bam.bai
 #snakemake -s snakeCLIP.py -j 12 --keep-going --cluster "qsub -l walltime={params.run_time} -l nodes=1:ppn={params.cores} -q home-yeo" --directory /home/hsher/scratch/ABC_reprocess/ {K562_RBFOX2_rep1,K562_RBFOX2_rep2}/bams/genome/RBFOX2.genome-mappedSoSo.rmDupSo.Aligned.out.bam.bai --configfile eclipse_rbfox.yaml
-# snakemake -s snakeCLIP.py -j 12 --keep-going --cluster "qsub -l walltime={params.run_time} -l nodes=1:ppn={params.cores} -q home-yeo" --directory /home/hsher/scratch/ABC_reprocess/ --configfile eclipse_multi.yaml -n
-# snakemake -s snakeCLIP.py -j 12 --keep-going --cluster "qsub -l walltime={params.run_time} -l nodes=1:ppn={params.cores} -q home-yeo" --directory /home/hsher/scratch/ABC_reprocess2/ --configfile eclipse_multi2.yaml -n
+# snakemake -s snakeCLIP.py -j 12 --keep-going --cluster "qsub -l walltime={params.run_time} -l nodes=1:ppn={params.cores} -q home-yeo" --directory /home/hsher/scratch/ABC_reprocess/ --configfile config/preprocess_config/eclipse_multi.yaml -n
+# snakemake -s snakeCLIP.py -j 12 --keep-going --cluster "qsub -l walltime={params.run_time} -l nodes=1:ppn={params.cores} -q home-yeo" --configfile config/preprocess_config/eclipse_multi2.yaml -n
 #snakemake -s snakeCLIP.py -j 12 --keep-going --cluster "qsub -l walltime={params.run_time} -l nodes=1:ppn={params.cores} -q home-yeo" --directory /home/hsher/scratch/ABC_katie/ --configfile eclipse_rbfox_katie.yaml --use-conda
 #snakemake -s snakeCLIP.py -j 12 --keep-going --cluster "qsub -l walltime={params.run_time} -l nodes=1:ppn={params.cores} -q home-yeo" --directory /home/hsher/scratch/ABC_katie/ --configfile eclipse_igg_katie.yaml --use-conda
 #snakemake -s snakeCLIP.py -j 12 --keep-going --cluster "qsub -l walltime={params.run_time} -l nodes=1:ppn={params.cores} -q home-yeo" --directory /home/hsher/scratch/ABC_reprocess/ --configfile eclipse_rbfox2_singleplex_rep.yaml --use-conda -n
@@ -25,9 +25,13 @@ try:
     CHROM_SIZES = config['CHROM_SIZES']
     STAR_DIR = config['STAR_DIR']
     STAR_REP= config['STAR_REP']
-    STAR_DROS = config['STAR_DROS']
+    
     TOOL_PATH= config['TOOL_PATH']
     umi_pattern = config['umi_pattern']
+
+    workdir: config['WORKDIR']
+
+    STAR_DROS = config.get('STAR_DROS')
 except Exception as e:
     print(e)
 
@@ -46,18 +50,23 @@ module snakeDros:
         #"Snake_downbam_UMI",
         "snakeDros.py"
 
+def get_output():
+    output = expand("{libname}/fastqc/{sample_label}.umi.fqTrTr.rev.sorted_fastqc.html", libname = libs, sample_label = rbps
+    )+expand("{libname}/bams/genome/{sample_label}.genome-mappedSoSo.rmDupSo.Aligned.out.bam.bai",  libname = libs, sample_label = rbps
+    )+expand("QC/{libname}/repeat_mapping_stats.csv",  libname = libs
+    )+expand("QC/{libname}/genome_mapping_stats.csv",  libname = libs
+    )+expand('QC/{libname}/fastQC_basic_summary.csv',  libname = libs
+    )+expand('QC/{libname}/fastQC_passfail.csv',  libname = libs
+    )+['QC/cutadapt_log1.csv','QC/cutadapt_log2.csv']
+
+    if 'STAR_DROS':
+        output.append(expand('QC/dros_mapping_stats.csv',  libname = libs))
+    
+    return output
 
 rule all:
     input:
-        expand("{libname}/fastqc/{sample_label}.umi.fqTrTr.rev.sorted_fastqc.html", libname = libs, sample_label = rbps)+
-        expand("{libname}/bams/genome/{sample_label}.genome-mappedSoSo.rmDupSo.Aligned.out.bam.bai",  libname = libs, sample_label = rbps),
-        expand("QC/{libname}/repeat_mapping_stats.csv",  libname = libs),
-        expand("QC/{libname}/genome_mapping_stats.csv",  libname = libs),
-        expand('QC/{libname}/fastQC_basic_summary.csv',  libname = libs),
-        expand('QC/{libname}/fastQC_passfail.csv',  libname = libs),
-        expand('QC/dros_mapping_stats.csv',  libname = libs),
-        'QC/cutadapt_log1.csv',
-        'QC/cutadapt_log2.csv'
+        get_output()
     output:
         "snakeLeaf.txt"
     params:
