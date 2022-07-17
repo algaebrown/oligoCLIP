@@ -36,17 +36,17 @@ except Exception as e:
 
 module peak_anno:
     snakefile:
-        "Snake_peakanno.py"
+        "rules/Snake_peakanno.py"
     config: config
 
 module peak_call:
     snakefile:
-        "Snake_CLIPper.py"
+        "rules/Snake_CLIPper.py"
     config: config
 
 module motif:
     snakefile:
-        "snake_scoreRBNS_SELEX.py"
+        "rules/snake_scoreRBNS_SELEX.py"
     config: config
 
 
@@ -60,6 +60,8 @@ rule all:
         expand("output/CLIPper/{sample_label}.peaks.filtered.svg", sample_label = sample_labels),
         expand("output/{sample_label}.peaks.normed.compressed.motifscore.csv", sample_label = all_rbfox),
         expand("output/CLIPper/{sample_label}.peaks.motifscore.csv", sample_label = all_rbfox),
+        expand("summary/normalized/{sample_label}.peaks.summary", sample_label = sample_labels),
+        expand("summary/CLIPper/{sample_label}.peaks.summary", sample_label = sample_labels),
 
     output:
         "snakeCLIP.txt"

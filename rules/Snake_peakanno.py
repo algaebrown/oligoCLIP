@@ -158,5 +158,38 @@ rule motif_analysis_clipper:
             --out_file {output.svg} \
             --species {params.sps} \
             --genome_fasta {params.fa}
+        """
 
+rule peak_summary_unnormalized:
+    input:
+        peak="output/CLIPper/{sample_label}.peaks.annotate.bed"
+    output:
+        summary_csv = "summary/CLIPper/{sample_label}.peaks.summary"
+    params:
+        run_time=1,
+        error_out_file = "error_files/annotate",
+        cores = "1",
+    conda:
+        "envs/metadensity.yaml"
+    shell:
+        """
+        python scripts/summarize_peak.py --bed {input.peak}  \
+                                        --outfile {output.summary_csv}
+        """
+rule peak_summary_normalized:
+    input:
+        peak="output/{sample_label}.peaks.normed.compressed.annotate.bed"
+    output:
+        summary_csv = "summary/normalized/{sample_label}.peaks.summary"
+    params:
+        run_time=1,
+        error_out_file = "error_files/annotate",
+        cores = "1",
+    conda:
+        "envs/metadensity.yaml"
+    shell:
+        """
+        python scripts/summarize_peak.py --bed {input.peak}  \
+                                        --is_normalized \
+                                        --outfile {output.summary_csv}
         """
