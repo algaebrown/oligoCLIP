@@ -32,6 +32,7 @@ try:
     workdir: config['WORKDIR']
 
     STAR_DROS = config.get('STAR_DROS')
+    
 except Exception as e:
     print(e)
 
@@ -43,23 +44,28 @@ print('LIBRARY:',libs)
 barcode_df = pd.read_csv(barcode)
 rbps = barcode_df['rbp'].tolist()
 print('RBP:',rbps)
+print('STAR:DROS',STAR_DROS)
 
 module snakeDros:
     snakefile:
-        # here, plain paths, URLs and the special markers for code hosting providers (see below) are possible.
-        #"Snake_downbam_UMI",
         "snakeDros.py"
+
+module QC:
+    snakefile:
+        "rules/QC.py"
+    config:
+        config
 
 def get_output():
     output = expand("{libname}/fastqc/{sample_label}.umi.fqTrTr.rev.sorted_fastqc.html", libname = libs, sample_label = rbps
     )+expand("{libname}/bams/genome/{sample_label}.genome-mappedSoSo.rmDupSo.Aligned.out.bam.bai",  libname = libs, sample_label = rbps
-    )+expand("QC/{libname}/repeat_mapping_stats.csv",  libname = libs
-    )+expand("QC/{libname}/genome_mapping_stats.csv",  libname = libs
+    )+expand("QC/repeat_mapping_stats.csv",  libname = libs
+    )+expand("QC/genome_mapping_stats.csv",  libname = libs
     )+expand('QC/{libname}/fastQC_basic_summary.csv',  libname = libs
     )+expand('QC/{libname}/fastQC_passfail.csv',  libname = libs
     )+['QC/cutadapt_log1.csv','QC/cutadapt_log2.csv']
 
-    if 'STAR_DROS':
+    if STAR_DROS:
         output.append(expand('QC/dros_mapping_stats.csv',  libname = libs))
     
     return output
@@ -98,26 +104,6 @@ rule make_good_barcode_tsv:
         python {params.script_path} {input} {output}
         """
 
-# rule find_barcode:
-# ONLY work for cells , if no "CCC" in bc-pattern, no longer works
-#     input:
-#         fq_raw = lambda wildcards: fastq_menifest.loc[fastq_menifest['libname']==wildcards.libname, 'fastq'].iloc[0],
-#     output:
-#         "{libname}/whitelist.txt"
-#     params:
-#         error_out_file = "error_files/findbarcode",
-#         run_time = "1:45:00",
-#         cores = "4",
-#         memory = "10000",
-#         job_name = "extract_umi",
-#         umi_pattern = umi_pattern,
-#         n_cell = cell_number
-#     shell:
-#         """
-#         module load eclip;
-#         umi_tools whitelist --stdin {input.fq_raw} --bc-pattern {params.umi_pattern} --set-cell-number={params.n_cell} > {output}
-#         """
-
 rule extract_umi: # TODO: adaptor TRIM first
     input:
         fq_raw = lambda wildcards: fastq_menifest.loc[fastq_menifest['libname']==wildcards.libname, 'fastq'].iloc[0]
@@ -142,29 +128,6 @@ rule extract_umi: # TODO: adaptor TRIM first
             --stdout {output.fq_umi} \
             --log {output.metrics} \
         """
-
-# # TODO: generate warning when some barcode is non-exsitence
-# rule combine_barcode:
-#     input:
-#         whitelist = "{libname}/whitelist.txt",
-#         provided_barcode = "{libname}/barcode.tsv"
-#     output:
-#         "merged.csv"
-#     params:
-#         error_out_file = "error_files/merge",
-#         run_time = "0:30:00",
-#         cores = "1",
-#         python = PYTHON3_PATH,
-#         script = os.path.join(TOOL_PATH, 'scripts/barcode_join.py')
-#     shell:
-#         """
-#         {params.python} {params.script} {input.provided_barcode} {input.whitelist} {output}
-#         """
-
-
-#TODO: make "find_InvRNAadaptor"
-#TODO: try if 1 step is good enough
-#TODO: try if we can feed the entire barcode without tiling
 
 def get_full_adapter_path(adaptor):
     return os.path.join(ADAPTOR_PATH, adaptor+'_adapters.fasta')
@@ -220,18 +183,18 @@ rule cutadapt_round_two:
             --cores=0 \
             {input.fq_trimmed} > {output.metrics}
         """
-use rule gather_trimming_stat from snakeDros with:
+
+use rule gather_trimming_stat from QC as qc_trim1 with:
     input:
         tr1=expand("QC/{libname}.umi.r1.fqTr.metrics", libname = libs),
-        tr2=expand("QC/{libname}.umi.r1.fqTrTr.metrics", libname = libs)
     output:
-        tr1='QC/cutadapt_log1.csv',
-        tr2='QC/cutadapt_log2.csv',
-    params:
-        run_time = "00:10:00",
-        cores="1",
-        files1=','.join(expand("QC/{libname}.umi.r1.fqTr.metrics", libname = libs)),
-        files2=','.join(expand("QC/{libname}.umi.r1.fqTrTr.metrics", libname = libs)),
+        tr1='QC/cutadapt_log1.csv'
+
+use rule gather_trimming_stat from QC as qc_trim2 with:
+    input:
+        tr1=expand("QC/{libname}.umi.r1.fqTrTr.metrics", libname = libs)
+    output:
+        tr1='QC/cutadapt_log2.csv',
 
 rule demultiplex:
     input:
@@ -301,25 +264,13 @@ rule fastqc_post_trim:
         """
 
 
-rule gather_fastqc_report:
+rule gather_fastqc_report from QC as qc_fastqc with:
     input:
         expand("{libname}/fastqc/{sample_label}.umi.fqTrTr.rev.sorted_fastqc/fastqc_data.txt", libname = libs, sample_label = rbps)
     output:
         basic='QC/{libname}/fastQC_basic_summary.csv',
         passfail='QC/{libname}/fastQC_passfail.csv'
-    params:
-        error_out_file = "error_files/mapstat",
-        run_time = "00:40:00",
-        cores = "1",
-        memory = "10000",
-        job_name = "gather_stat",
-        files = ','.join(expand("{libname}/fastqc/{sample_label}.umi.fqTrTr.rev.sorted_fastqc/fastqc_data.txt", libname = libs, sample_label = rbps))
-    conda:
-        "envs/metadensity.yaml"
-    shell:
-        """
-        python /home/hsher/projects/QC_tools/fastqc_io.py -i {params.files} -p {output.passfail} -b {output.basic}
-        """
+    
 use rule align_reads_to_Drosophila from snakeDros with:
     input:
         fq_1 = "{libname}/fastqs/{sample_label}.umi.fqTrTr.rev.sorted.fq.gz"
@@ -337,18 +288,11 @@ use rule align_reads_to_Drosophila from snakeDros with:
         outprefix = "{libname}/bams/dros/{sample_label}."
     benchmark: "benchmarks/align/{sample_label}.{libname}.align_dros_reads.txt"
 
-use rule gather_DROSOPHILA_mapstat from snakeDros with:
+use rule gather_mapstat from QC as mapstat_gather_repeat with:
     input:
         expand("{libname}/bams/dros/{sample_label}.Log.final.out", libname = libs, sample_label = rbps)
     output:
         "QC/dros_mapping_stats.csv"
-    params:
-        error_out_file = "error_files/mapstat",
-        run_time = "00:40:00",
-        cores = "1",
-        memory = "10000",
-        job_name = "gather_stat",
-        files = ','.join(expand("{libname}/bams/dros/{sample_label}.Log.final.out", libname = libs, sample_label = rbps))
 
 rule align_reads_to_REPEAT:
     input:
@@ -391,25 +335,12 @@ rule align_reads_to_REPEAT:
             --runMode alignReads \
             --runThreadN 8
         """
-rule gather_REPEAT_mapstat:
+use rule gather_mapstat from QC as mapstat_gather_repeat with:
     input:
         #find_all_files("{libname}/bams/repeat/{sample_label}.Log.final.out", libs)
         expand("{libname}/bams/repeat/{sample_label}.Log.final.out", libname = libs, sample_label = rbps)
     output:
-        "QC/{libname}/repeat_mapping_stats.csv"
-    params:
-        error_out_file = "error_files/mapstat",
-        run_time = "00:40:00",
-        cores = "1",
-        memory = "10000",
-        job_name = "gather_stat",
-        files = ','.join(expand("{libname}/bams/repeat/{sample_label}.Log.final.out", libname = libs, sample_label = rbps))
-    conda:
-        "envs/metadensity.yaml"
-    shell:
-        """
-        python /home/hsher/projects/QC_tools/star_mapping_stat_io.py -i {params.files} -o {output}
-        """
+        "QC/repeat_mapping_stats.csv"
 
 rule align_to_GENOME:
     input:
@@ -453,25 +384,12 @@ rule align_to_GENOME:
 
         """
 
-rule gather_GENOME_mapstat:
+use rule gather_mapstat from QC as mapstat_gather_repeat with:
     input:
         #find_all_files("{libname}/bams/genome/{sample_label}.genome-mapped.Log.final.out", libs)
         expand("{libname}/bams/genome/{sample_label}.genome-mapped.Log.final.out", libname = libs, sample_label = rbps)
     output:
-        "QC/{libname}/genome_mapping_stats.csv"
-    params:
-        error_out_file = "error_files/mapstat",
-        run_time = "00:40:00",
-        cores = "1",
-        memory = "10000",
-        job_name = "gather_stat",
-        files = ','.join(expand("{libname}/bams/genome/{sample_label}.genome-mapped.Log.final.out", libname = libs, sample_label = rbps))
-    conda:
-        "envs/metadensity.yaml"
-    shell:
-        """
-        python /home/hsher/projects/QC_tools/star_mapping_stat_io.py -i {params.files} -o {output}
-        """
+        "QC/genome_mapping_stats.csv"
 
 rule sort_bams:
     input:
@@ -535,3 +453,10 @@ rule index_genome_bams:
         "module load samtools;"
         "samtools sort -o {output.sbam} {input.bam} ;"
         "samtools index {output.sbam};"
+
+use rule duplication_rate from QC as qc_duplication_rate with:
+    input:
+        dup=expand("{libname}/bams/genome/{sample_label}.genome-mappedSoSo.Aligned.out.bam", libname = libs, sample_label = rbps),
+        rmdup=expand("{libname}/bams/genome/{sample_label}.genome-mappedSoSo.rmDupSo.Aligned.out.bam",libname = libs, sample_label = rbps)
+    output:
+        "QC/dup_level.csv"

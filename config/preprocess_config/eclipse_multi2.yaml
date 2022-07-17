@@ -16,3 +16,4 @@ TOOL_PATH: /home/hsher/projects/oligoCLIP
 umi_pattern: XXXXXNNNNN
 
 WORKDIR: /home/hsher/scratch/ABC_reprocess2/
+QC_TOOLS_PATH: /home/hsher/projects/QC_tools
