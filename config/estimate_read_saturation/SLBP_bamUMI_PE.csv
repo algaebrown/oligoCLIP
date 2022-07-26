@@ -1,0 +1,5 @@
+,Sample,bam,barcode,bam_control
+12,262_01_SLBP,/home/hsher/scratch/encode_recall/262_SLBP.262_01_SLBP_CLIP.B06.r1.fq.umitools.genome-mappedSo.bam.sorted.bam,B06,/home/hsher/scratch/encode_recall/262_SLBP.262_01_SLBP_INPUT.NIL.r1.fq.genome-mappedSo.rmDupSo.r2.bam
+13,262_01_SLBP,/home/hsher/scratch/encode_recall/262_SLBP.262_01_SLBP_CLIP.A01.r1.fq.umitools.genome-mappedSo.bam.sorted.bam,A01,/home/hsher/scratch/encode_recall/262_SLBP.262_01_SLBP_INPUT.NIL.r1.fq.genome-mappedSo.rmDupSo.r2.bam
+34,262_02_SLBP,/home/hsher/scratch/encode_recall/262_SLBP.262_02_SLBP_CLIP.D8f.r1.fq.umitools.genome-mappedSo.bam.sorted.bam,D8f,/home/hsher/scratch/encode_recall/262_SLBP.262_02_SLBP_INPUT.NIL.r1.fq.genome-mappedSo.rmDupSo.r2.bam
+35,262_02_SLBP,/home/hsher/scratch/encode_recall/262_SLBP.262_02_SLBP_CLIP.C01.r1.fq.umitools.genome-mappedSo.bam.sorted.bam,C01,/home/hsher/scratch/encode_recall/262_SLBP.262_02_SLBP_INPUT.NIL.r1.fq.genome-mappedSo.rmDupSo.r2.bam
