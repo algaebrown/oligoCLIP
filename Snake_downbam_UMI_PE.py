@@ -1,12 +1,13 @@
-# simulate at different sequencing depth, how many UMI/peaks will be captured (single end)
 import pandas as pd
 import glob
 import numpy as np
 
 print(config)
 manifest = pd.read_table(config['DOWNSAMPLE_MENIFEST'], index_col = 0, sep = ',')
+workdir: config['WORKDIR']
 
-#snakemake -j 12 -s Snake_downbam_UMI_PE.py --cluster "qsub -l walltime={params.run_time}:00:00 -l nodes=1:ppn={params.cores} -q home-yeo" --configfile config/pe_downsample.yaml
+#snakemake -j 12 -s Snake_downbam_UMI_PE.py --cluster "qsub -l walltime={params.run_time}:00:00 -l nodes=1:ppn={params.cores} -q home-yeo" --configfile config/estimate_read_saturation/pe_downsample.yaml
+#snakemake -j 12 -s Snake_downbam_UMI_PE.py --cluster "qsub -l walltime={params.run_time}:00:00 -l nodes=1:ppn={params.cores} -q home-yeo" --configfile config/estimate_read_saturation/pe_downsample_SLBP.yaml
 
 def get_total_reads(sample_label):
     with open(f"downsample_bam_UMI/{sample_label}.totalcount", 'r') as f:
@@ -26,12 +27,12 @@ module Snake_downbam:
         
 module Snake_CLIPper:
     snakefile:
-        "Snake_CLIPper.py"
+        "rules/Snake_CLIPper.py"
     config: config
 
 module peak_anno:
     snakefile:
-        "Snake_peakanno.py"
+        "rules/Snake_peakanno.py"
     config: config
 
 combinations = []
@@ -40,11 +41,11 @@ for index, row in manifest.iterrows():
 
 rule all:
     input:
-        expand("downsample_bam_UMI_counts/{combination}.{nread}.rmDup.count", combination=combinations,nread = targets)+
-        expand("downsample_bam_UMI/CLIPper/{sample_label}.{nread}.peaks.normed.compressed.annotate.bed", 
-        sample_label = ['676_01_RBFOX2'],
-        nread = np.array(targets)[[0,1,2]]
-        )
+        expand("downsample_bam_UMI_counts/{combination}.{nread}.rmDup.count", combination=combinations,nread = targets),
+        # expand("downsample_bam_UMI/CLIPper/{sample_label}.{nread}.peaks.normed.compressed.annotate.bed", 
+        # sample_label = ['676_01_RBFOX2'],
+        # nread = np.array(targets)[[0,1,2]]
+        # )
     output:
         "snakeUMI_PE.txt"
     params:

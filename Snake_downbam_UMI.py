@@ -8,10 +8,9 @@ import sys
 import glob
 import numpy as np
 
-print(config)
 manifest = pd.read_table(config['DOWNSAMPLE_MENIFEST'], index_col = 0, sep = ',')
+config['CLIPper_pvalthes'] = None
 
-#print(manifest)
 
 def get_total_reads(sample_label):
     with open(f"downsample_bam_UMI/{sample_label}.totalcount", 'r') as f:
@@ -27,13 +26,13 @@ module Snake_CLIPper:
     snakefile:
         # here, plain paths, URLs and the special markers for code hosting providers (see below) are possible.
         #"Snake_downbam_UMI",
-        "Snake_CLIPper.py"
+        "rules/Snake_CLIPper.py"
     config:
         config
 
 module peak_anno:
     snakefile:
-        "Snake_peakanno.py"
+        "rules/Snake_peakanno.py"
     config: config
 
 
@@ -93,7 +92,7 @@ rule downsample_bam:
 
         frac=$(awk "BEGIN {{print ({params.nread})/$total}}")
         
-        samtools view -h -F 4 -s 5$frac {input.bam} | samtools view -Sb - > {output.subsample_bam}
+        samtools view -h -F 4 -s 5$frac {input.bam} | samtools sort - | samtools view -Sb - > {output.subsample_bam}
         samtools index {output.subsample_bam}
         """
 
