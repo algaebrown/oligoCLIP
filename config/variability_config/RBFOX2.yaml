@@ -1,0 +1,48 @@
+WORKDIR: /home/hsher/scratch/ABC_rep_var
+data:
+  - 
+      sample_label: ABC_multiplex_HEK293_RBFOX2
+      reps:
+      - rep1:
+        bam: /home/hsher/scratch/ABC_reprocess/HEK293_rep1/bams/genome/RBFOX2.genome-mappedSoSo.rmDupSo.Aligned.out.bam
+        bed: /home/hsher/scratch/downsample_peak_from_eclipse/output/CLIPper/Dan_multiplex1_HEK293_rep1_RBFOX2.peaks.bed
+      - rep2:
+        bam: /home/hsher/scratch/ABC_reprocess/HEK293_rep2/bams/genome/RBFOX2.genome-mappedSoSo.rmDupSo.Aligned.out.bam
+        bed: /home/hsher/scratch/downsample_peak_from_eclipse/output/CLIPper/Dan_multiplex1_HEK293_rep2_RBFOX2.peaks.bed
+  - 
+      sample_label: ABC_singleplex_HEK293_RBFOX2
+      reps:
+      - rep1:
+        bam: /home/hsher/scratch/ABC_reprocess/HEK293_RBFOX2_rep1/bams/genome/RBFOX2.genome-mappedSoSo.rmDupSo.Aligned.out.bam
+        bed: /home/hsher/scratch/downsample_peak_from_eclipse/output/CLIPper/Dan_singleplex_HEK293_rep1_RBFOX2.peaks.bed
+      - rep2:
+        bam: /home/hsher/scratch/ABC_reprocess/HEK293_RBFOX2_rep2/bams/genome/RBFOX2.genome-mappedSoSo.rmDupSo.Aligned.out.bam
+        bed: /home/hsher/scratch/downsample_peak_from_eclipse/output/CLIPper/Dan_singleplex_HEK293_rep2_RBFOX2.peaks.bed
+  - 
+      sample_label: ABC_single_vs_multi_HEK293_RBFOX2
+      reps:
+      - rep1:
+        bam: /home/hsher/scratch/ABC_reprocess/HEK293_RBFOX2_rep1/bams/genome/RBFOX2.genome-mappedSoSo.rmDupSo.Aligned.out.bam
+        bed: /home/hsher/scratch/downsample_peak_from_eclipse/output/CLIPper/Dan_singleplex_HEK293_rep1_RBFOX2.peaks.bed
+      - rep2:
+        bam: /home/hsher/scratch/ABC_reprocess/HEK293_rep1/bams/genome/RBFOX2.genome-mappedSoSo.rmDupSo.Aligned.out.bam
+        bed: /home/hsher/scratch/downsample_peak_from_eclipse/output/CLIPper/Dan_multiplex1_HEK293_rep1_RBFOX2.peaks.bed
+  -
+      sample_label: NATURE_HEK293T_RBFOX2_eCLIP_downsampled
+      reps:
+        - rep1:
+          bam: /home/hsher/scratch/eric_rbfox2_293t_snake/downsample_bams/ENCODE_Dan_singleplex_HEK293_rep1_RBFOX2_CLIP.bam
+          bed: /home/hsher/scratch/downsample_peak_from_eclipse/output/CLIPper/ENCODE_Dan_singleplex_HEK293_rep1_RBFOX2.peaks.bed
+        - rep2:
+          bam: /home/hsher/scratch/eric_rbfox2_293t_snake/downsample_bams/ENCODE_Dan_singleplex_HEK293_rep2_RBFOX2_CLIP.bam
+          bed: /home/hsher/scratch/downsample_peak_from_eclipse/output/CLIPper/ENCODE_Dan_singleplex_HEK293_rep2_RBFOX2.peaks.bed
+  - 
+      sample_label: NATURE_HEK293T_RBFOX2_eCLIP_full
+      reps:
+        - rep1:
+          bam: /home/bay001/projects/hugo_tripseq_20210609/permanent_data/00_nmeth_2016/GRCh38/nmeth_2016_grch38_v3/results/RBFOX2_293t_GRCh38.1120_2500_CLIP.A04.r1.fq.genome-mappedSo.rmDupSo.merged.r2.bam
+          bed: /home/bay001/projects/hugo_tripseq_20210609/permanent_data/00_nmeth_2016/GRCh38/nmeth_2016_grch38_v3/results/RBFOX2_293t_GRCh38.1120_2500_CLIP.A04.r1.fq.genome-mappedSo.rmDupSo.merged.r2.peakClusters.bed
+        - rep2:
+          bam: /home/bay001/projects/hugo_tripseq_20210609/permanent_data/00_nmeth_2016/GRCh38/nmeth_2016_grch38_v3/results/RBFOX2_293t_GRCh38.204_01_2500_CLIP.A03.r1.fq.genome-mappedSo.rmDupSo.merged.r2.bam
+          bed: /home/bay001/projects/hugo_tripseq_20210609/permanent_data/00_nmeth_2016/GRCh38/nmeth_2016_grch38_v3/results/RBFOX2_293t_GRCh38.204_01_2500_CLIP.A03.r1.fq.genome-mappedSo.rmDupSo.merged.r2.peakClusters.bed
+
