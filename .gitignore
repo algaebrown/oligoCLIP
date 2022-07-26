@@ -1,0 +1,5 @@
+*.pyc
+*.dot
+*.pdf
+*-checkpoint*
+.snakemake
