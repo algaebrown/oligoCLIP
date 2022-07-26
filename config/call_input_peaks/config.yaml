@@ -1,0 +1,8 @@
+SCRIPT_PATH: /home/hsher/projects/oligoCLIP/scripts/
+SPECIES: GRCh38v35noalt
+WORKDIR: /home/hsher/scratch/SMINPUT_peaks/
+
+GTF: /home/hsher/gencode_coords/gencode.v35.gtf.db
+ANNOTATOR_SPECIES: GRCh38
+GENOMEFA: /home/hsher/gencode_coords/GRCh38.p13.genome.fa
+CLIPper_pvalthes: 0.001
