@@ -13,7 +13,7 @@ from color_mapper import *
 plt.rcParams['axes.prop_cycle'] = plt.cycler(color=plt.cm.Set3.colors)
 repeat_masker = BedTool('/home/hsher/gencode_coords/repeatmasker_ucsc.hg38.bed')
 
-def read_annotated_peaks(path, filter_repeat = True, merge_bp_distance = 5, normalized = False):
+def read_annotated_peaks(path, filter_repeat = True, merge_bp_distance = 5, normalized = False, chi = False):
     ''' read annotated peaks file as dataframe
     
     merges peaks within `merge_bp_distance`
@@ -54,6 +54,8 @@ def read_annotated_peaks(path, filter_repeat = True, merge_bp_distance = 5, norm
     
     if normalized:
         normed_df['-log10pval'] = normed_df['score']
+    elif chi:
+        normed_df['-log10pval'] = normed_df['name']
     else:
         
         # can be either in name or score

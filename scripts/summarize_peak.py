@@ -14,6 +14,7 @@ def optparser():
     parser.add_option("-b", "--bed", dest="annotated_bed",
                     help="annotated bed file from annotator")
     parser.add_option('-n', '--is_normalized', default = False, action = "store_true")
+    parser.add_option('-c', '--is_chi', default = False, action = "store_true")
     parser.add_option("-f", "--filter_repeat",
                     action="store_true", dest="filter_repeat", default=False,
                     help="filter_out_repeat_masker")
@@ -44,11 +45,14 @@ if __name__ == '__main__':
     peak_df = read_annotated_peaks(options.annotated_bed,
                                    filter_repeat = options.filter_repeat,
                                    merge_bp_distance = options.merge_bp_distance,
-                                   normalized = options.is_normalized
+                                   normalized = options.is_normalized,
+                                   chi = options.is_chi
                                     )
     n_prefilter = peak_df.shape[0]
     logging.info('pre-filter:',n_prefilter)
     # filter pvalue
+    if options.is_chi:
+        peak_df = peak_df.loc[(peak_df['-log10pval']>options.log10pval_thres)]
     if options.is_normalized:
         # has both pvalue and fc
         peak_df = peak_df.loc[(peak_df['name']>options.l2fold_change_threshold)&
