@@ -1,0 +1,7 @@
+WORKDIR: /home/hsher/scratch/chirepeat
+
+GTF: /home/hsher/gencode_coords/gencode.v35.gtf.db
+ANNOTATOR_SPECIES: GRCh38
+GENOMEFA: /home/hsher/gencode_coords/GRCh38.p13.genome.fa
+CHI_LOG10PVAL_THRES: 3
+SCRIPT_PATH: /home/hsher/projects/oligoCLIP/scripts/
