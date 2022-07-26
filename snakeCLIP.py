@@ -7,7 +7,7 @@ import glob
 #snakemake -s snakeCLIP.py -j 12 --keep-going --cluster "qsub -l walltime={params.run_time} -l nodes=1:ppn={params.cores} -q home-yeo" --directory /home/hsher/scratch/ABC_reprocess/ {K562_SLBP_rep1,K562_SLBP_rep2}/bams/genome/SLBP.genome-mappedSoSo.rmDupSo.Aligned.out.bam.bai
 #snakemake -s snakeCLIP.py -j 12 --keep-going --cluster "qsub -l walltime={params.run_time} -l nodes=1:ppn={params.cores} -q home-yeo" --directory /home/hsher/scratch/ABC_reprocess/ {K562_RBFOX2_rep1,K562_RBFOX2_rep2}/bams/genome/RBFOX2.genome-mappedSoSo.rmDupSo.Aligned.out.bam.bai --configfile eclipse_rbfox.yaml
 # snakemake -s snakeCLIP.py -j 12 --keep-going --cluster "qsub -l walltime={params.run_time} -l nodes=1:ppn={params.cores} -q home-yeo" --directory /home/hsher/scratch/ABC_reprocess/ --configfile config/preprocess_config/eclipse_multi.yaml -n
-# snakemake -s snakeCLIP.py -j 12 --keep-going --cluster "qsub -l walltime={params.run_time} -l nodes=1:ppn={params.cores} -q home-yeo" --configfile config/preprocess_config/eclipse_multi2.yaml -n
+# snakemake -s snakeCLIP.py -j 12 --keep-going --cluster "qsub -l walltime={params.run_time} -l nodes=1:ppn={params.cores} -q home-yeo" --configfile config/preprocess_config/eclipse_slbp_singleplex.yaml -np
 #snakemake -s snakeCLIP.py -j 12 --keep-going --cluster "qsub -l walltime={params.run_time} -l nodes=1:ppn={params.cores} -q home-yeo" --directory /home/hsher/scratch/ABC_katie/ --configfile eclipse_rbfox_katie.yaml --use-conda
 #snakemake -s snakeCLIP.py -j 12 --keep-going --cluster "qsub -l walltime={params.run_time} -l nodes=1:ppn={params.cores} -q home-yeo" --directory /home/hsher/scratch/ABC_katie/ --configfile eclipse_igg_katie.yaml --use-conda
 #snakemake -s snakeCLIP.py -j 12 --keep-going --cluster "qsub -l walltime={params.run_time} -l nodes=1:ppn={params.cores} -q home-yeo" --directory /home/hsher/scratch/ABC_reprocess/ --configfile eclipse_rbfox2_singleplex_rep.yaml --use-conda -n
@@ -30,8 +30,10 @@ try:
     umi_pattern = config['umi_pattern']
 
     workdir: config['WORKDIR']
-
-    STAR_DROS = config.get('STAR_DROS')
+    if 'STAR_DROS' in config:
+        STAR_DROS = config.get('STAR_DROS')
+    else:
+        STAR_DROS = None
     
 except Exception as e:
     print(e)
@@ -44,7 +46,7 @@ print('LIBRARY:',libs)
 barcode_df = pd.read_csv(barcode)
 rbps = barcode_df['rbp'].tolist()
 print('RBP:',rbps)
-print('STAR:DROS',STAR_DROS)
+#print('STAR:DROS',STAR_DROS)
 
 module snakeDros:
     snakefile:
@@ -288,7 +290,7 @@ use rule align_reads_to_Drosophila from snakeDros with:
         outprefix = "{libname}/bams/dros/{sample_label}."
     benchmark: "benchmarks/align/{sample_label}.{libname}.align_dros_reads.txt"
 
-use rule gather_mapstat from QC as mapstat_gather_repeat with:
+use rule gather_mapstat from QC as mapstat_gather_dros with:
     input:
         expand("{libname}/bams/dros/{sample_label}.Log.final.out", libname = libs, sample_label = rbps)
     output:
@@ -384,7 +386,7 @@ rule align_to_GENOME:
 
         """
 
-use rule gather_mapstat from QC as mapstat_gather_repeat with:
+use rule gather_mapstat from QC as mapstat_gather_genome with:
     input:
         #find_all_files("{libname}/bams/genome/{sample_label}.genome-mapped.Log.final.out", libs)
         expand("{libname}/bams/genome/{sample_label}.genome-mapped.Log.final.out", libname = libs, sample_label = rbps)

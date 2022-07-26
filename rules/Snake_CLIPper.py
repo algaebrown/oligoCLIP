@@ -13,8 +13,8 @@ except Exception as e:
 
 rule clipper:
     input:
-        subsample_bam=lambda wildcards: glob.glob(manifest.loc[manifest.uid == wildcards.sample_label]["bam_0"].values[0]),
-        subsample_bai=lambda wildcards: glob.glob(manifest.loc[manifest.uid == wildcards.sample_label]["bam_0"].values[0]+'.bai')
+        bam=lambda wildcards: glob.glob(manifest.loc[manifest.uid == wildcards.sample_label]["bam_0"].values[0]),
+        bai=lambda wildcards: glob.glob(manifest.loc[manifest.uid == wildcards.sample_label]["bam_0"].values[0]+'.bai')
     output:
         peak="output/CLIPper/{sample_label}.peaks.bed"
         
@@ -26,7 +26,7 @@ rule clipper:
     shell:
         """
         module load clipper/42502ec
-        clipper -b {input.subsample_bam} -s {params.species} -o {output.peak} --processors=16
+        clipper -b {input.bam} -s {params.species} -o {output.peak} --processors=16
         """
 rule count_read_num:
     input:

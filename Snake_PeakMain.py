@@ -26,7 +26,9 @@ try:
     #print(manifest.head())
 
     sample_labels = manifest.uid.tolist()
-    print(sample_labels)
+    sample_labels =[s for s in sample_labels if 'singleplex' in s]
+    # print('summary/CLIPper/{'+','.join(sample_labels)+'}.peaks.summary')
+    # print('summary/normalized/{'+','.join(sample_labels)+'}.peaks.summary')
     #sample_labels = ['Dan_singleplex_HEK293_rep1_RBFOX2','Dan_singleplex_HEK293_rep2_RBFOX2','ENCODE_Dan_singleplex_HEK293_rep1_RBFOX2','ENCODE_Dan_singleplex_HEK293_rep2_RBFOX2']
 
     all_rbfox = [s for s in sample_labels if 'RBFOX2' in s or '676' in s]

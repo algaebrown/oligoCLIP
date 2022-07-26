@@ -1,5 +1,5 @@
 # This is the file that annotate and run motif analysis for peaks.
-
+SCRIPT_PATH = config['SCRIPT_PATH']
 
 rule annotate:
     input:
@@ -173,7 +173,7 @@ rule peak_summary_unnormalized:
         "envs/metadensity.yaml"
     shell:
         """
-        python scripts/summarize_peak.py --bed {input.peak}  \
+        python {SCRIPT_PATH}/summarize_peak.py --bed {input.peak}  \
                                         --outfile {output.summary_csv}
         """
 rule peak_summary_normalized:
@@ -189,7 +189,7 @@ rule peak_summary_normalized:
         "envs/metadensity.yaml"
     shell:
         """
-        python scripts/summarize_peak.py --bed {input.peak}  \
+        python {SCRIPT_PATH}/summarize_peak.py --bed {input.peak}  \
                                         --is_normalized \
                                         --outfile {output.summary_csv}
         """
