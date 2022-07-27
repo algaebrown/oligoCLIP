@@ -1,8 +1,8 @@
 MANIFEST: /home/hsher/projects/oligoCLIP/config/fastq_csv/katie_pe.csv
-WORKDIR: /home/hsher/scratch/oligo_PE
+WORKDIR: /home/hsher/scratch/oligo_PE_highquality
 adaptor_fwd: AGATCGGAAGAGC 
 adaptor_rev: AGATCGGAAGAGC
-QUALITY_CUTOFF: 6
+QUALITY_CUTOFF: 15
 
 umi_length: 10
 

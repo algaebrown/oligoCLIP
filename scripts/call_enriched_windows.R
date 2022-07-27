@@ -25,8 +25,8 @@ output_stem = args[8]
 
 n_bin = 10
 
-sample_cols = names(count_data)[7:ncol(count_data)] ### added
-not_included_cols = sample_cols[(sample_cols != input_replicate_label) & (sample_cols != clip_replicate_label)]
+sample_cols = names(count_data)[7:ncol(count_data)] ### added, all the columns containing counts
+not_included_cols = sample_cols[(sample_cols != input_replicate_label) & (sample_cols != clip_replicate_label)] # all columns that is not input or clip
 
 # Prepare rankings of feature and transcript types
 exon_subtypes = accession_data$exon_subtype %>% unique
@@ -39,7 +39,8 @@ transcript_plot_order = feature_annotations %>% group_by(transcript_type_top) %>
 # Compile GC content information
 count_data$pct_gc = nuc_data$`8_pct_gc`
 #count_gc_data = count_data[select(count_data, matches("(IP|IN)_[0-9]+$")) %>% rowSums > 0,] %>% group_by(gc_bin = cut_number(pct_gc,10)) %>% filter(.data[[clip_replicate_label]] + .data[[input_replicate_label]] > 0)
-count_gc_data = count_data[count_data[sample_cols] %>% rowSums > 0,] %>% group_by(gc_bin = cut_number(pct_gc,n_bin))
+#count_gc_data = count_data[count_data[sample_cols] %>% rowSums > 0,] %>% group_by(gc_bin = cut_number(pct_gc,n_bin)) # using all sample labels
+count_gc_data = count_data[count_data[c(clip_replicate_label, input_replicate_label)] %>% rowSums > 0,] %>% group_by(gc_bin = cut_number(pct_gc,n_bin)) # using only labels of use
 
 # Calculate baseline log odds based on window properties (GC content)
 processed_count_data = count_gc_data %>% rename(input = all_of(input_replicate_label), clip = all_of(clip_replicate_label)) %>% summarize(b_log_odds = mean((clip / (clip + input))) %>% (VGAM::logitlink)) %>% inner_join(select(count_gc_data %>% rename(input = all_of(input_replicate_label), clip = all_of(clip_replicate_label)), -not_included_cols),.)

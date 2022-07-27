@@ -18,7 +18,7 @@ rule trim_adaptor:
         adaptor_fwd = config['adaptor_fwd'],
         adaptor_rev = config['adaptor_rev'],
         error_out_file = "error_files/trim_adaptor.{libname}.txt",
-        quality_cutoff = config['QUALTITY_CUTOFF']
+        quality_cutoff = config['QUALITY_CUTOFF']
     conda:
         "envs/cutadapt.yaml"
     benchmark: "benchmarks/trim_adaptor.{libname}"
@@ -76,13 +76,13 @@ rule demultiplex:
     input:
         fq1 = "{libname}/fastqs/all.Tr.umi.fq1.gz",
         fq2 = "{libname}/fastqs/all.Tr.umi.fq2.gz",
-        barcode_csv = config['barcode_csv']
+        barcode_csv = ancient(config['barcode_csv'])
     output:
         fq1=expand("{libname}/fastqs/ultraplex_demux_{sample_label}_Rev.fastq.gz", libname = ["{libname}"], sample_label = rbps),
         fq2=expand("{libname}/fastqs/ultraplex_demux_{sample_label}_Fwd.fastq.gz", libname = ["{libname}"], sample_label = rbps),
         missing_fq1="{libname}/fastqs/ultraplex_demux_5bc_no_match_Rev.fastq.gz",
         missing_fq2="{libname}/fastqs/ultraplex_demux_5bc_no_match_Fwd.fastq.gz",
-        logs = "{libname}/barcode.log"
+        # logs = "{libname}/barcode.log"
     conda:
         "envs/ultraplex.yaml"
     benchmark: "benchmarks/pre/demux.{libname}.txt"
@@ -96,7 +96,7 @@ rule demultiplex:
         """
         cd {params.prefix}
         ultraplex -i all.Tr.umi.fq2.gz -i2 all.Tr.umi.fq1.gz -b {input.barcode_csv}  \
-            -m5 1 -m3 0 -t {params.cores} -a XX -a2 XX 
+            -m5 1 -m3 0 -t {params.cores} -a XX -a2 XX --ultra
         sleep 600
         """
 
