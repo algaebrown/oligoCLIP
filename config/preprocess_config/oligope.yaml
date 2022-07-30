@@ -3,6 +3,7 @@ WORKDIR: /home/hsher/scratch/oligo_PE
 adaptor_fwd: AGATCGGAAGAGC 
 adaptor_rev: AGATCGGAAGAGC
 QUALITY_CUTOFF: 6
+error_rate: 0.2
 
 umi_length: 10
 
