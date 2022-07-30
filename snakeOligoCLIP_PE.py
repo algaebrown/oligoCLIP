@@ -3,7 +3,7 @@ from importlib.resources import path
 import pandas as pd
 import os
 
-#snakemake -s snakeOligoCLIP_PE.py -j 12 --cluster "qsub -l walltime={params.run_time} -l nodes=1:ppn={params.cores} -q home-yeo -e {params.error_out_file} -o /dev/null" --configfile config/preprocess_config/oligope.yaml --use-conda  -n  --conda-prefix
+#snakemake -s snakeOligoCLIP_PE.py -j 12 --cluster "qsub -l walltime={params.run_time} -l nodes=1:ppn={params.cores} -q home-yeo -e {params.error_out_file} -o /dev/null" --configfile config/preprocess_config/oligope.yaml --use-conda  --conda-prefix /home/hsher/scratch/oligo_PE/.snakemake/conda -n 
 
 try:
     MANIFEST=config['MANIFEST']
