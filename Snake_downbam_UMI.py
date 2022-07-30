@@ -1,5 +1,6 @@
 #configfile: "config.yaml"
-# snakemake -j 9 -s Snake_downbam_UMI.py --configfile config/se_downsample.yaml --cluster "qsub -l walltime={params.run_time}:00:00 -l nodes=1:ppn={params.cores} -q home-yeo" -n
+# snakemake -j 9 -s Snake_downbam_UMI.py --configfile config/estimate_read_saturation/se_downsample.yaml --cluster "qsub -l walltime={params.run_time}:00:00 -l nodes=1:ppn={params.cores} -q home-yeo" -n
+# snakemake -j 9 -s Snake_downbam_UMI.py --configfile config/estimate_read_saturation/se_downsample_SLBP.yaml --cluster "qsub -l walltime={params.run_time}:00:00 -l nodes=1:ppn={params.cores} -q home-yeo" -n
 # downsample bams to match the # of mapped reads
 
 import pandas as pd
@@ -10,6 +11,7 @@ import numpy as np
 
 manifest = pd.read_table(config['DOWNSAMPLE_MENIFEST'], index_col = 0, sep = ',')
 config['CLIPper_pvalthes'] = None
+workdir: config['WORKDIR']
 
 
 def get_total_reads(sample_label):
@@ -18,7 +20,7 @@ def get_total_reads(sample_label):
     return int(nread.rstrip())
 
 # downsample targets
-targets = [int(i) for i in np.array([0.5, 1, 2,  5, 10, 50, 100]) * 10**6]
+targets = [int(i) for i in np.array([0.1, 0.2, 0.5, 0.8, 1, 2, 4]) * int(config['max_read'])]
 seeds = []
 sample_labels = manifest.Sample.tolist()
 
@@ -39,11 +41,11 @@ module peak_anno:
 rule all:
     input:
         expand("downsample_bam_UMI_counts/{sample_label}.{nread}.rmDup.count", 
-        sample_label = sample_labels,
+        sample_label = [s for s in sample_labels if 'Dan' in s],
         nread = targets),
-        expand("downsample_bam_UMI/CLIPper/{sample_label}.{nread}.peaks.normed.compressed.annotate.bed", 
-        sample_label = ['Dan_singleplex_K562_rep1_RBFOX2', 'katieoligo_RBFOX2_rep1'],
-        nread = np.array(targets)[[0,1,2]])
+        # expand("downsample_bam_UMI/CLIPper/{sample_label}.{nread}.peaks.normed.compressed.annotate.bed", 
+        # sample_label = ['Dan_singleplex_K562_rep1_RBFOX2', 'katieoligo_RBFOX2_rep1'],
+        # nread = np.array(targets)[[0,1,2]])
     output:
         "snakeUMI.txt"
     params:

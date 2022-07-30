@@ -15,7 +15,7 @@ def get_total_reads(sample_label):
     return int(nread.rstrip())
 
 # downsample targets
-targets = [int(i) for i in np.array([1, 2, 5, 10, 50, 100]) * 10**6]
+targets = [int(i) for i in np.array([0.1, 0.2, 0.5, 0.8]) * int(config['max_read'])]
 seeds = []
 sample_labels = manifest.Sample.tolist()
 

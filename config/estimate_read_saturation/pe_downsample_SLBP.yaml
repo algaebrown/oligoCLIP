@@ -5,3 +5,4 @@ GTF: /home/hsher/gencode_coords/gencode.v35.gtf.db
 ANNOTATOR_SPECIES: GRCh38
 GENOMEFA: /home/hsher/gencode_coords/GRCh38.p13.genome.fa
 WORKDIR:  /home/hsher/scratch/SLBP_downsample/
+max_read: 1000000
