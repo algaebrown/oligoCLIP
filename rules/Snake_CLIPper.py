@@ -55,7 +55,6 @@ rule norm_peaks:
         nread_ip="output/{sample_label}.ip.readnum.txt",
         nread_in="output/{sample_label}.in.readnum.txt",
         peak="output/CLIPper/{sample_label}.peaks.bed"
-        #peak = lambda wildcards: glob.glob(manifest.loc[manifest.uid == wildcards.sample_label]["clipper"].values[0]),
     output:
         norm_peak="output/{sample_label}.peaks.normed.bed"
     params:

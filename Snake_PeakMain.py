@@ -5,7 +5,7 @@
 #snakemake -j 12 -s Snake_PeakMain.py --cluster "qsub -l walltime={params.run_time}:00:00 -l nodes=1:ppn={params.cores} -q home-yeo" --configfile config/snake_CLIPper_encode.yaml -n 
 #snakemake -j 12 -s Snake_PeakMain.py --cluster "qsub -l walltime={params.run_time}:00:00 -l nodes=1:ppn={params.cores} -q home-yeo" --configfile config/snake_CLIPper_nature2016.yaml -n 
 #snakemake -j 12 -s Snake_PeakMain.py --cluster "qsub -l walltime={params.run_time}:00:00 -l nodes=1:ppn={params.cores} -q home-yeo" --configfile config/snake_CLIPper_katie.yaml --keep-going output/CLIPper/{katieoligo_RBFOX2_rep1,katieoligo_RBFOX2_rep2,katieoligo_RBFOX2_rep3,katieoligo_RBFOX2_rep4}.peaks.motifscore.csv output/{katieoligo_RBFOX2_rep1,katieoligo_RBFOX2_rep2,katieoligo_RBFOX2_rep3,katieoligo_RBFOX2_rep4}.peaks.normed.compressed.motifscore.csv
-#snakemake -j 40 -s Snake_PeakMain.py --cluster "qsub -l walltime={params.run_time}:00:00 -l nodes=1:ppn={params.cores} -q home-yeo" --configfile config/snake_CLIPper_downsample.rep4redo.yaml --use-conda -F -n 
+#snakemake -j 40 -s Snake_PeakMain.py --cluster "qsub -l walltime={params.run_time}:00:00 -l nodes=1:ppn={params.cores} -q home-yeo" --configfile config/peak_call_config/snake_CLIPper_downsample.chi.yaml --use-conda -n 
 
 from importlib.resources import path
 import pandas as pd
@@ -23,14 +23,7 @@ try:
     print('WORKDIR', os.getcwd())
 
     manifest = pd.read_table(MANIFEST, index_col = False, sep = ',')
-    #print(manifest.head())
-
     sample_labels = manifest.uid.tolist()
-    sample_labels =[s for s in sample_labels if 'singleplex' in s]
-    # print('summary/CLIPper/{'+','.join(sample_labels)+'}.peaks.summary')
-    # print('summary/normalized/{'+','.join(sample_labels)+'}.peaks.summary')
-    #sample_labels = ['Dan_singleplex_HEK293_rep1_RBFOX2','Dan_singleplex_HEK293_rep2_RBFOX2','ENCODE_Dan_singleplex_HEK293_rep1_RBFOX2','ENCODE_Dan_singleplex_HEK293_rep2_RBFOX2']
-
     all_rbfox = [s for s in sample_labels if 'RBFOX2' in s or '676' in s]
     print(','.join(all_rbfox))
 except Exception as e:
@@ -51,6 +44,10 @@ module motif:
         "rules/snake_scoreRBNS_SELEX.py"
     config: config
 
+module chi:
+    snakefile:
+        "rules/chisq.py"
+    config: config
 
 rule all:
     input:
@@ -64,6 +61,8 @@ rule all:
         expand("output/CLIPper/{sample_label}.peaks.motifscore.csv", sample_label = all_rbfox),
         expand("summary/normalized/{sample_label}.peaks.summary", sample_label = sample_labels),
         expand("summary/CLIPper/{sample_label}.peaks.summary", sample_label = sample_labels),
+        expand("chisq/motif/{combinations}.peaks.normed.compressed.filtered.annotate.svg", combinations = (manifest['lib']+'/'+manifest['uid']).tolist()),
+        expand("chisq/{combinations}.peaks.summary", combinations = (manifest['lib']+'/'+manifest['uid']).tolist())
 
     output:
         "snakeCLIP.txt"
@@ -84,3 +83,5 @@ use rule * from peak_call as call_*
 use rule * from peak_anno as anno_*
 
 use rule * from motif as motif_*
+
+use rule * from chi as chi_*
