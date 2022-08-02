@@ -1,7 +1,7 @@
 
 SCRIPT_PATH: /home/hsher/projects/oligoCLIP/scripts/
 SPECIES: GRCh38v35noalt
-MANIFEST: /home/hsher/projects/oligo_results/downsample_peakcall.partial1.csv
+MANIFEST: /home/hsher/projects/oligoCLIP/config/peak_call_csv/downsample_peakcall_multiplex_only.csv
 WORKDIR: /home/hsher/scratch/downsample_peak_from_eclipse
 
 GTF: /home/hsher/gencode_coords/gencode.v35.gtf.db

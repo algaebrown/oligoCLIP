@@ -1,0 +1,7 @@
+,bam,Sample,bam_control
+2,/home/hsher/scratch/ABC_reprocess/K562_SLBP_rep1/bams/genome/SLBP.genome-mappedSoSo.Aligned.out.bam,Dan_singleplex_K562_rep1_SLBP,/home/hsher/scratch/RNAseq/ENCFF833WFD.bam
+3,/home/hsher/scratch/ABC_reprocess/K562_SLBP_rep2/bams/genome/SLBP.genome-mappedSoSo.Aligned.out.bam,Dan_singleplex_K562_rep2_SLBP,/home/hsher/scratch/RNAseq/ENCFF833WFD.bam
+8,/home/hsher/scratch/katie_drosphila/bams/genome/SLBP_CLIP1.genome-mappedSoSo.Aligned.out.bam,katieoligo_SLBP_rep1,/home/hsher/scratch/katie_drosphila/bams/genome/SLBP_INPUT1.genome-mappedSoSo.rmDupSo.Aligned.out.bam
+9,/home/hsher/scratch/katie_drosphila/bams/genome/SLBP_CLIP2.genome-mappedSoSo.Aligned.out.bam,katieoligo_SLBP_rep2,/home/hsher/scratch/katie_drosphila/bams/genome/SLBP_INPUT2.genome-mappedSoSo.rmDupSo.Aligned.out.bam
+10,/home/hsher/scratch/katie_drosphila/bams/genome/SLBP_V5_CLIP1.genome-mappedSoSo.Aligned.out.bam,katieoligo_SLBP_V5_rep1,/home/hsher/scratch/katie_drosphila/bams/genome/SLBP_INPUT1.genome-mappedSoSo.rmDupSo.Aligned.out.bam
+11,/home/hsher/scratch/katie_drosphila/bams/genome/SLBP_V5_CLIP2.genome-mappedSoSo.Aligned.out.bam,katieoligo_SLBP_V5_rep2,/home/hsher/scratch/katie_drosphila/bams/genome/SLBP_INPUT2.genome-mappedSoSo.rmDupSo.Aligned.out.bam
