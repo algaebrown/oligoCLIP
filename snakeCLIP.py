@@ -13,9 +13,11 @@ import glob
 #snakemake -s snakeCLIP.py -j 12 --keep-going --cluster "qsub -l walltime={params.run_time} -l nodes=1:ppn={params.cores} -q home-yeo" --directory /home/hsher/scratch/ABC_reprocess/ --configfile eclipse_rbfox2_singleplex_rep.yaml --use-conda -n
 
 
+STAR_DROS = None
+
 try:
-    print('overriding with config')
-    fastq_menifest = pd.read_csv(config['fastq_menifest'])
+    # print('overriding with config')
+    fastqs = config['fastqs']
     barcode = config['barcode']
 
     ADAPTOR_PATH = config['ADAPTOR_PATH']
@@ -28,25 +30,22 @@ try:
     
     TOOL_PATH= config['TOOL_PATH']
     umi_pattern = config['umi_pattern']
-
-    workdir: config['WORKDIR']
-    if 'STAR_DROS' in config:
-        STAR_DROS = config.get('STAR_DROS')
-    else:
-        STAR_DROS = None
     
+    STAR_DROS = config.get('STAR_DROS', None)
+
 except Exception as e:
     print(e)
 
 
 
-libs = fastq_menifest['libname'].tolist()
-print(fastq_menifest)
-print('LIBRARY:',libs)
+# libs = fastq_menifest['libname'].tolist()
+libs = [f['libname'] for f in fastqs]
+# print(fastq_menifest)
+# print('LIBRARY:',libs)
 barcode_df = pd.read_csv(barcode)
 rbps = barcode_df['rbp'].tolist()
-print('RBP:',rbps)
-#print('STAR:DROS',STAR_DROS)
+# print('RBP:',rbps)
+# print('STAR:DROS',STAR_DROS)
 
 module snakeDros:
     snakefile:
@@ -59,6 +58,7 @@ module QC:
         config
 
 def get_output():
+    # print(f"STAR DROS: {STAR_DROS}")
     output = expand("{libname}/fastqc/{sample_label}.umi.fqTrTr.rev.sorted_fastqc.html", libname = libs, sample_label = rbps
     )+expand("{libname}/bams/genome/{sample_label}.genome-mappedSoSo.rmDupSo.Aligned.out.bam.bai",  libname = libs, sample_label = rbps
     )+expand("QC/repeat_mapping_stats.csv",  libname = libs
@@ -88,6 +88,12 @@ rule all:
         "echo created by Evan Boyle and the Yeo lab >> {output}"
 
 rule make_good_barcode_tsv:
+    """
+    Transforms a csv-formatted barcode into a tab-separated one.
+    
+    Inputs:  manifest[barcode]
+    Outputs: {libname}/barcode.tsv
+    """
     input:
         barcode
     output:
@@ -98,17 +104,25 @@ rule make_good_barcode_tsv:
         cores = "1",
         memory = "20",
         job_name = "all",
-        script_path = os.path.join(TOOL_PATH, 'scripts/to_tsv.py')
+        script_path = os.path.join(TOOL_PATH, 'to_tsv.py')
     conda:
         "envs/metadensity.yaml"
+    container: "docker://algaebrown/metadensity:latest"
     shell:
         """
         python {params.script_path} {input} {output}
         """
 
 rule extract_umi: # TODO: adaptor TRIM first
+    """
+    Extracts UMI based on the umi_pattern as specified in config.
+    
+    Inputs:  raw fastq from manifest
+    Outputs: {libname}/fastqs/all.umi.fq.gz
+             QC/{libname}.all.umi.metrics
+    """
     input:
-        fq_raw = lambda wildcards: fastq_menifest.loc[fastq_menifest['libname']==wildcards.libname, 'fastq'].iloc[0]
+        fq_raw = lambda wildcards: fastqs[['libname']==wildcards.libname]['fastq']
     output:
         fq_umi = "{libname}/fastqs/all.umi.fq.gz",
         metrics = "QC/{libname}.all.umi.metrics"
@@ -120,9 +134,9 @@ rule extract_umi: # TODO: adaptor TRIM first
         job_name = "extract_umi",
         umi_pattern = umi_pattern
     benchmark: "benchmarks/umi/extract.{libname}.txt"
+    container: "docker://brianyee/umi_tools:1.0.0"
     shell:
         """
-        module load eclip;
         umi_tools extract \
             --random-seed 1 \
             --bc-pattern {params.umi_pattern} \
@@ -132,9 +146,19 @@ rule extract_umi: # TODO: adaptor TRIM first
         """
 
 def get_full_adapter_path(adaptor):
-    return os.path.join(ADAPTOR_PATH, adaptor+'_adapters.fasta')
+    """
+    Returns full path of adapter file.
+    """
+    return os.path.join(ADAPTOR_PATH, adaptor)
 
 rule cutadapt_round_one:
+    """
+    First round of cutadapt. Requires at least an overlap of 1 (-O 1) to start trimming.
+    
+    Inputs:  {libname}/fastqs/all.umi.fq.gz  # From extract_umi
+    Outputs: {libname}/fastqs/all.umi.fqTr.gz
+             QC/{libname}.umi.r1.fqTr.metrics
+    """
     input:
         fq_umi = "{libname}/fastqs/all.umi.fq.gz",
     output:
@@ -145,9 +169,9 @@ rule cutadapt_round_one:
         run_time = "12:04:00",
         cores="4"
     benchmark: "benchmarks/cutadapt/extract.{libname}.txt"
+    container: "docker://brianyee/cutadapt:2.8"
     shell:
         """
-        module load cutadapt/2.8;
         cutadapt -O 1 \
             --match-read-wildcards \
             --times 1 \
@@ -156,11 +180,18 @@ rule cutadapt_round_one:
             -m 23 \
             -o {output.fq_trimmed} \
             -a file:{params.InvRNA} \
-            --cores=0 \
+            --cores={params.cores} \
             {input.fq_umi} > {output.metrics}
         """
 
 rule cutadapt_round_two:
+    """
+    Second round of cutadapt. Requires at least an overlap of 5 (-O 5) to start trimming.
+    
+    Inputs:  {libname}/fastqs/all.umi.fqTr.gz  # From cutadapt_round_one
+    Outputs: {libname}/fastqs/all.umi.fqTrTr.gz
+             QC/{libname}.umi.r1.fqTrTr.metrics
+    """
     input:
         fq_trimmed="{libname}/fastqs/all.umi.fqTr.gz",
     output:
@@ -171,9 +202,9 @@ rule cutadapt_round_two:
         run_time = "16:04:00",
         cores="8"
     benchmark: "benchmarks/cutadapt/extract_round2.{libname}.txt"
+    container: "docker://brianyee/cutadapt:2.8"
     shell:
         """
-        module load cutadapt/2.8;
         cutadapt -O 5 \
             --match-read-wildcards \
             --times 1 \
@@ -199,6 +230,14 @@ use rule gather_trimming_stat from QC as qc_trim2 with:
         tr1='QC/cutadapt_log2.csv',
 
 rule demultiplex:
+    """
+    Demultiplexes trimmed and umi-extracted reads according to their barcoded features.
+    
+    Inputs:  {libname}/fastqs/all.umi.fqTrTr.gz  # From cutadapt_round_two
+             {libname}/barcode.tsv  # From make_good_barcode_tsv
+    Outputs: {libname}/fastqs/{sample_label}.umi.fqTrTr.fastq
+             {libname}/barcode.log
+    """
     input:
         fq_raw = "{libname}/fastqs/all.umi.fqTrTr.gz",
         barcode_tsv= "{libname}/barcode.tsv",
@@ -210,12 +249,19 @@ rule demultiplex:
         cores="1",
         run_time = "03:00:00",
         prefix = "{libname}/fastqs/"
+    container: "docker://brianyee/fastx_toolkit:0.0.14"
     shell:
         """
-        module load fastx_toolkit
         zcat {input.fq_raw} | fastx_barcode_splitter.pl --bcfile {input.barcode_tsv} --prefix {params.prefix} --suffix ".umi.fqTrTr.fastq" --bol > {output.logs}
         """
+
 rule remove_barcode_and_reverse_complement:
+    """
+    Computes the reverse complement of the demuxed fastq file WITHOUT the demuxed barcode.
+    
+    Inputs:  {libname}/fastqs/{sample_label}.umi.fqTrTr.fastq  # From demultiplex
+    Outputs: {libname}/fastqs/{sample_label}.umi.fqTrTr.rev.fq
+    """
     input:
         "{libname}/fastqs/{sample_label}.umi.fqTrTr.fastq"
     output:
@@ -223,14 +269,20 @@ rule remove_barcode_and_reverse_complement:
     params:
         run_time = "05:04:00",
         cores="1"
+    container: "docker://brianyee/cutadapt:2.8-fastx_toolkit-0.0.14"
     shell:
         """
-        module load fastx_toolkit
-        module load eclip
-
-        cutadapt -g NNNNN {input} | fastx_reverse_complement > {output.fqrev}
+        cutadapt -u -5 {input} | fastx_reverse_complement > {output.fqrev}
         """
+
 rule sort_and_gzip_fastq:
+    """
+    Sorts and compressed umi-extracted, twice-trimmed, demultiplexed and reverse-complemented fastqs
+    
+    Inputs:  {libname}/fastqs/{sample_label}.umi.fqTrTr.rev.fq  # From remove_barcode_and_reverse_complement
+    Outputs: {libname}/fastqs/{sample_label}.umi.fqTrTr.rev.sorted.fq.gz
+    
+    """
     input:
         fq_trimmed_twice="{libname}/fastqs/{sample_label}.umi.fqTrTr.rev.fq",
     output:
@@ -238,13 +290,22 @@ rule sort_and_gzip_fastq:
     params:
         run_time = "05:04:00",
         cores="1"
+    container: "docker://brianyee/fastq-tools:0.8"
     shell:
         """
-        module load eclip;
         fastq-sort --id {input.fq_trimmed_twice} | gzip > {output.fq_gz}
         """
+
 # TODO, CHECK IF THE TRIMMING IS SUCCESSFUL, CHECK CROSS CONTAMINATION
 rule fastqc_post_trim:
+    """
+    FastQC on compressed umi-extracted, twice-trimmed, demultiplexed and reverse-complemented fastqs
+    
+    Inputs:  {libname}/fastqs/{sample_label}.umi.fqTrTr.rev.sorted.fq.gz  # From sort_and_gzip_fastq
+    Outputs: {libname}/fastqc/{sample_label}.umi.fqTrTr.rev.sorted_fastqc.html
+             {libname}/fastqc/{sample_label}.umi.fqTrTr.rev.sorted_fastqc/fastqc_data.txt
+    
+    """
     input:
         "{libname}/fastqs/{sample_label}.umi.fqTrTr.rev.sorted.fq.gz"
     output:
@@ -259,14 +320,14 @@ rule fastqc_post_trim:
     resources:
         runtime="1:00:00",
         cores="1"
+    container: "docker://brianyee/fastqc:0.11.8"
     shell:
         """
-        module load fastqc;
         fastqc {input} --extract --outdir {params.outdir} -t {threads}
         """
 
 
-rule gather_fastqc_report from QC as qc_fastqc with:
+use rule gather_fastqc_report from QC as qc_fastqc with:
     input:
         expand("{libname}/fastqc/{sample_label}.umi.fqTrTr.rev.sorted_fastqc/fastqc_data.txt", libname = libs, sample_label = rbps)
     output:
@@ -297,6 +358,14 @@ use rule gather_mapstat from QC as mapstat_gather_dros with:
         "QC/dros_mapping_stats.csv"
 
 rule align_reads_to_REPEAT:
+    """
+    Performs alignment on Repeat elements.
+    
+    Inputs:  {libname}/fastqs/{sample_label}.umi.fqTrTr.rev.sorted.fq.gz  # From sort_and_gzip_fastq
+    Outputs: {libname}/bams/repeat/{sample_label}.Aligned.out.bam
+             {libname}/bams/repeat/{sample_label}.Unmapped.out.mate1
+             {libname}/bams/repeat/{sample_label}.Log.final.out
+    """
     input:
         fq_1 = "{libname}/fastqs/{sample_label}.umi.fqTrTr.rev.sorted.fq.gz"
     output:
@@ -312,9 +381,9 @@ rule align_reads_to_REPEAT:
         star_sjdb = STAR_REP,
         outprefix = "{libname}/bams/repeat/{sample_label}.",
     benchmark: "benchmarks/align/{libname}.{sample_label}.align_reads.txt"
+    container: "docker://brianyee/star:2.7.6a"
     shell:
         """
-        module load star ;
         STAR \
             --alignEndsType EndToEnd \
             --genomeDir {params.star_sjdb} \
@@ -337,14 +406,22 @@ rule align_reads_to_REPEAT:
             --runMode alignReads \
             --runThreadN 8
         """
+        
 use rule gather_mapstat from QC as mapstat_gather_repeat with:
     input:
-        #find_all_files("{libname}/bams/repeat/{sample_label}.Log.final.out", libs)
         expand("{libname}/bams/repeat/{sample_label}.Log.final.out", libname = libs, sample_label = rbps)
     output:
         "QC/repeat_mapping_stats.csv"
 
 rule align_to_GENOME:
+    """
+    Performs alignment to genome.
+    
+    Inputs:  {libname}/fastqs/{sample_label}.umi.fqTrTr.rev.sorted.fq.gz  # From sort_and_gzip_fastq
+    Outputs: {libname}/bams/genome/{sample_label}.Aligned.out.bam
+             {libname}/bams/genome/{sample_label}.Unmapped.out.mate1
+             {libname}/bams/genome/{sample_label}.Log.final.out
+    """
     input:
         fq= "{libname}/bams/repeat/{sample_label}.Unmapped.out.mate1",
     output:
@@ -360,9 +437,9 @@ rule align_to_GENOME:
         star_sjdb = STAR_DIR,
         outprefix = "{libname}/bams/genome/{sample_label}.genome-mapped.",
     benchmark: "benchmarks/align/{libname}.{sample_label}.align_reads.txt"
+    container: "docker://brianyee/star:2.7.6a"
     shell:
         """
-        module load star ;
         STAR \
         --alignEndsType EndToEnd \
         --genomeDir {params.star_sjdb} \
@@ -394,6 +471,15 @@ use rule gather_mapstat from QC as mapstat_gather_genome with:
         "QC/genome_mapping_stats.csv"
 
 rule sort_bams:
+    """
+    Sorts the bam file (twice) so results are deterministic. First sorts by name, then position.
+    Indexes the final bam file.
+    
+    Inputs:  {libname}/bams/genome/{sample_label}.genome-mapped.Aligned.out.bam  # From align_to_GENOME
+    Outputs: {libname}/bams/genome/{sample_label}.genome-mappedSo.Aligned.out.bam
+             {libname}/bams/genome/{sample_label}.genome-mappedSoSo.Aligned.out.bam
+             {libname}/bams/genome/{sample_label}.genome-mappedSoSo.Aligned.out.bam.bai
+    """
     input:
         bam="{libname}/bams/genome/{sample_label}.genome-mapped.Aligned.out.bam",
     output:
@@ -406,16 +492,24 @@ rule sort_bams:
         cores = "4",
         memory = "10000",
         job_name = "sortbam",
+    container: "docker://brianyee/samtools:1.6"
     shell:
         """
-        module load samtools;
-        samtools sort -o {output.sort_once} {input.bam};
+        samtools sort -n -o {output.sort_once} {input.bam};
         samtools sort -o {output.sort_twice} {output.sort_once};
         samtools index {output.sort_twice}
         """
 
 
 rule umi_dedup:
+    """
+    Performs barcode collapsing (dedup)
+    
+    Inputs:  {libname}/bams/genome/{sample_label}.genome-mappedSoSo.Aligned.out.bam  # From sort_bams
+             {libname}/bams/genome/{sample_label}.genome-mappedSoSo.Aligned.out.bam.bai  # From sort_bams
+    Outputs: {libname}/bams/genome/{sample_label}.genome-mappedSoSo.rmDup.Aligned.out.bam
+             
+    """
     input:
         bam="{libname}/bams/genome/{sample_label}.genome-mappedSoSo.Aligned.out.bam",
         bai="{libname}/bams/genome/{sample_label}.genome-mappedSoSo.Aligned.out.bam.bai"
@@ -428,9 +522,9 @@ rule umi_dedup:
         memory = "10000",
         job_name = "sortbam",
         prefix='{libname}/bams/genome/{sample_label}.genome-mappedSoSo'
+    container: "docker://brianyee/umi_tools:1.0.0"
     shell:
         """
-        module load eclip;
         umi_tools dedup \
             --random-seed 1 \
             -I {input.bam} \
@@ -439,6 +533,13 @@ rule umi_dedup:
             -S {output.bam_dedup}
         """
 rule index_genome_bams:
+    """
+    Indexes the deduped bam file.
+    
+    Inputs:  {libname}/bams/genome/{sample_label}.genome-mappedSoSo.rmDup.Aligned.out.bam  # From umi_dedup
+    Outputs: {libname}/bams/genome/{sample_label}.genome-mappedSoSo.rmDupSo.Aligned.out.bam  # From umi_dedup
+             {libname}/bams/genome/{sample_label}.genome-mappedSoSo.rmDupSo.Aligned.out.bam.bai
+    """
     input:
         bam = "{libname}/bams/genome/{sample_label}.genome-mappedSoSo.rmDup.Aligned.out.bam"
     output:
@@ -451,8 +552,8 @@ rule index_genome_bams:
         memory = "1000",
         job_name = "index_bam"
     benchmark: "benchmarks/align/{libname}.{sample_label}.index_bam.txt"
+    container: "docker://brianyee/samtools:1.6"
     shell:
-        "module load samtools;"
         "samtools sort -o {output.sbam} {input.bam} ;"
         "samtools index {output.sbam};"
 

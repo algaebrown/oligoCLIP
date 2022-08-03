@@ -16,11 +16,13 @@ include: "snakeDros_config.py"
 manifest = pd.read_csv(MANIFEST, index_col = False)
 
 sample_labels = manifest.Sample.tolist()
-print(manifest.iloc[0])
+# print(manifest.iloc[0])
 manifest.loc[manifest.Sample == sample_labels[0]]["RNA_adaptor"].values[0]
 
-print(os.path.join(ADAPTOR_PATH, 
-        manifest.loc[manifest.Sample == sample_labels[0], "RNA_adaptor"].values[0]+'_adapters.fasta'))
+# print(
+#     os.path.join(ADAPTOR_PATH, 
+#     manifest.loc[manifest.Sample == sample_labels[0], "RNA_adaptor"].values[0]+'_adapters.fasta')
+#   )
 
 rule all:
     input:
@@ -59,10 +61,10 @@ rule extract_umi:
         memory = "10000",
         job_name = "extract_umi",
         umi_pattern = lambda wildcards: 'N'*(manifest.loc[manifest.Sample == wildcards.sample_label]["random_mer"].values[0]),
+    container: "docker://brianyee/umi_tools:1.0.0"
     benchmark: "benchmarks/umi/{sample_label}.extract.txt"
     shell:
         """
-        module load eclip;
         umi_tools extract \
             --random-seed 1 \
             --bc-pattern {params.umi_pattern} \
@@ -89,9 +91,9 @@ rule cutadapt_round_one:
         run_time = "08:04:00",
         cores="4"
     benchmark: "benchmarks/cutadapt/{sample_label}.extract.txt"
+    container: "docker://brianyee/cutadapt:2.8"
     shell:
         """
-        module load cutadapt/2.8;
         cutadapt -O 1 \
             -f fastq \
             --match-read-wildcards \
@@ -115,9 +117,9 @@ rule cutadapt_round_two:
         run_time = "08:04:00",
         cores="4"
     benchmark: "benchmarks/cutadapt/{sample_label}.extract_round2.txt"
+    container: "docker://brianyee/cutadapt:2.8"
     shell:
         """
-        module load cutadapt/2.8;
         cutadapt -O 5 \
             -f fastq \
             --match-read-wildcards \
@@ -144,6 +146,7 @@ rule gather_trimming_stat:
         files1=','.join(expand("fastqs/umi/{sample_label}.umi.r1.fqTr.metrics", sample_label = sample_labels)),
     conda:
         "envs/metadensity.yaml"
+    container: "docker://algaebrown/metadensity:latest"
     shell:
         """
         python /home/hsher/projects/QC_tools/trimming_stat.py {params.files1} {output.tr1}
@@ -159,9 +162,9 @@ rule sort_and_gzip_fastq:
     params:
         run_time = "05:04:00",
         cores="1"
+    container: "docker pull brianyee/fastq-tools:0.8"
     shell:
         """
-        module load eclip;
         zcat {input.fq_trimmed_twice} > {output.fq}
         fastq-sort --id {output.fq} | gzip > {output.fq_gz}
         """
@@ -174,6 +177,7 @@ rule fastqc_post_trim:
     threads: 2
     conda:
         "envs/metadensity.yaml"
+    container: "docker://algaebrown/metadensity:latest"
     params:
         outdir="fastqc",
         run_time = "01:09:00",
@@ -183,7 +187,6 @@ rule fastqc_post_trim:
         cores="1"
     shell:
         """
-        module load fastqc;
         fastqc {input} --extract --outdir {params.outdir} -t {threads}
         """
 
@@ -201,12 +204,21 @@ rule gather_fastqc_report:
         job_name = "gather_stat",
         files = ','.join(expand("fastqc/{sample_label}.umi.fqTrTr_fastqc/fastqc_data.txt", 
             sample_label = sample_labels))
+    container: "docker://algaebrown/metadensity:latest"
     shell:
         """
-        python /home/hsher/projects/QC_tools/fastqc_io.py -i {params.files} -p {output.passfail} -b {output.basic}
+        python fastqc_io.py -i {params.files} -p {output.passfail} -b {output.basic}
         """
 
 rule align_reads_to_Drosophila:
+    """
+    Performs alignment on Drosophila genome.
+    
+    Inputs:  {libname}/fastqs/{sample_label}.umi.fqTrTr.rev.sorted.fq.gz  # From sort_and_gzip_fastq
+    Outputs: {libname}/bams/dros/{sample_label}.Aligned.out.bam
+             {libname}/bams/dros/{sample_label}.Unmapped.out.mate1"
+             {libname}/bams/dros/{sample_label}.Log.final.out
+    """
     input:
         fq_1 = "fastqs/umi/{sample_label}.umi.fqTrTr.sorted.fq.gz",
     output:
@@ -221,10 +233,11 @@ rule align_reads_to_Drosophila:
         job_name = "align_reads",
         star_sjdb = STAR_DROS,
         outprefix = "bams/dros/{sample_label}.",
+    container: "docker://brianyee/star:2.7.6a"
+
     benchmark: "benchmarks/align/{sample_label}.align_dros_reads.txt"
     shell:
         """
-        module load star ;
         STAR \
             --alignEndsType EndToEnd \
             --genomeDir {params.star_sjdb} \
@@ -259,9 +272,9 @@ rule featureCount_dros:
         memory = "10000",
         job_name = "featureCount",
         GFF='/home/hsher/gencode_coords/GCF_000001215.4_Release_6_plus_ISO1_MT_genomic.gff',
+    container: "docker://brianyee/subread:2.0.1"
     shell:
         """
-        module load subreadfeaturecounts 
         featureCounts -s 1 -a {params.GFF} -o {output} {input}
         """
 
@@ -280,6 +293,7 @@ rule gather_DROSOPHILA_mapstat:
         memory = "10000",
         job_name = "gather_stat",
         files = ','.join(expand("bams/dros/{sample_label}.Log.final.out", sample_label = sample_labels))
+    container: "docker://algaebrown/metadensity:latest"
     shell:
         """
         python /home/hsher/projects/QC_tools/star_mapping_stat_io.py -i {params.files} -o {output}
@@ -303,6 +317,7 @@ rule align_reads_to_REPEAT:
         star_sjdb = STAR_REP,
         outprefix = "bams/repeat/{sample_label}.",
     benchmark: "benchmarks/align/{sample_label}.align_reads.txt"
+    container: "docker://brianyee/star:2.7.6a"
     shell:
         """
         module load star ;

@@ -1,0 +1,13 @@
+Barcode	Count	Location
+DDX3	9302	K562_rep1/fastqs/DDX3.umi.fqTrTr.fastq
+EIF3G	2532	K562_rep1/fastqs/EIF3G.umi.fqTrTr.fastq
+FAM120A	13815	K562_rep1/fastqs/FAM120A.umi.fqTrTr.fastq
+IGF2BP2	16707	K562_rep1/fastqs/IGF2BP2.umi.fqTrTr.fastq
+LIN28B	3973	K562_rep1/fastqs/LIN28B.umi.fqTrTr.fastq
+PRPF8	15145	K562_rep1/fastqs/PRPF8.umi.fqTrTr.fastq
+PUM2	1146	K562_rep1/fastqs/PUM2.umi.fqTrTr.fastq
+RBFOX2	12300	K562_rep1/fastqs/RBFOX2.umi.fqTrTr.fastq
+SF3B4	8366	K562_rep1/fastqs/SF3B4.umi.fqTrTr.fastq
+ZC3H11A	2986	K562_rep1/fastqs/ZC3H11A.umi.fqTrTr.fastq
+unmatched	2072	K562_rep1/fastqs/unmatched.umi.fqTrTr.fastq
+total	88344

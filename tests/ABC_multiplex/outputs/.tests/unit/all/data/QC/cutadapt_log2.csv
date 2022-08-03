@@ -1,0 +1,5 @@
+,Total reads processed,Reads with adapters,Reads that were too short,Reads written (passing filters),Total basepairs processed,Quality-trimmed,Total written (filtered),% Reads with adapters,% Reads that were too short,% Reads written (passing filters),% Quality-trimmed,% Total written (filtered)
+K562_rep1.umi.r1.fqTrTr.metrics,88420,2269,76,88344,4933717,0,4916627,2.6,0.1,99.9,0.0,99.7
+K562_rep2.umi.r1.fqTrTr.metrics,88420,2269,76,88344,4933717,0,4916627,2.6,0.1,99.9,0.0,99.7
+HEK293_rep1.umi.r1.fqTrTr.metrics,88420,2269,76,88344,4933717,0,4916627,2.6,0.1,99.9,0.0,99.7
+HEK293_rep2.umi.r1.fqTrTr.metrics,88420,2269,76,88344,4933717,0,4916627,2.6,0.1,99.9,0.0,99.7
