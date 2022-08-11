@@ -33,7 +33,7 @@ names = ['K562_rep1',
 
 fastq_menifest = pd.DataFrame([fastqs, names], index = ['fastq', 'libname']).T
 
-print(fastq_menifest)
+# print(fastq_menifest)
 
 
 fastq_menifest.iloc[:4].to_csv('multiplex1.csv')

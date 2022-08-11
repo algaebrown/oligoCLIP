@@ -11,14 +11,14 @@ def get_all_sample(config = config):
 def get_beds(sample_label, config = config):
     ''' return beds of replicates, given sample_label '''
     the_sample = [s for s in config['data'] if s['sample_label']==sample_label]
-    print(the_sample)
+    # print(the_sample)
     assert len(the_sample)==1
     the_sample = the_sample[0]
     return [r['bed'] for r in the_sample['reps']]
 def get_bams(sample_label, config = config):
     ''' return bam of replicates, given sample_label '''
     the_sample = [s for s in config['data'] if s['sample_label']==sample_label]
-    print(the_sample)
+    # print(the_sample)
     assert len(the_sample)==1
     the_sample = the_sample[0]
     return [r['bam'] for r in the_sample['reps']]

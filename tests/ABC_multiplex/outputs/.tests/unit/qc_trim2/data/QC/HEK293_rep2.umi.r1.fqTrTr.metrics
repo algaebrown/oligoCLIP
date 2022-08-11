@@ -1,0 +1,508 @@
+This is cutadapt 2.8 with Python 3.7.6
+Command line parameters: -O 5 --match-read-wildcards --times 1 -e 0.1 --quality-cutoff 6 -m 23 -o HEK293_rep2/fastqs/all.umi.fqTrTr.gz -a file:/home/bay001/projects/codebase/oligoCLIP/tests/ABC_singleplex/inputs/InvRiL19_adapters.fasta --cores=0 HEK293_rep2/fastqs/all.umi.fqTr.gz
+Processing reads on 36 cores in single-end mode ...
+Finished in 1.17 s (13 us/read; 4.54 M reads/minute).
+
+=== Summary ===
+
+Total reads processed:                  88,420
+Reads with adapters:                     2,269 (2.6%)
+Reads that were too short:                  76 (0.1%)
+Reads written (passing filters):        88,344 (99.9%)
+
+Total basepairs processed:     4,933,717 bp
+Quality-trimmed:                       0 bp (0.0%)
+Total written (filtered):      4,916,627 bp (99.7%)
+
+=== Adapter ril19_1 ===
+
+Sequence: AGATCGGAAGAGCAC; Type: regular 3'; Length: 15; Trimmed: 940 times; Reverse-complemented: 0 times
+
+No. of allowed errors:
+0-9 bp: 0; 10-15 bp: 1
+
+Bases preceding removed adapters:
+  A: 23.2%
+  C: 8.8%
+  G: 59.4%
+  T: 8.6%
+  none/other: 0.0%
+
+Overview of removed sequences
+length	count	expect	max.err	error counts
+5	118	86.3	0	118
+6	238	21.6	0	238
+7	279	5.4	0	279
+8	1	1.3	0	1
+9	24	0.3	0	16 8
+10	80	0.1	1	41 39
+11	34	0.0	1	21 13
+12	44	0.0	1	13 31
+13	68	0.0	1	26 42
+14	28	0.0	1	20 8
+15	16	0.0	1	0 16
+17	4	0.0	1	0 4
+18	2	0.0	1	0 2
+19	3	0.0	1	0 3
+20	1	0.0	1	0 1
+
+
+=== Adapter ril19_2 ===
+
+Sequence: GATCGGAAGAGCACA; Type: regular 3'; Length: 15; Trimmed: 137 times; Reverse-complemented: 0 times
+
+No. of allowed errors:
+0-9 bp: 0; 10-15 bp: 1
+
+Bases preceding removed adapters:
+  A: 0.0%
+  C: 43.8%
+  G: 49.6%
+  T: 6.6%
+  none/other: 0.0%
+
+Overview of removed sequences
+length	count	expect	max.err	error counts
+5	43	86.3	0	43
+6	28	21.6	0	28
+8	1	1.3	0	1
+9	2	0.3	0	1 1
+10	22	0.1	1	0 22
+11	31	0.0	1	0 31
+12	2	0.0	1	1 1
+13	1	0.0	1	1
+14	2	0.0	1	1 1
+17	2	0.0	1	0 2
+18	1	0.0	1	0 1
+21	2	0.0	1	2
+
+
+=== Adapter ril19_3 ===
+
+Sequence: ATCGGAAGAGCACAC; Type: regular 3'; Length: 15; Trimmed: 19 times; Reverse-complemented: 0 times
+
+No. of allowed errors:
+0-9 bp: 0; 10-15 bp: 1
+
+Bases preceding removed adapters:
+  A: 21.1%
+  C: 47.4%
+  G: 0.0%
+  T: 31.6%
+  none/other: 0.0%
+
+Overview of removed sequences
+length	count	expect	max.err	error counts
+5	9	86.3	0	9
+6	3	21.6	0	3
+8	1	1.3	0	1
+11	1	0.0	1	0 1
+13	1	0.0	1	0 1
+14	2	0.0	1	0 2
+16	1	0.0	1	0 1
+19	1	0.0	1	1
+
+
+=== Adapter ril19_4 ===
+
+Sequence: TCGGAAGAGCACACG; Type: regular 3'; Length: 15; Trimmed: 111 times; Reverse-complemented: 0 times
+
+No. of allowed errors:
+0-9 bp: 0; 10-15 bp: 1
+
+Bases preceding removed adapters:
+  A: 0.0%
+  C: 64.9%
+  G: 6.3%
+  T: 28.8%
+  none/other: 0.0%
+
+Overview of removed sequences
+length	count	expect	max.err	error counts
+5	94	86.3	0	94
+6	13	21.6	0	13
+9	1	0.3	0	0 1
+10	1	0.1	1	0 1
+19	2	0.0	1	2
+
+
+=== Adapter ril19_5 ===
+
+Sequence: CGGAAGAGCACACGT; Type: regular 3'; Length: 15; Trimmed: 153 times; Reverse-complemented: 0 times
+
+No. of allowed errors:
+0-9 bp: 0; 10-15 bp: 1
+
+Bases preceding removed adapters:
+  A: 7.8%
+  C: 83.7%
+  G: 8.5%
+  T: 0.0%
+  none/other: 0.0%
+WARNING:
+    The adapter is preceded by "C" extremely often.
+    The provided adapter sequence could be incomplete at its 3' end.
+
+Overview of removed sequences
+length	count	expect	max.err	error counts
+5	66	86.3	0	66
+6	55	21.6	0	55
+7	27	5.4	0	27
+11	1	0.0	1	0 1
+12	2	0.0	1	0 2
+13	2	0.0	1	0 2
+
+
+=== Adapter ril19_6 ===
+
+Sequence: GGAAGAGCACACGTC; Type: regular 3'; Length: 15; Trimmed: 73 times; Reverse-complemented: 0 times
+
+No. of allowed errors:
+0-9 bp: 0; 10-15 bp: 1
+
+Bases preceding removed adapters:
+  A: 41.1%
+  C: 0.0%
+  G: 39.7%
+  T: 19.2%
+  none/other: 0.0%
+
+Overview of removed sequences
+length	count	expect	max.err	error counts
+5	37	86.3	0	37
+6	16	21.6	0	16
+7	2	5.4	0	2
+8	1	1.3	0	1
+10	9	0.1	1	0 9
+11	4	0.0	1	0 4
+12	3	0.0	1	0 3
+14	1	0.0	1	0 1
+
+
+=== Adapter ril19_7 ===
+
+Sequence: GAAGAGCACACGTCT; Type: regular 3'; Length: 15; Trimmed: 61 times; Reverse-complemented: 0 times
+
+No. of allowed errors:
+0-9 bp: 0; 10-15 bp: 1
+
+Bases preceding removed adapters:
+  A: 19.7%
+  C: 21.3%
+  G: 0.0%
+  T: 59.0%
+  none/other: 0.0%
+
+Overview of removed sequences
+length	count	expect	max.err	error counts
+5	34	86.3	0	34
+6	17	21.6	0	17
+9	2	0.3	0	0 2
+10	4	0.1	1	0 4
+11	3	0.0	1	0 3
+12	1	0.0	1	0 1
+
+
+=== Adapter ril19_8 ===
+
+Sequence: AAGAGCACACGTCTG; Type: regular 3'; Length: 15; Trimmed: 34 times; Reverse-complemented: 0 times
+
+No. of allowed errors:
+0-9 bp: 0; 10-15 bp: 1
+
+Bases preceding removed adapters:
+  A: 38.2%
+  C: 14.7%
+  G: 0.0%
+  T: 47.1%
+  none/other: 0.0%
+
+Overview of removed sequences
+length	count	expect	max.err	error counts
+5	24	86.3	0	24
+6	4	21.6	0	4
+7	2	5.4	0	2
+8	1	1.3	0	1
+11	1	0.0	1	0 1
+12	2	0.0	1	0 2
+
+
+=== Adapter ril19_9 ===
+
+Sequence: AGAGCACACGTCTGA; Type: regular 3'; Length: 15; Trimmed: 61 times; Reverse-complemented: 0 times
+
+No. of allowed errors:
+0-9 bp: 0; 10-15 bp: 1
+
+Bases preceding removed adapters:
+  A: 0.0%
+  C: 32.8%
+  G: 62.3%
+  T: 4.9%
+  none/other: 0.0%
+
+Overview of removed sequences
+length	count	expect	max.err	error counts
+5	35	86.3	0	35
+6	12	21.6	0	12
+7	1	5.4	0	1
+8	2	1.3	0	2
+10	1	0.1	1	0 1
+12	10	0.0	1	0 10
+
+
+=== Adapter ril19_10 ===
+
+Sequence: GAGCACACGTCTGAA; Type: regular 3'; Length: 15; Trimmed: 278 times; Reverse-complemented: 0 times
+
+No. of allowed errors:
+0-9 bp: 0; 10-15 bp: 1
+
+Bases preceding removed adapters:
+  A: 0.0%
+  C: 48.2%
+  G: 48.9%
+  T: 2.9%
+  none/other: 0.0%
+
+Overview of removed sequences
+length	count	expect	max.err	error counts
+5	155	86.3	0	155
+6	90	21.6	0	90
+7	32	5.4	0	32
+9	1	0.3	0	0 1
+
+
+=== Adapter ril19_11 ===
+
+Sequence: AGCACACGTCTGAAC; Type: regular 3'; Length: 15; Trimmed: 75 times; Reverse-complemented: 0 times
+
+No. of allowed errors:
+0-9 bp: 0; 10-15 bp: 1
+
+Bases preceding removed adapters:
+  A: 80.0%
+  C: 17.3%
+  G: 0.0%
+  T: 2.7%
+  none/other: 0.0%
+
+Overview of removed sequences
+length	count	expect	max.err	error counts
+5	23	86.3	0	23
+6	47	21.6	0	47
+7	1	5.4	0	1
+9	2	0.3	0	0 2
+11	1	0.0	1	0 1
+12	1	0.0	1	0 1
+
+
+=== Adapter ril19_12 ===
+
+Sequence: GCACACGTCTGAACT; Type: regular 3'; Length: 15; Trimmed: 45 times; Reverse-complemented: 0 times
+
+No. of allowed errors:
+0-9 bp: 0; 10-15 bp: 1
+
+Bases preceding removed adapters:
+  A: 0.0%
+  C: 53.3%
+  G: 35.6%
+  T: 11.1%
+  none/other: 0.0%
+
+Overview of removed sequences
+length	count	expect	max.err	error counts
+5	33	86.3	0	33
+6	6	21.6	0	6
+10	1	0.1	1	0 1
+11	4	0.0	1	0 4
+13	1	0.0	1	0 1
+
+
+=== Adapter ril19_13 ===
+
+Sequence: CACACGTCTGAACTC; Type: regular 3'; Length: 15; Trimmed: 78 times; Reverse-complemented: 0 times
+
+No. of allowed errors:
+0-9 bp: 0; 10-15 bp: 1
+
+Bases preceding removed adapters:
+  A: 23.1%
+  C: 30.8%
+  G: 0.0%
+  T: 46.2%
+  none/other: 0.0%
+
+Overview of removed sequences
+length	count	expect	max.err	error counts
+5	71	86.3	0	71
+6	3	21.6	0	3
+7	2	5.4	0	2
+9	1	0.3	0	0 1
+11	1	0.0	1	0 1
+
+
+=== Adapter ril19_14 ===
+
+Sequence: ACACGTCTGAACTCC; Type: regular 3'; Length: 15; Trimmed: 16 times; Reverse-complemented: 0 times
+
+No. of allowed errors:
+0-9 bp: 0; 10-15 bp: 1
+
+Bases preceding removed adapters:
+  A: 75.0%
+  C: 0.0%
+  G: 12.5%
+  T: 12.5%
+  none/other: 0.0%
+
+Overview of removed sequences
+length	count	expect	max.err	error counts
+5	4	86.3	0	4
+6	10	21.6	0	10
+9	1	0.3	0	0 1
+10	1	0.1	1	0 1
+
+
+=== Adapter ril19_15 ===
+
+Sequence: CACGTCTGAACTCCA; Type: regular 3'; Length: 15; Trimmed: 23 times; Reverse-complemented: 0 times
+
+No. of allowed errors:
+0-9 bp: 0; 10-15 bp: 1
+
+Bases preceding removed adapters:
+  A: 0.0%
+  C: 47.8%
+  G: 30.4%
+  T: 21.7%
+  none/other: 0.0%
+
+Overview of removed sequences
+length	count	expect	max.err	error counts
+5	15	86.3	0	15
+6	3	21.6	0	3
+7	1	5.4	0	1
+10	1	0.1	1	0 1
+12	3	0.0	1	0 3
+
+
+=== Adapter ril19_16 ===
+
+Sequence: ACGTCTGAACTCCAG; Type: regular 3'; Length: 15; Trimmed: 21 times; Reverse-complemented: 0 times
+
+No. of allowed errors:
+0-9 bp: 0; 10-15 bp: 1
+
+Bases preceding removed adapters:
+  A: 14.3%
+  C: 0.0%
+  G: 85.7%
+  T: 0.0%
+  none/other: 0.0%
+WARNING:
+    The adapter is preceded by "G" extremely often.
+    The provided adapter sequence could be incomplete at its 3' end.
+
+Overview of removed sequences
+length	count	expect	max.err	error counts
+5	18	86.3	0	18
+7	1	5.4	0	1
+10	1	0.1	1	0 1
+11	1	0.0	1	0 1
+
+
+=== Adapter ril19_17 ===
+
+Sequence: CGTCTGAACTCCAGT; Type: regular 3'; Length: 15; Trimmed: 35 times; Reverse-complemented: 0 times
+
+No. of allowed errors:
+0-9 bp: 0; 10-15 bp: 1
+
+Bases preceding removed adapters:
+  A: 0.0%
+  C: 45.7%
+  G: 14.3%
+  T: 40.0%
+  none/other: 0.0%
+
+Overview of removed sequences
+length	count	expect	max.err	error counts
+5	33	86.3	0	33
+6	2	21.6	0	2
+
+
+=== Adapter ril19_18 ===
+
+Sequence: GTCTGAACTCCAGTC; Type: regular 3'; Length: 15; Trimmed: 19 times; Reverse-complemented: 0 times
+
+No. of allowed errors:
+0-9 bp: 0; 10-15 bp: 1
+
+Bases preceding removed adapters:
+  A: 15.8%
+  C: 0.0%
+  G: 57.9%
+  T: 26.3%
+  none/other: 0.0%
+
+Overview of removed sequences
+length	count	expect	max.err	error counts
+5	9	86.3	0	9
+6	4	21.6	0	4
+7	2	5.4	0	2
+9	1	0.3	0	0 1
+11	1	0.0	1	0 1
+13	2	0.0	1	0 2
+
+
+=== Adapter ril19_19 ===
+
+Sequence: TCTGAACTCCAGTCA; Type: regular 3'; Length: 15; Trimmed: 47 times; Reverse-complemented: 0 times
+
+No. of allowed errors:
+0-9 bp: 0; 10-15 bp: 1
+
+Bases preceding removed adapters:
+  A: 21.3%
+  C: 31.9%
+  G: 0.0%
+  T: 46.8%
+  none/other: 0.0%
+
+Overview of removed sequences
+length	count	expect	max.err	error counts
+5	36	86.3	0	36
+6	6	21.6	0	6
+7	3	5.4	0	3
+8	1	1.3	0	1
+11	1	0.0	1	0 1
+
+
+=== Adapter ril19_20 ===
+
+Sequence: CTGAACTCCAGTCAC; Type: regular 3'; Length: 15; Trimmed: 43 times; Reverse-complemented: 0 times
+
+No. of allowed errors:
+0-9 bp: 0; 10-15 bp: 1
+
+Bases preceding removed adapters:
+  A: 44.2%
+  C: 20.9%
+  G: 34.9%
+  T: 0.0%
+  none/other: 0.0%
+
+Overview of removed sequences
+length	count	expect	max.err	error counts
+5	30	86.3	0	30
+6	6	21.6	0	6
+10	4	0.1	1	0 4
+11	2	0.0	1	0 2
+13	1	0.0	1	0 1
+
+
+WARNING:
+    One or more of your adapter sequences may be incomplete.
+    Please see the detailed output above.
