@@ -4,14 +4,18 @@
 library(tidyverse)
 
 args = commandArgs(trailingOnly=TRUE)
-dir.create("output/figures/clip_distributions/", showWarnings = FALSE, recursive = TRUE)
-dir.create("output/clip_model_coef/", showWarnings = FALSE, recursive = TRUE)
 
 nuc_data = read_tsv(args[1])
 count_data = read_tsv(args[2])
 experiment = args[3]
 given_clip_replicate = args[4]
 outf = args[5]
+
+coef_dir = dirname(outf)
+distribution_dir = file.path(dirname(coef_dir), "figures", "clip_distributions")
+dir.create(coef_dir, showWarnings = FALSE, recursive = TRUE) # "output/clip_model_coef/" or "internal_output/clip_model_coef/
+dir.create(distribution_dir, showWarnings = FALSE, recursive = TRUE) # "output/figures/clip_distributions/" or "internal_output/figures/clip_distributions/
+
 
 n_bin = 10
 
@@ -34,7 +38,7 @@ clip_betabinom_fit_data = lapply(other_clip_replicates, function(other_clip_repl
 			count(name = "count") %>% group_by(clip_total, gc_bin) %>% mutate(pdf = count / sum(count)) %>% rowwise %>% 
 			mutate(binomial = dbinom(x = .data[[given_clip_replicate]], size = clip_total, prob = global_given_clip_fraction),
 				betabinomial = VGAM::dbetabinom(x = .data[[given_clip_replicate]], size = clip_total, prob = (betabinom_coefs[1] + given_clip_fraction * betabinom_coefs[3]) %>% (VGAM::logitlink)(inverse=TRUE), rho = betabinom_coefs[2] %>% (VGAM::logitlink)(inverse=TRUE) )) 
-		pdf(paste0('output/figures/clip_distributions/', experiment, ".", given_clip_replicate, ".", other_clip_replicate, '.clip_distribution.pdf'),height = 3.5, width = 6)
+		pdf(paste0(distribution_dir, experiment, ".", given_clip_replicate, ".", other_clip_replicate, '.clip_distribution.pdf'),height = 3.5, width = 6)
 		print(
 			ggplot(distribution_data %>% filter(clip_total <=6) %>% 
 				pivot_longer(values_to="expected",names_to="distribution",-clip_total:-pdf) %>% 
