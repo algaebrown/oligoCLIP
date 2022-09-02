@@ -30,7 +30,7 @@ pipeline for oligoCLIP contains 2 stages. `Stage1: SnakeCLIP.py`: Goes from fast
     - `QC/{libname}/fastQC_*.csv`: fastQC outputs for all RBPs.
     - `genome_mapping_stats.csv` and `repeat_mapping_stats.csv`: csv file with all STAR Logs joined together
     - `dup_level.csv`: UMI deduplication statistics
-    - I cannot figure out what is going on: chat with your lab's bioinformatician with these files in hand. They will love to see these.
+    - These files are used to diagnose problems when you don't get expected outputs: chat with your lab's bioinformatician with these files in hand. They will love to see these.
 
 ## What is it doing?
 the flowchart can be generated using the following command `snakemake -s snakeCLIP.py --dag --configfile config/preprocess_config/eclipse_rbfox.yaml |gdot -Tsvg > snakeCLIP.svg`. You can also run this with your own config file.
