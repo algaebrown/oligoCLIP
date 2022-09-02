@@ -14,7 +14,6 @@ import glob
 
 
 try:
-    print('overriding with config')
     fastq_menifest = pd.read_csv(config['fastq_menifest'])
     barcode = config['barcode']
 
@@ -41,12 +40,8 @@ except Exception as e:
 
 
 libs = fastq_menifest['libname'].tolist()
-print(fastq_menifest)
-print('LIBRARY:',libs)
 barcode_df = pd.read_csv(barcode)
 rbps = barcode_df['rbp'].tolist()
-print('RBP:',rbps)
-#print('STAR:DROS',STAR_DROS)
 
 module snakeDros:
     snakefile:
@@ -65,7 +60,7 @@ def get_output():
     )+expand("QC/genome_mapping_stats.csv",  libname = libs
     )+expand('QC/{libname}/fastQC_basic_summary.csv',  libname = libs
     )+expand('QC/{libname}/fastQC_passfail.csv',  libname = libs
-    )+['QC/cutadapt_log1.csv','QC/cutadapt_log2.csv']
+    )+['QC/cutadapt_log1.csv','QC/cutadapt_log2.csv', "QC/dup_level.csv"]
 
     if STAR_DROS:
         output.append(expand('QC/dros_mapping_stats.csv',  libname = libs))
@@ -106,7 +101,7 @@ rule make_good_barcode_tsv:
         python {params.script_path} {input} {output}
         """
 
-rule extract_umi: # TODO: adaptor TRIM first
+rule extract_umi: 
     input:
         fq_raw = lambda wildcards: fastq_menifest.loc[fastq_menifest['libname']==wildcards.libname, 'fastq'].iloc[0]
     output:
@@ -186,19 +181,19 @@ rule cutadapt_round_two:
             {input.fq_trimmed} > {output.metrics}
         """
 
-use rule gather_trimming_stat from QC as qc_trim1 with:
+use rule gather_trimming_stat from QC as gather_trimming_stat_round1 with:
     input:
         tr1=expand("QC/{libname}.umi.r1.fqTr.metrics", libname = libs),
     output:
         tr1='QC/cutadapt_log1.csv'
 
-use rule gather_trimming_stat from QC as qc_trim2 with:
+use rule gather_trimming_stat from QC as gather_trimming_stat_round2 with:
     input:
         tr1=expand("QC/{libname}.umi.r1.fqTrTr.metrics", libname = libs)
     output:
         tr1='QC/cutadapt_log2.csv',
 
-rule demultiplex:
+rule demultiplex_using_barcodes:
     input:
         fq_raw = "{libname}/fastqs/all.umi.fqTrTr.gz",
         barcode_tsv= "{libname}/barcode.tsv",
@@ -243,8 +238,8 @@ rule sort_and_gzip_fastq:
         module load eclip;
         fastq-sort --id {input.fq_trimmed_twice} | gzip > {output.fq_gz}
         """
-# TODO, CHECK IF THE TRIMMING IS SUCCESSFUL, CHECK CROSS CONTAMINATION
-rule fastqc_post_trim:
+
+rule fastQC_post_trim:
     input:
         "{libname}/fastqs/{sample_label}.umi.fqTrTr.rev.sorted.fq.gz"
     output:
@@ -266,7 +261,7 @@ rule fastqc_post_trim:
         """
 
 
-rule gather_fastqc_report from QC as qc_fastqc with:
+rule gather_fastqc_report from QC with:
     input:
         expand("{libname}/fastqc/{sample_label}.umi.fqTrTr.rev.sorted_fastqc/fastqc_data.txt", libname = libs, sample_label = rbps)
     output:
@@ -290,7 +285,7 @@ use rule align_reads_to_Drosophila from snakeDros with:
         outprefix = "{libname}/bams/dros/{sample_label}."
     benchmark: "benchmarks/align/{sample_label}.{libname}.align_dros_reads.txt"
 
-use rule gather_mapstat from QC as mapstat_gather_dros with:
+use rule gather_mapstat from QC as gather_drosophila_mapping_stat with:
     input:
         expand("{libname}/bams/dros/{sample_label}.Log.final.out", libname = libs, sample_label = rbps)
     output:
@@ -337,7 +332,7 @@ rule align_reads_to_REPEAT:
             --runMode alignReads \
             --runThreadN 8
         """
-use rule gather_mapstat from QC as mapstat_gather_repeat with:
+use rule gather_mapstat from QC as gather_repeat_mapping_stat with:
     input:
         #find_all_files("{libname}/bams/repeat/{sample_label}.Log.final.out", libs)
         expand("{libname}/bams/repeat/{sample_label}.Log.final.out", libname = libs, sample_label = rbps)
@@ -386,7 +381,7 @@ rule align_to_GENOME:
 
         """
 
-use rule gather_mapstat from QC as mapstat_gather_genome with:
+use rule gather_mapstat from QC as gather_genome_mapping_stat with:
     input:
         #find_all_files("{libname}/bams/genome/{sample_label}.genome-mapped.Log.final.out", libs)
         expand("{libname}/bams/genome/{sample_label}.genome-mapped.Log.final.out", libname = libs, sample_label = rbps)
@@ -415,7 +410,7 @@ rule sort_bams:
         """
 
 
-rule umi_dedup:
+rule umitools_dedup:
     input:
         bam="{libname}/bams/genome/{sample_label}.genome-mappedSoSo.Aligned.out.bam",
         bai="{libname}/bams/genome/{sample_label}.genome-mappedSoSo.Aligned.out.bam.bai"
