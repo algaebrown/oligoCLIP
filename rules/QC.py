@@ -120,3 +120,30 @@ rule what_is_read_wo_barcode:
         module load blast
         blastn -db {input.target} -query {output.fasta} -out {output.blast_result} -outfmt 6 -max_target_seqs 1 
         """
+
+rule blast_unmapped_reads:
+    input:
+        target=HUMAN_RNA_NUCLEOTIDE,
+        target_db=HUMAN_RNA_NUCLEOTIDE + '.nog',
+        unmapped1_fq= "{libname}/bams/genome/{sample_label}.genome-mapped.Unmapped.out.mate1",
+        unmapped2_fq= "{libname}/bams/genome/{sample_label}.genome-mapped.Unmapped.out.mate2"
+    output:
+        blast_result1="QC/unmapped_blast_output/{libname}.{sample_label}.1.blast.tsv",
+        blast_result2="QC/unmapped_blast_output/{libname}.{sample_label}.2.blast.tsv",
+        fasta1="QC/unmapped_blast_output/{libname}.{sample_label}.1.fasta",
+        fasta2="QC/unmapped_blast_output/{libname}.{sample_label}.2.fasta"
+    params:
+        error_out_file = "error_files/demux_count",
+        run_time = "00:40:00",
+        cores = "1",
+        nlines = N_READ_TO_SAMPLE * 4
+    shell:
+        """
+        set +o pipefail; 
+        module load samtools
+        samtools fasta {input.unmapped1_fq} | head -n {params.nlines} > {output.fasta1}
+        samtools fasta {input.unmapped2_fq} | head -n {params.nlines} > {output.fasta2}
+        module load blast
+        blastn -db {input.target} -query {output.fasta1} -out {output.blast_result1} -outfmt 6 -max_target_seqs 1 
+        blastn -db {input.target} -query {output.fasta2} -out {output.blast_result2} -outfmt 6 -max_target_seqs 1 
+        """
