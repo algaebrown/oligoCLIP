@@ -15,3 +15,6 @@ STAR_REP: /projects/ps-yeolab4/software/eclip/0.7.0/examples/inputs/star_2_7_hom
 TOOL_PATH: /home/hsher/projects/oligoCLIP
 
 umi_pattern: XXXXXNNNNN
+
+WORKDIR: /home/hsher/scratch/ABC_reprocess/
+QC_TOOLS_PATH: /home/hsher/projects/QC_tools
