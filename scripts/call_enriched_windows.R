@@ -4,24 +4,33 @@ library(tidyverse)
 library(viridis)
 
 args = commandArgs(trailingOnly=TRUE)
-dir.create("output/threshold_scan/", showWarnings = FALSE, recursive = TRUE)
-dir.create("output/tested_windows/", showWarnings = FALSE, recursive = TRUE)
-dir.create("output/enriched_windows/", showWarnings = FALSE, recursive = TRUE)
-dir.create("output/enrichment_summaries/", showWarnings = FALSE, recursive = TRUE)
-dir.create("output/all_reads/", showWarnings = FALSE, recursive = TRUE)
-dir.create("output/figures/threshold_scan/", showWarnings = FALSE, recursive = TRUE)
-dir.create("output/figures/enriched_windows/", showWarnings = FALSE)
-dir.create("output/figures/all_reads/", showWarnings = FALSE)
 
 # Read in data
 nuc_data = read_tsv(args[1])
 count_data = read_tsv(args[2])
 accession_data = read_tsv(args[3]) %>% arrange(rank)
 feature_annotations = read_tsv(args[4]) %>% rename(name = row_id)
-model_data = read_tsv(args[5])
+model_data = read_tsv(args[5]) # "internal_output/clip_model_coef/{libname}.{clip_sample_label}.tsv"
 input_replicate_label = args[6]
 clip_replicate_label = args[7]
 output_stem = args[8]
+
+root_folder = dirname(dirname(args[5])) # internal_output
+threshold_scan_folder = file.path(root_folder, "threshold_scan")
+dir.create(threshold_scan_folder, showWarnings = FALSE, recursive = TRUE) # "output/threshold_scan/"
+tested_window_folder = file.path(root_folder, "tested_windows")
+dir.create(tested_window_folder, showWarnings = FALSE, recursive = TRUE)
+enriched_window_folder = file.path(root_folder, "enriched_windows")
+dir.create(enriched_window_folder, showWarnings = FALSE, recursive = TRUE)
+enrichment_summary_folder = file.path(root_folder, "enrichment_summaries")
+dir.create(enrichment_summary_folder, showWarnings = FALSE, recursive = TRUE)
+all_reads_folder = file.path(root_folder, "all_reads")
+dir.create(all_reads_folder, showWarnings = FALSE, recursive = TRUE)
+fig_folder = file.path(root_folder, "figures")
+dir.create(file.path(fig_folder, "threshold_scan"), showWarnings = FALSE, recursive = TRUE)
+enriched_window_fig_folder = file.path(fig_folder, "enriched_windows")
+dir.create(enriched_window_fig_folder, showWarnings = FALSE)
+dir.create(file.path(fig_folder, "all_reads"), showWarnings = FALSE)
 
 n_bin = 10
 
@@ -58,11 +67,12 @@ p_clip = with(p_data, sum(clip) / sum(clip + input))
 # Optimize coverage threshold for calling enriched windows by 20% FDR
 threshold_max = p_data %>% mutate(total_counts = input + clip) %>% arrange(desc(total_counts)) %>% head(100) %>% tail(1) %>% pull(total_counts)
 threshold_data = tibble(threshold = seq(2, threshold_max), n_enriched = sapply(seq(2, threshold_max), function(i) sum((p_data %>% filter(input + clip >= i) %>% pull(pvalue) %>% p.adjust(.,"fdr")) < 0.2)) )
-write_tsv(threshold_data, paste0("output/threshold_scan/", output_stem, ".threshold_data.tsv"))
+threshold_data_path = file.path(threshold_scan_folder, paste0(output_stem, ".threshold_data.tsv"))
+write_tsv(threshold_data, threshold_data_path)
 
 optimized_threshold = threshold_data %>% arrange(n_enriched %>% desc) %>% head(1) %>% pull(threshold)
 
-pdf(paste0('output/figures/threshold_scan/', output_stem, '.threshold_scan.pdf'), height = 1.5, width = 1.7)
+pdf(file.path(fig_folder, "threshold_scan", paste0(output_stem, '.threshold_scan.pdf')), height = 1.5, width = 1.7) # 'output/figures/threshold_scan/', 
 ggplot(threshold_data %>% mutate(replicate = clip_replicate_label), aes(threshold, n_enriched)) + theme_bw(base_size = 7) +
 	geom_line() + xlab("Total read threshold") + ylab("# of hits (q < 20%)") + scale_x_log10()+
 	geom_vline(xintercept=optimized_threshold, color = "#f86808") + theme(aspect.ratio = 1) + facet_wrap(~replicate) 
@@ -77,7 +87,7 @@ all_reads_fractions_feature_data = q_data %>% inner_join(select(feature_annotati
 	mutate(input = input / sum(input), clip = clip / sum(clip)) %>%
 	mutate(feature_type_top = factor(feature_type_top, levels = feature_plot_order %>% rev))
 
-pdf(paste0('output/figures/all_reads/', output_stem, '.all_reads_fractions.feature.pdf'), height = 1.8, width = 2.8)
+pdf(file.path(fig_folder, "all_reads",paste0(output_stem, '.all_reads_fractions.feature.pdf')), height = 1.8, width = 2.8) # 'output/figures/all_reads/'
 all_reads_fractions_feature_data %>%
 	pivot_longer(names_to = "replicate", values_to = "fraction",-c(feature_type_top, feature_group)) %>%
 	mutate(replicate = factor(replicate, levels = c("input", "clip"))) %>%
@@ -91,7 +101,7 @@ ggplot(aes(x=feature_type_top, fraction, fill = feature_group, group = replicate
 	facet_wrap(~clip_replicate)
 dev.off()
 
-write_tsv(all_reads_fractions_feature_data, paste0("output/all_reads/", output_stem, ".all_reads_fractions_feature_data.tsv"))
+write_tsv(all_reads_fractions_feature_data, file.path(all_reads_folder, paste0(output_stem, ".all_reads_fractions_feature_data.tsv")))
 
 # Aggregate all reads by feature
 all_reads_odds_feature_data = p_data %>% 
@@ -109,7 +119,7 @@ all_reads_odds_feature_data = p_data %>%
 min_odds = all_reads_odds_feature_data %>% filter(n_windows >= 2.5 / p_clip / (1 - p_clip)) %>% .$odds_ratio %>% min
 max_odds = all_reads_odds_feature_data %>% filter(n_windows >= 2.5 / p_clip / (1 - p_clip)) %>% .$odds_ratio %>% max
 
-pdf(paste0('output/figures/all_reads/', output_stem, '.all_reads_odds.feature.pdf'), height = 2, width = 2.8)
+pdf(file.path(fig_folder, "all_reads", paste0(output_stem, '.all_reads_odds.feature.pdf')), height = 2, width = 2.8) # 'output/figures/all_reads/'
 all_reads_odds_feature_data %>% filter(n_windows >= 2.5 / p_clip / (1 - p_clip)) %>%
 	mutate(feature_group = sub("_.*","", feature_type_top)) %>%
 ggplot(aes(feature_type_top, odds_ratio, fill = feature_group)) + theme_bw(base_size = 7) + 
@@ -119,7 +129,7 @@ ggplot(aes(feature_type_top, odds_ratio, fill = feature_group)) + theme_bw(base_
 	facet_wrap(~replicate) + geom_blank(data = tibble(odds_ratio = c(1,exp(1)), feature_type_top = c("INTRON","CDS"), feature_group = "CDS")) 
 dev.off()
 
-write_tsv(all_reads_odds_feature_data, paste0("output/all_reads/", output_stem, ".all_reads_odds_feature_data.tsv"))
+write_tsv(all_reads_odds_feature_data,file.path(all_reads_folder, paste0(output_stem, ".all_reads_odds_feature_data.tsv"))) #"output/all_reads/", 
 
 # Aggregate all reads by feature and transcript
 all_reads_odds_transcript_data = p_data %>% 
@@ -138,7 +148,7 @@ all_reads_odds_transcript_data = p_data %>%
 min_odds = all_reads_odds_transcript_data %>% filter(n_windows >= 2.5 / p_clip / (1 - p_clip)) %>% .$odds_ratio %>% min
 max_odds = all_reads_odds_transcript_data %>% filter(n_windows >= 2.5 / p_clip / (1 - p_clip)) %>% .$odds_ratio %>% max
 
-pdf(paste0('output/figures/all_reads/', output_stem, '.all_reads_odds.all_transcript_types.pdf'), height = 2.6, width = 5.2)
+pdf(file.path(fig_folder, "all_reads", paste0(output_stem, '.all_reads_odds.all_transcript_types.pdf')), height = 2.6, width = 5.2) # 'output/figures/all_reads/'
 all_reads_odds_transcript_data %>% filter(n_windows >= 2.5 / p_clip / (1 - p_clip)) %>%
 	mutate(replicate = clip_replicate_label) %>% 
 ggplot(aes(transcript_type_top, feature_type_top, fill = odds_ratio)) + theme_bw(base_size = 6) +  #, width = 0.9 * transcript_n / length(feature_plot_order)
@@ -149,7 +159,7 @@ ggplot(aes(transcript_type_top, feature_type_top, fill = odds_ratio)) + theme_bw
 	xlab("Type of transcript") + ylab("Type of feature") + theme(axis.text.x = element_text(lineheight = 0.8))
 dev.off()
 
-write_tsv(all_reads_odds_transcript_data %>% mutate(transcript_type_top = gsub("\n", "_", transcript_type_top)), paste0("output/all_reads/", output_stem, ".all_reads_odds_transcript_data.tsv"))
+write_tsv(all_reads_odds_transcript_data %>% mutate(transcript_type_top = gsub("\n", "_", transcript_type_top)), file.path(all_reads_folder, paste0(output_stem, ".all_reads_odds_transcript_data.tsv"))) # "output/all_reads/", 
 
 # Aggregate all reads by feature and GC content
 all_reads_odds_feature_gc_data = p_data %>% 
@@ -166,7 +176,7 @@ all_reads_odds_feature_gc_data = p_data %>%
 min_odds = all_reads_odds_feature_gc_data %>% filter(n_windows >= 2.5 / p_clip / (1 - p_clip)) %>% .$odds_ratio %>% min
 max_odds = all_reads_odds_feature_gc_data %>% filter(n_windows >= 2.5 / p_clip / (1 - p_clip)) %>% .$odds_ratio %>% max
 
-pdf(paste0('output/figures/all_reads/', output_stem, '.all_reads_odds.feature_gc.pdf'), height = 2, width = 2.5)
+pdf(file.path(fig_folder, "all_reads", paste0(output_stem, '.all_reads_odds.feature_gc.pdf')), height = 2, width = 2.5) #'output/figures/all_reads/'
 all_reads_odds_feature_gc_data %>% 
 	filter(n_windows >= 2.5 / p_clip / (1 - p_clip)) %>%
 ggplot(aes(gc_decile, feature_type_top, fill = odds_ratio)) + theme_bw(base_size = 7) + 
@@ -176,40 +186,40 @@ ggplot(aes(gc_decile, feature_type_top, fill = odds_ratio)) + theme_bw(base_size
 	facet_wrap(~replicate) + geom_blank(data = tibble(gc_decile = c(1,2), odds_ratio = c(1,exp(1)), feature_type_top = c("INTRON","CDS")))
 dev.off()
 
-write_tsv(all_reads_odds_feature_gc_data, paste0("output/all_reads/", output_stem, ".all_reads_odds_feature_gc_data.tsv"))
+write_tsv(all_reads_odds_feature_gc_data, file.path(all_reads_folder, paste0(output_stem, ".all_reads_odds_feature_gc_data.tsv"))) #"output/all_reads/"
 
 # Aggregate window data by feature type
 all_window_feature_data = feature_annotations %>% group_by(feature_type_top) %>% count(name = "n_windows") %>% ungroup
 
 tested_window_feature_data = q_data %>% filter(above_threshold) %>% select(-above_threshold) %>% mutate(across(c("b_log_odds", "d_log_odds","pvalue","qvalue"), ~ sprintf(.x, fmt = "%.6g")))
-write_tsv(tested_window_feature_data, paste0("output/tested_windows/", output_stem, ".tested_windows.tsv.gz"))
+write_tsv(tested_window_feature_data, file.path(tested_window_folder, paste0(output_stem, ".tested_windows.tsv.gz")))# "output/tested_windows/", 
 
 enriched_window_data = q_data %>% filter(above_threshold, qvalue < 0.2) %>% select(-above_threshold) %>% left_join(feature_annotations) %>% arrange(qvalue)
-write_tsv(enriched_window_data %>% mutate(across(c("b_log_odds", "d_log_odds","pvalue","qvalue"), ~ sprintf(.x, fmt = "%.6g"))), paste0("output/enriched_windows/", output_stem, ".enriched_windows.tsv.gz"))
+write_tsv(enriched_window_data %>% mutate(across(c("b_log_odds", "d_log_odds","pvalue","qvalue"), ~ sprintf(.x, fmt = "%.6g"))), file.path(enriched_window_folder, paste0(output_stem, ".enriched_windows.tsv.gz"))) # "output/enriched_windows/"
 
 if(nrow(enriched_window_data) == 0) {
 	for(output_file in c(
-		paste0('output/figures/enriched_windows/', output_stem, '.enriched_window_coverage.pdf'),
-		paste0('output/figures/enriched_windows/', output_stem, '.enriched_window_rates.pdf'),
-		paste0('output/figures/enriched_windows/', output_stem, '.enriched_window_counts.linear.pdf'),
-		paste0('output/figures/enriched_windows/', output_stem, '.enriched_window_counts.log10.pdf'),
-		paste0('output/figures/enriched_windows/', output_stem, '.enriched_window_odds.feature.pdf'),
-		paste0('output/figures/enriched_windows/', output_stem, '.enriched_window_odds.all_transcript_types.pdf'),
-		paste0('output/figures/enriched_windows/', output_stem, '.enriched_window_odds.select_transcript_types.pdf'),
-		paste0('output/figures/enriched_windows/', output_stem, '.enriched_window_counts.per_gene_feature.pdf')
+		file.path(enriched_window_fig_folder, paste0(output_stem, '.enriched_window_coverage.pdf')),
+		file.path(enriched_window_fig_folder, paste0(output_stem, '.enriched_window_rates.pdf')),
+		file.path(enriched_window_fig_folder, paste0(output_stem, '.enriched_window_counts.linear.pdf')),
+		file.path(enriched_window_fig_folder, paste0(output_stem, '.enriched_window_counts.log10.pdf')),
+		file.path(enriched_window_fig_folder, paste0(output_stem, '.enriched_window_odds.feature.pdf')),
+		file.path(enriched_window_fig_folder, paste0(output_stem, '.enriched_window_odds.all_transcript_types.pdf')),
+		file.path(enriched_window_fig_folder, paste0(output_stem, '.enriched_window_odds.select_transcript_types.pdf')),
+		file.path(enriched_window_fig_folder, paste0(output_stem, '.enriched_window_counts.per_gene_feature.pdf'))
 	))
 	{
 		pdf(output_file, height = 1, width = 2)
 			print(ggplot() + annotate("text", x = 1, y = 1, label = "No enriched windows") + theme_void())
 		dev.off()
 	}
-	file.create(paste0("output/enrichment_summaries/", output_stem, ".enriched_window_feature_data.tsv"))
-	file.create(paste0("output/enrichment_summaries/", output_stem, ".enriched_window_transcript_data.tsv"))
-	file.create(paste0("output/enrichment_summaries/", output_stem, ".enriched_window_gene_data.tsv"))
+	file.create(file.path(enrichment_summary_folder, paste0(output_stem, ".enriched_window_feature_data.tsv")))
+	file.create(file.path(enrichment_summary_folder, paste0(output_stem, ".enriched_window_transcript_data.tsv")))
+	file.create(file.path(enrichment_summary_folder, paste0(output_stem, ".enriched_window_gene_data.tsv")))
 	quit()
 }
 
-pdf(paste0('output/figures/enriched_windows/', output_stem, '.enriched_window_coverage.pdf'), height = 2, width = 2.8)
+pdf(file.path(enriched_window_folder, paste0(output_stem, '.enriched_window_coverage.pdf')), height = 2, width = 2.8)
 enriched_window_data %>%
 	mutate(replicate = clip_replicate_label, `IP reads per region` = clip) %>%
 	mutate(feature_group = sub("_.*","", feature_type_top), feature_type_top = factor(feature_type_top, levels = feature_plot_order %>% rev)) %>%
@@ -230,7 +240,7 @@ enriched_window_feature_data = left_join(
 enriched_window_feature_data$pseudocount = enriched_window_feature_data %>% with(nrow(.) * (n_windows / (sum(n_windows))))
 enriched_window_feature_data$odds_ratio = enriched_window_feature_data %>% with((n_enriched + pseudocount) / (sum((n_enriched + pseudocount)) - (n_enriched + pseudocount)) / (n_windows / (sum(n_windows) - n_windows)))
 
-pdf(paste0('output/figures/enriched_windows/', output_stem, '.enriched_window_rates.pdf'), height = 3.1, width = 2.2)
+pdf(file.path(enriched_window_fig_folder, paste0(output_stem, '.enriched_window_rates.pdf')), height = 3.1, width = 2.2)
 enriched_window_feature_data %>%
 	mutate(feature_group = sub("_.*","", feature_type_top)) %>% 
 	mutate(feature_type_top = factor(feature_type_top, levels = feature_plot_order %>% rev)) %>%
@@ -243,7 +253,7 @@ ggplot(aes(feature_type_top, value, color = feature_group, group = feature_type_
 	xlab("Type of feature") + scale_y_log10(limits = c(NA,1)) + ylab("Rate")
 dev.off()
 
-pdf(paste0('output/figures/enriched_windows/', output_stem, '.enriched_window_counts.linear.pdf'), height = 1.8, width = 2.2)
+pdf(file.path(enriched_window_fig_folder, paste0(output_stem, '.enriched_window_counts.linear.pdf')), height = 1.8, width = 2.2)
 enriched_window_feature_data %>% mutate(replicate = clip_replicate_label) %>% 
 	mutate(feature_group = sub("_.*","", feature_type_top)) %>% 
 ggplot(aes(feature_type_top, n_enriched, fill = feature_group, group = feature_type_top)) + theme_bw(base_size = 7) + 
@@ -252,7 +262,7 @@ ggplot(aes(feature_type_top, n_enriched, fill = feature_group, group = feature_t
 	xlab("Type of feature") + ylab("# enriched")
 dev.off()
 
-pdf(paste0('output/figures/enriched_windows/', output_stem, '.enriched_window_counts.log10.pdf'), height = 1.8, width = 2.2)
+pdf(file.path(enriched_window_fig_folder, paste0(output_stem, '.enriched_window_counts.log10.pdf')), height = 1.8, width = 2.2)
 enriched_window_feature_data %>% mutate(replicate = clip_replicate_label) %>% 
 	mutate(feature_group = sub("_.*","", feature_type_top)) %>% 
 ggplot(aes(feature_type_top, n_enriched, color = feature_group, group = feature_type_top)) + theme_bw(base_size = 7) + 
@@ -261,7 +271,7 @@ ggplot(aes(feature_type_top, n_enriched, color = feature_group, group = feature_
 	xlab("Type of feature") + ylab("# enriched") + scale_y_log10()
 dev.off()
 
-pdf(paste0('output/figures/enriched_windows/', output_stem, '.enriched_window_odds.feature.pdf'), height = 1.8, width = 2.2)
+pdf(file.path(enriched_window_fig_folder, paste0(output_stem, '.enriched_window_odds.feature.pdf')), height = 1.8, width = 2.2)
 enriched_window_feature_data %>% mutate(replicate = clip_replicate_label) %>% 
 	filter(n_enriched > 0 | n_windows > 100) %>%
 	mutate(feature_group = sub("_.*","", feature_type_top)) %>% 
@@ -272,7 +282,7 @@ ggplot(aes(feature_type_top, odds_ratio, fill = feature_group, group = feature_t
 	xlab("Type of feature") + ylab("Enrichment (OR)")
 dev.off()
 
-write_tsv(enriched_window_feature_data, paste0("output/enrichment_summaries/", output_stem, ".enriched_window_feature_data.tsv"))
+write_tsv(enriched_window_feature_data, file.path(enrichment_summary_folder, paste0(output_stem, ".enriched_window_feature_data.tsv")))
 
 # Aggregate window data by transcript and feature type
 all_window_transcript_data = feature_annotations %>% group_by(transcript_type_top, feature_type_top) %>% count(name = "n_windows") %>% ungroup
@@ -291,12 +301,12 @@ enriched_window_transcript_data = left_join(
 enriched_window_transcript_data$pseudocount = enriched_window_transcript_data %>% with(nrow(.) * (n_windows / (sum(n_windows))))
 enriched_window_transcript_data$odds_ratio = enriched_window_transcript_data %>% with((n_enriched + pseudocount) / (sum((n_enriched + pseudocount)) - (n_enriched + pseudocount)) / (n_windows / (sum(n_windows) - n_windows)))
 
-write_tsv(enriched_window_transcript_data %>% mutate(transcript_type_top = gsub("\n", "_", transcript_type_top)), paste0("output/enrichment_summaries/", output_stem, ".enriched_window_transcript_data.tsv"))
+write_tsv(enriched_window_transcript_data %>% mutate(transcript_type_top = gsub("\n", "_", transcript_type_top)), file.path(enrichment_summary_folder, paste0(output_stem, ".enriched_window_transcript_data.tsv")))
 
 min_odds = enriched_window_transcript_data %>% filter((n_enriched > 0 & n_windows > 20) | n_windows > 100) %>% .$odds_ratio %>% min
 max_odds = enriched_window_transcript_data %>% filter((n_enriched > 0 & n_windows > 20) | n_windows > 100) %>% .$odds_ratio %>% max
 
-pdf(paste0('output/figures/enriched_windows/', output_stem, '.enriched_window_odds.all_transcript_types.pdf'), height = 2.6, width = 5.2)
+pdf(file.path(enriched_window_fig_folder, paste0(output_stem, '.enriched_window_odds.all_transcript_types.pdf')), height = 2.6, width = 5.2)
 enriched_window_transcript_data %>% filter((n_enriched > 0 & n_windows > 20) | n_windows > 100) %>%
 	mutate(replicate = clip_replicate_label) %>%
 ggplot(aes(transcript_type_top, feature_type_top, fill = odds_ratio)) + theme_bw(base_size = 6) +  #, width = 0.9 * transcript_n / length(feature_plot_order)
@@ -311,7 +321,7 @@ single_feature_transcript_types = enriched_window_transcript_data %>% select(fea
 min_odds = enriched_window_transcript_data %>% filter((n_enriched > 0 & n_windows > 20) | n_windows > 100, ! transcript_type_top %in% single_feature_transcript_types) %>% .$odds_ratio %>% min
 max_odds = enriched_window_transcript_data %>% filter((n_enriched > 0 & n_windows > 20) | n_windows > 100, ! transcript_type_top %in% single_feature_transcript_types) %>% .$odds_ratio %>% max
 
-pdf(paste0('output/figures/enriched_windows/', output_stem, '.enriched_window_odds.select_transcript_types.pdf'), height = 2.6, width = 4)
+pdf(file.path(enriched_window_fig_folder, paste0(output_stem, '.enriched_window_odds.select_transcript_types.pdf')), height = 2.6, width = 4)
 enriched_window_transcript_data %>% filter(! transcript_type_top %in% single_feature_transcript_types) %>% 
 	filter((n_enriched > 0 & n_windows > 20) | n_windows > 100, !transcript_type_top %in% single_feature_transcript_types) %>%
 	mutate(feature_group = sub("_.*","", feature_type_top), replicate = clip_replicate_label) %>% 
@@ -328,7 +338,7 @@ enriched_window_gene_data = enriched_window_data %>% group_by(gene_name,feature_
 		group_by(feature_type_top, n_enriched) %>% mutate(n_enriched = pmin(n_enriched, 5)) %>% count(name="n_genes") %>% 
 		mutate(n_enriched = ifelse(n_enriched <5, as.character(n_enriched), "5+"))
 
-pdf(paste0('output/figures/enriched_windows/', output_stem, '.enriched_window_counts.per_gene_feature.pdf'), height = 2.2, width = 2.8)
+pdf(file.path(enriched_window_fig_folder,paste0(output_stem, '.enriched_window_counts.per_gene_feature.pdf')), height = 2.2, width = 2.8)
 enriched_window_gene_data %>%
 	mutate(feature_type_top = factor(feature_type_top, levels = feature_plot_order %>% rev)) %>%
 	mutate(replicate = clip_replicate_label) %>%
@@ -339,5 +349,5 @@ ggplot(aes(feature_type_top, n_genes, fill = n_enriched)) + theme_bw(base_size =
 	theme(legend.position = "top", axis.text.x = element_text(angle = 90,vjust = 0.5,hjust=1), panel.grid.major.x = element_blank(), panel.grid.minor.y = element_blank())
 dev.off()
 
-write_tsv(enriched_window_gene_data, paste0("output/enrichment_summaries/", output_stem, ".enriched_window_gene_data.tsv"))
+write_tsv(enriched_window_gene_data, file.path(enrichment_summary_folder, paste0(output_stem, ".enriched_window_gene_data.tsv")))
 
