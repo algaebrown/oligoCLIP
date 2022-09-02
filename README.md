@@ -8,7 +8,7 @@ pipeline for oligoCLIP contains 2 stages. `Stage1: SnakeCLIP.py`: Goes from fast
 
 ## Input: Config file
 - fill out the config file. see [example](https://github.com/algaebrown/oligoCLIP/blob/master/eclipse_multi.yaml).
-    - `fastq_menifest`: a csv file pointing to 1 or multiple libraries with the *SAME* barcode set. Look at this [example file](https://github.com/algaebrown/oligoCLIP/blob/master/multiplex1.csv) to see how it is structures.
+    - `fastq_menifest`: a csv file pointing to 1 or multiple libraries with the *SAME* barcode set. Look at this [example file](https://github.com/algaebrown/oligoCLIP/blob/master/config/fastq_csv/multiplex1.csv) to see how it is structures.
     - `barcode`: a csv file pointing barcodes to RBPs.  The RBP names must be unique. [example](https://github.com/algaebrown/oligoCLIP/blob/master/config/barcode_csv/barcodes.csv)
     - `ADAPTOR_PATH`: a folder containing a "tiling adaptor" fasta file [example](https://github.com/algaebrown/oligoCLIP/blob/master/InvRiL19_adapters.fasta). The adaptor sequence is break into tiling substrings.
     -  `adaptor`: name of the fasta file without the .fasta suffix.
@@ -128,7 +128,7 @@ snakemake -s Snake_PeakMain.py --configfile config/peak_call_config/snake_CLIPpe
 ```
 ![anno_flowchart](anno.svg)
 
-I use the complementary control as an example. The upper part up to "compress" is explained above.
+I use the complementary control as an example. The method used for external control or the unnormalized is the sname.The upper part up to "compress" is already explained above.
 1. `filter*`: filter for significant peaks
 2. `*motif`: call HOMER motifs for each steps
 3. `anno*`: annotate peaks with region, gene name
@@ -136,6 +136,14 @@ I use the complementary control as an example. The upper part up to "compress" i
 
 ### Combining all in place:
 ```
-snakemake -s Snake_PeakMain.py --configfile config/peak_call_config/snake_CLIPper_downsample.chi.yaml --use-conda -n --dag | dot -Tsvg > all.svg
+snakemake -s Snake_PeakMain.py --configfile config/peak_call_config/snake_CLIPper_downsample.chi.yaml \
+--use-conda -n --dag \
+chisq/Dan_multiplex1_K562_rep1/Dan_multiplex1_K562_rep1_RBFOX2.peaks.summary \
+chisq/motif/Dan_multiplex1_K562_rep1/Dan_multiplex1_K562_rep1_RBFOX2.peaks.normed.compressed.filtered.annotate.svg \
+output/Dan_multiplex1_K562_rep1_RBFOX2.peaks.normed.compressed.annotate.bed \
+output/motif/Dan_multiplex1_K562_rep1_RBFOX2.peaks.normed.compressed.filtered.annotate.svg \
+output/CLIPper/Dan_multiplex1_K562_rep1_RBFOX2.peaks.filtered.svg \
+output/CLIPper/Dan_multiplex1_K562_rep1_RBFOX2.peaks.annotate.bed \
+  | dot -Tsvg > all.svg
 ```
 ![all_flowchart](all.svg)
