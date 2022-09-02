@@ -4,10 +4,32 @@ manifest = pd.read_csv(config['MANIFEST'])
 
 barcode_df = pd.read_csv(config['barcode_csv'], header = None, sep = ':', names = ['barcode', 'RBP'])
 rbps = barcode_df['RBP'].tolist()
+rule tile_adaptor:
+    output:
+        adafwd="params/adaptor_fwd.fasta",
+        adarev="params/adaptor_rev.fasta"
+    params:
+        run_time = "00:20:00",
+        cores="1",
+        adaptor_fwd = config['adaptor_fwd'],
+        adaptor_rev = config['adaptor_rev'],
+        error_out_file = "error_files/adatile.txt",
+        tiling_length = config['tile_length']
+    conda:
+        "envs/metadensity.yaml"
+    benchmark: "benchmarks/tile_adaptor"
+    shell:      
+        """
+        python {SCRIPT_PATH}/create_adaptor_tile.py {params.adaptor_fwd} {output.adafwd} {params.tiling_length}
+        python {SCRIPT_PATH}/create_adaptor_tile.py {params.adaptor_rev} {output.adarev} {params.tiling_length}
+        """
+
 rule trim_adaptor:
     input:
         fq1 = lambda wildcards: manifest.loc[manifest['libname']==wildcards.libname, 'fastq1'],
-        fq2 = lambda wildcards: manifest.loc[manifest['libname']==wildcards.libname, 'fastq2']
+        fq2 = lambda wildcards: manifest.loc[manifest['libname']==wildcards.libname, 'fastq2'],
+        adaptor_fwd = "params/adaptor_fwd.fasta",
+        adaptor_rev = "params/adaptor_rev.fasta"
     output:
         fq1 = "{libname}/fastqs/all.Tr.fq1.gz",
         fq2 = "{libname}/fastqs/all.Tr.fq2.gz",
@@ -15,8 +37,6 @@ rule trim_adaptor:
     params:
         run_time = "12:04:00",
         cores="4",
-        adaptor_fwd = config['adaptor_fwd'],
-        adaptor_rev = config['adaptor_rev'],
         error_out_file = "error_files/trim_adaptor.{libname}.txt",
         quality_cutoff = config['QUALITY_CUTOFF']
     conda:
@@ -24,8 +44,8 @@ rule trim_adaptor:
     benchmark: "benchmarks/trim_adaptor.{libname}"
     shell:      
         """
-        cutadapt -a {params.adaptor_fwd} \
-            -A {params.adaptor_rev} \
+        cutadapt -a file:{input.adaptor_fwd} \
+            -A file:{input.adaptor_rev} \
             --times 2 \
             -e 0.1 \
             --quality-cutoff {params.quality_cutoff} \
@@ -223,7 +243,7 @@ rule umi_dedup:
         bam="{libname}/bams/genome/{sample_label}.genome-mapped.Aligned.sortedByCoord.out.bam",
         bai="{libname}/bams/genome/{sample_label}.genome-mapped.Aligned.sortedByCoord.out.bam.bai",
     output:
-        bam_dedup="{libname}/bams/genome/{sample_label}.genome-mapped.rmDup.Aligned.sortedByCoord.out.bam"
+        bam_dedup="{libname}/bams/genome/{sample_label}.genome-mapped.rmDup.Aligned.sortedByCoord.out.bam",
     params:
         error_out_file = "error_files/dedup.{libname}.{sample_label}",
         run_time = "06:40:00",
