@@ -20,23 +20,20 @@ try:
     WORKDIR=config['WORKDIR']
     workdir: WORKDIR
 
-    print('WORKDIR', os.getcwd())
-
     manifest = pd.read_table(MANIFEST, index_col = False, sep = ',')
     sample_labels = manifest.uid.tolist()
     all_rbfox = [s for s in sample_labels if 'RBFOX2' in s or '676' in s]
-    print(','.join(all_rbfox))
 except Exception as e:
     print('config:', e)
 
 module peak_anno:
     snakefile:
-        "rules/Snake_peakanno.py"
+        "rules/annotate_peak.py"
     config: config
 
 module peak_call:
     snakefile:
-        "rules/Snake_CLIPper.py"
+        "rules/clipper_and_norm.py"
     config: config
 
 module motif:
@@ -46,7 +43,7 @@ module motif:
 
 module chi:
     snakefile:
-        "rules/chisq.py"
+        "rules/complementary_control.py"
     config: config
 
 rule all:
