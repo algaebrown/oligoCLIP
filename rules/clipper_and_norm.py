@@ -82,10 +82,11 @@ rule compress_peak:
         run_time=14,
         error_out_file = "error_files/compress_peak",
         cores = "1",
+        script_path=os.path.join(config['SCRIPT_PATH'], 'compress_l2foldenrpeakfi_for_replicate_overlapping_bedformat.pl')
     shell:
         """
         module load eclip/0.7.0;
-        perl $ECLIP_HOME/bin/compress_l2foldenrpeakfi_for_replicate_overlapping_bedformat.pl \
+        perl {params.script_path} \
         {input.norm_peak} \
         {output.compress_peak}
         """

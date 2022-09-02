@@ -8,16 +8,14 @@ except Exception as e:
 def get_all_other_bams(sample_label, lib):
     return manifest.loc[(manifest['lib'] == lib) & (manifest['uid'] != sample_label), 'bam_0'].tolist()
 
-print([len(get_all_other_bams(s, l)) for s, l in zip(manifest['uid'], manifest['lib'])])
-
 module peak_anno:
     snakefile:
-        "Snake_peakanno.py"
+        "annotate_peak.py"
     config: config
 
 module peak_call:
     snakefile:
-        "Snake_CLIPper.py"
+        "clipper_and_norm.py"
     config: config
 
 rule concat_other_bams:
