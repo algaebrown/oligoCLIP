@@ -16,11 +16,7 @@ include: "snakeDros_config.py"
 manifest = pd.read_csv(MANIFEST, index_col = False)
 
 sample_labels = manifest.Sample.tolist()
-print(manifest.iloc[0])
 manifest.loc[manifest.Sample == sample_labels[0]]["RNA_adaptor"].values[0]
-
-print(os.path.join(ADAPTOR_PATH, 
-        manifest.loc[manifest.Sample == sample_labels[0], "RNA_adaptor"].values[0]+'_adapters.fasta'))
 
 rule all:
     input:
