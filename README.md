@@ -7,7 +7,7 @@ pipeline for oligoCLIP contains 2 stages. `Stage1: SnakeCLIP.py`: Goes from fast
 # Stage 1: Preprocessing
 
 ## Input: Config file
-- fill out the config file. see [example](https://github.com/algaebrown/oligoCLIP/blob/master/eclipse_multi.yaml).
+- fill out the config file. see [example](https://github.com/algaebrown/oligoCLIP/blob/master/config/preprocess_config/eclipse_multi.yaml).
     - `fastq_menifest`: a csv file pointing to 1 or multiple libraries with the *SAME* barcode set. Look at this [example file](https://github.com/algaebrown/oligoCLIP/blob/master/config/fastq_csv/multiplex1.csv) to see how it is structures.
     - `barcode`: a csv file pointing barcodes to RBPs.  The RBP names must be unique. [example](https://github.com/algaebrown/oligoCLIP/blob/master/config/barcode_csv/barcodes.csv)
     - `ADAPTOR_PATH`: a folder containing a "tiling adaptor" fasta file [example](https://github.com/algaebrown/oligoCLIP/blob/master/InvRiL19_adapters.fasta). The adaptor sequence is break into tiling substrings.
@@ -79,6 +79,11 @@ This main script `Snake_PeakMain.py` calls several modules:
     - `ANNOTATOR_SPECIES`: species name used by [annotator](https://github.com/byee4/annotator).
     - `GENOMEFA`: fasta file containing genome sequence. 
     - `CLIPper_pvalthes`: pvalue threshold to filter CLIPper, used by motif calling. All peaks above this threshold will be used to find motif.
+## How to run
+```
+snakemake -j 40 -s Snake_PeakMain.py --cluster "qsub -l walltime={params.run_time}:00:00 -l nodes=1:ppn={params.cores} -q home-yeo" --configfile config/peak_call_config/snake_CLIPper_downsample.yaml --use-conda -n 
+```
+- for specific options, see [snakemake command line interface](https://snakemake.readthedocs.io/en/stable/executing/cli.html)
 
 ## Output:
 ### Peak calling and Normalization Outputs:
