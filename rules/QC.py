@@ -72,6 +72,7 @@ rule duplication_rate:
         'QC/dup_level.csv'
     params:
         error_out_file = "error_files/dup",
+        out_file = "stdout/dup_rate",
         run_time = "00:40:00",
         cores = "1",
         memory = "10000",
@@ -91,13 +92,15 @@ rule count_demultiplex_ultraplex:
         'QC/demux_read_count.txt'
     params:
         error_out_file = "error_files/demux_count",
+        out_file = "stdout/readcount",
         run_time = "00:40:00",
         cores = "1",
         memory = "10000",
         QC_PATH = QC_PATH,
     shell:
         """
-        wc -l {input} > {output}
+        touch {output}
+        for f in */fastqs/*Fwd.fastq.gz ; do echo "$f $(zcat $f | wc -l)" >> {output}; done
         """
 
 rule what_is_read_wo_barcode:

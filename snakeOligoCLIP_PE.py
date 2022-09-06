@@ -88,6 +88,7 @@ rule all:
         "QC/repeat_mapping_stats.csv",
         "QC/genome_mapping_stats.csv",
         "QC/dup_level.csv",
+        'QC/demux_read_count.txt',
         expand("QC/nobarcode_blast_output/{libname}.blast.tsv", libname = libnames),
         expand("QC/unmapped_blast_output/{libname}.{sample_label}.1.blast.tsv", libname = libnames, sample_label = rbps),
         expand("output/enriched_windows/{libname}.{clip_sample_label}.{bg_sample_label}.enriched_windows.tsv.gz",
@@ -152,6 +153,7 @@ use rule duplication_rate from QC as qc_duplication_rate with:
 
 use rule what_is_read_wo_barcode from QC
 use rule blast_unmapped_reads from QC
+use rule count_demultiplex_ultraplex from QC
 
 ### region caller ###
 use rule * from normalization as skipper_*
