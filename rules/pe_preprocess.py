@@ -14,6 +14,7 @@ rule tile_adaptor:
         adaptor_fwd = config['adaptor_fwd'],
         adaptor_rev = config['adaptor_rev'],
         error_out_file = "error_files/adatile.txt",
+        out_file = "stdout/adatile.txt",
         tiling_length = config['tile_length']
     conda:
         "envs/metadensity.yaml"
@@ -38,7 +39,8 @@ rule trim_adaptor:
         run_time = "12:04:00",
         cores="4",
         error_out_file = "error_files/trim_adaptor.{libname}.txt",
-        quality_cutoff = config['QUALITY_CUTOFF']
+        quality_cutoff = config['QUALITY_CUTOFF'],
+        out_file = "stdout/trim_adaptor.{libname}.txt.txt",
     conda:
         "envs/cutadapt.yaml"
     benchmark: "benchmarks/trim_adaptor.{libname}"
@@ -57,6 +59,7 @@ rule trim_adaptor:
         """
 
 rule extract_umi_and_trim_polyG: # TODO: adaptor TRIM first
+#fastp does not remove UMI from read2
     input:
         fq1 = "{libname}/fastqs/all.Tr.fq1.gz",
         fq2 = "{libname}/fastqs/all.Tr.fq2.gz",
@@ -67,6 +70,7 @@ rule extract_umi_and_trim_polyG: # TODO: adaptor TRIM first
         metrics2 = "QC/{libname}.umi.html",
     params:
         error_out_file = "error_files/extract_umi.{libname}.txt",
+        out_file = "stdout/extract_umi.{libname}.txt",
         run_time = "3:45:00",
         cores = "4",
         memory = "10000",
@@ -89,13 +93,35 @@ rule extract_umi_and_trim_polyG: # TODO: adaptor TRIM first
             -w {params.cores}
         """
 
+rule trim_umi_from_read2:
+    input:
+        fq2 = "{libname}/fastqs/all.Tr.umi.fq2.gz",
+    output:
+        fq2_unzip = temp("{libname}/fastqs/all.Tr.umi.fq2"),
+        fq2 = "{libname}/fastqs/all.Tr.umi.fq2.trim.gz",
+    params:
+        error_out_file = "error_files/extract_umi.{libname}.txt",
+        out_file = "stdout/extract_umi.{libname}.txt",
+        run_time = "3:45:00",
+        cores = "4",
+        memory = "10000",
+        job_name = "extract_umi",
+        umi_length = config['umi_length']
+    conda:
+        "envs/seqtk.yaml"
+    benchmark: "benchmarks/umi/trim_umi_from_r2.{libname}.txt"
+    shell:
+        """
+        zcat {input.fq2} > {output.fq2_unzip}
+        seqtk trimfq -e {params.umi_length} {output.fq2_unzip} | gzip > {output.fq2}
+        """
 # reverse read1 and read2 cause ultraplex does not support 3' only demux
 # set adaptor to X to disable adaptor trimming
 # the pgzip thing is slow. always lead to incomplete file
 rule demultiplex:
     input:
         fq1 = "{libname}/fastqs/all.Tr.umi.fq1.gz",
-        fq2 = "{libname}/fastqs/all.Tr.umi.fq2.gz",
+        fq2 = "{libname}/fastqs/all.Tr.umi.fq2.trim.gz",
         barcode_csv = ancient(config['barcode_csv'])
     output:
         fq1=expand("{libname}/fastqs/ultraplex_demux_{sample_label}_Rev.fastq.gz", libname = ["{libname}"], sample_label = rbps),
@@ -111,31 +137,77 @@ rule demultiplex:
         cores="4",
         run_time = "06:00:00",
         prefix = "{libname}/fastqs/",
-        error_out_file = "error_files/demux.{libname}.txt"
+        error_out_file = "error_files/demux.{libname}.txt",
+        out_file = "stdout/demux.{libname}.txt",
     shell:
         """
         cd {params.prefix}
+        # in case there is no not matched ones
+        
         ultraplex -i all.Tr.umi.fq2.gz -i2 all.Tr.umi.fq1.gz -b {input.barcode_csv}  \
             -m5 1 -m3 0 -t {params.cores} -a XX -a2 XX --ultra
-        sleep 600
+        if [ ! -f ultraplex_demux_5bc_no_match_Rev.fastq.gz ]
+        then
+            touch ultraplex_demux_5bc_no_match_Rev.fastq.gz
+            touch ultraplex_demux_5bc_no_match_Fwd.fastq.gz
+        fi
         """
+
+rule trim_barcode_r1:
+# ultraplex does not trim well for the other read
+    input:
+        fq1 = "{libname}/fastqs/ultraplex_demux_{sample_label}_Rev.fastq.gz", # has reverse complement of barcode at the end
+        fq2 = "{libname}/fastqs/ultraplex_demux_{sample_label}_Fwd.fastq.gz",
+    output:
+        fq1 = "{libname}/fastqs/ultraplex_demux_{sample_label}_Rev.Tr.fastq.gz",
+        fq2 = "{libname}/fastqs/ultraplex_demux_{sample_label}_Fwd.Tr.fastq.gz",
+        metric = "QC/{libname}.{sample_label}.n_rev_read_w_bar.txt"
+    params:
+        run_time = "12:04:00",
+        cores="4",
+        error_out_file = "error_files/trim_barcode.{libname}.{sample_label}.txt",
+        quality_cutoff = config['QUALITY_CUTOFF'],
+        out_file = "stdout/trim_barcode.{libname}.{sample_label}.txt",
+        barcode_sequence = lambda wildcards:barcode_df.loc[barcode_df['RBP'] == wildcards.sample_label,'barcode'].iloc[0],
+    conda:
+        "envs/fastp.yaml"
+    benchmark: "benchmarks/trim_adaptor.{libname}.{sample_label}"
+    shell:      
+        # """
+        # cutadapt -a {params.barcode_sequence} \
+        #     --times 1 \
+        #     -e 0.1 \
+        #     -o {output.fq1} \
+        #     --cores=0 \
+        #     --revcomp \
+        #     {input.fq1} > {output.metric}
+        # """
+        """
+        set +o pipefail; 
+        rev_bar=$(echo {params.barcode_sequence} | tr ACGTacgt TGCAtgca | rev)
+        fastp -i {input.fq1} -I {input.fq2} -o {output.fq1} -O {output.fq2} --adapter_sequence $rev_bar
+        zcat {input.fq2} | grep -v "@" | grep $rev_bar | wc -l > {output.metric}
+        zcat {output.fq2} | grep -v "@" | grep $rev_bar | wc -l >> {output.metric}
+        """
+
 
 # TODO, CHECK IF THE TRIMMING IS SUCCESSFUL, CHECK CROSS CONTAMINATION
 rule fastqc_post_trim:
     input:
-        fq1="{libname}/fastqs/ultraplex_demux_{sample_label}_Rev.fastq.gz",
-        fq2="{libname}/fastqs/ultraplex_demux_{sample_label}_Fwd.fastq.gz"
+        fq1="{libname}/fastqs/ultraplex_demux_{sample_label}_Rev.Tr.fastq.gz",
+        fq2="{libname}/fastqs/ultraplex_demux_{sample_label}_Fwd.Tr.fastq.gz",
     output:
         # PRPF8.umi.fqTrTr.rev.sorted_fastqc
-        html1="{libname}/fastqc/ultraplex_demux_{sample_label}_Rev_fastqc.html",
-        txt1="{libname}/fastqc/ultraplex_demux_{sample_label}_Rev_fastqc/fastqc_data.txt",
-        html2="{libname}/fastqc/ultraplex_demux_{sample_label}_Fwd_fastqc.html",
-        txt2="{libname}/fastqc/ultraplex_demux_{sample_label}_Fwd_fastqc/fastqc_data.txt"
+        html1="{libname}/fastqc/ultraplex_demux_{sample_label}_Rev.Tr_fastqc.html",
+        txt1="{libname}/fastqc/ultraplex_demux_{sample_label}_Rev.Tr_fastqc/fastqc_data.txt",
+        html2="{libname}/fastqc/ultraplex_demux_{sample_label}_Fwd.Tr_fastqc.html",
+        txt2="{libname}/fastqc/ultraplex_demux_{sample_label}_Fwd.Tr_fastqc/fastqc_data.txt"
     params:
         outdir="{libname}/fastqc/",
         run_time = "02:09:00",
         cores="1",
-        error_out_file = "error_files/fastqc.{libname}.txt"
+        error_out_file = "error_files/fastqc.{libname}.txt",
+        out_file = "stdout/fastqc.{libname}.txt",
     benchmark: "benchmarks/qc/fastqc.{libname}.{sample_label}.txt"
     shell:
         """
@@ -147,8 +219,8 @@ rule fastqc_post_trim:
 
 rule align_reads_to_REPEAT:
     input:
-        fq1="{libname}/fastqs/ultraplex_demux_{sample_label}_Rev.fastq.gz",
-        fq2="{libname}/fastqs/ultraplex_demux_{sample_label}_Fwd.fastq.gz"
+        fq1="{libname}/fastqs/ultraplex_demux_{sample_label}_Rev.Tr.fastq.gz",
+        fq2="{libname}/fastqs/ultraplex_demux_{sample_label}_Fwd.Tr.fastq.gz",
     output:
         ubam = "{libname}/bams/repeat/{sample_label}.Aligned.out.bam",
         unmapped1= "{libname}/bams/repeat/{sample_label}.Unmapped.out.mate1",
@@ -156,6 +228,7 @@ rule align_reads_to_REPEAT:
         log= "{libname}/bams/repeat/{sample_label}.Log.final.out",
     params:
         error_out_file = "error_files/{sample_label}_align_reads",
+        out_file = "stdout/{sample_label}_align_reads",
         run_time = "06:40:00",
         cores = "4",
         memory = "10000",
@@ -201,6 +274,7 @@ rule align_to_GENOME:
         log= "{libname}/bams/genome/{sample_label}.genome-mapped.Log.final.out",
     params:
         error_out_file = "error_files/{libname}.{sample_label}_align_reads_genome",
+        out_file = "stdout/{sample_label}_align_reads_genome",
         run_time = "06:40:00",
         cores = "4",
         memory = "10000",
@@ -246,6 +320,7 @@ rule umi_dedup:
         bam_dedup="{libname}/bams/genome/{sample_label}.genome-mapped.rmDup.Aligned.sortedByCoord.out.bam",
     params:
         error_out_file = "error_files/dedup.{libname}.{sample_label}",
+        out_file = "stdout/{libname}.{sample_label}.index_reads",
         run_time = "06:40:00",
         cores = "4",
         memory = "10000",
@@ -267,6 +342,7 @@ rule index_genome_bams:
         bai = "{libname}/bams/genome/{sample_label}.genome-mapped.rmDup.Aligned.sortedByCoord.out.bam.bai"
     params:
         error_out_file = "error_files/index_bam.{libname}.{sample_label}",
+        out_file = "stdout/index_bam.{libname}.{sample_label}",
         run_time = "01:40:00",
         cores = "4",
         memory = "1000",

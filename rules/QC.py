@@ -1,8 +1,8 @@
 QC_PATH = config['QC_TOOLS_PATH']
 
-sample_labels = []
-libnames = []
-rbps = []
+sample_labels = config['rbps']
+libnames = config['libnames']
+rbps = config['rbps']
 
 HUMAN_RNA_NUCLEOTIDE='/projects/ps-yeolab4/seqdata/20200622_gencode_coords_hsher/GRCh38_latest_rna.fna'
 N_READ_TO_SAMPLE=5*10**3
@@ -16,7 +16,8 @@ rule gather_trimming_stat:
         run_time = "00:10:00",
         cores="1",
         QC_PATH = QC_PATH,
-        error_out_file = "error_files/qctrim.txt"
+        error_out_file = "error_files/qctrim.txt",
+        out_file = "stdout/qctrim",
     conda:
         "envs/metadensity.yaml"
     shell:
@@ -36,7 +37,8 @@ rule gather_fastqc_report:
         memory = "10000",
         job_name = "gather_stat",
         QC_PATH = QC_PATH,
-        error_out_file = "error_files/fastqc_stat.txt"
+        error_out_file = "error_files/fastqc_stat.txt",
+        out_file = "stdout/fastqc",
     conda:
         "envs/metadensity.yaml"
     shell:
@@ -59,6 +61,7 @@ rule gather_mapstat:
         memory = "10000",
         job_name = "gather_stat",
         QC_PATH = QC_PATH,
+        out_file = "stdout/mapstat",
     shell:
         """
         python {params.QC_PATH}/star_mapping_stat_io.py -i "{input}" -o {output}
@@ -87,7 +90,8 @@ rule duplication_rate:
 
 rule count_demultiplex_ultraplex:
     input:
-        fq2=expand("{libname}/fastqs/ultraplex_demux_{sample_label}_Fwd.fastq.gz", libname = libnames, sample_label = rbps)
+        fq2=expand("{libname}/fastqs/ultraplex_demux_{sample_label}_Fwd.fastq.gz", libname = libnames, sample_label = rbps),
+        fq1=expand("{libname}/fastqs/ultraplex_demux_{sample_label}_Rev.fastq.gz", libname = libnames, sample_label = rbps)
     output:
         'QC/demux_read_count.txt'
     params:
@@ -100,7 +104,8 @@ rule count_demultiplex_ultraplex:
     shell:
         """
         touch {output}
-        for f in */fastqs/*Fwd.fastq.gz ; do echo "$f $(zcat $f | wc -l)" >> {output}; done
+        for f in {input.fq2} ; do echo "$f $(zcat $f | wc -l)" >> {output}; done
+        for f in {input.fq1} ; do echo "$f $(zcat $f | wc -l)" >> {output}; done
         """
 
 rule what_is_read_wo_barcode:
@@ -113,6 +118,7 @@ rule what_is_read_wo_barcode:
         fasta="QC/nobarcode_blast_output/{libname}.fasta"
     params:
         error_out_file = "error_files/demux_count",
+        out_file = "stdout/readwobar",
         run_time = "00:40:00",
         cores = "1",
         nlines = N_READ_TO_SAMPLE * 4
@@ -137,6 +143,7 @@ rule blast_unmapped_reads:
         fasta2="QC/unmapped_blast_output/{libname}.{sample_label}.2.fasta"
     params:
         error_out_file = "error_files/demux_count",
+        out_file = "stdout/blastunmap",
         run_time = "00:40:00",
         cores = "1",
         nlines = N_READ_TO_SAMPLE * 4
@@ -149,4 +156,27 @@ rule blast_unmapped_reads:
         module load blast
         blastn -db {input.target} -query {output.fasta1} -out {output.blast_result1} -outfmt 6 -max_target_seqs 1 
         blastn -db {input.target} -query {output.fasta2} -out {output.blast_result2} -outfmt 6 -max_target_seqs 1 
+        """
+
+rule blast_unmapped_reads_too_short:
+    input:
+        target=HUMAN_RNA_NUCLEOTIDE,
+        target_db=HUMAN_RNA_NUCLEOTIDE + '.nog',
+        bam= "{libname}/bams/genome/{sample_label}.genome-mapped.Aligned.sortedByCoord.out.bam",
+    output:
+        blast_result="QC/unmapped_blast_output/{libname}.{sample_label}.short.blast.tsv",
+        fasta="QC/unmapped_blast_output/{libname}.{sample_label}.short.fasta",
+    params:
+        error_out_file = "error_files/demux_count",
+        out_file = "stdout/blastunmap",
+        run_time = "00:40:00",
+        cores = "1",
+        nlines = N_READ_TO_SAMPLE
+    shell:
+        """
+        set +o pipefail; 
+        module load samtools
+        samtools view -f 4 {input.bam} | grep uT:A:1 | head -n {params.nlines} | samtools fasta >  {output.fasta}
+        module load blast
+        blastn -db {input.target} -query {output.fasta} -out {output.blast_result} -outfmt 6 -max_target_seqs 1 
         """

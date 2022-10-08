@@ -4,60 +4,62 @@ import pandas as pd
 import os
 
 #snakemake -s snakeOligoCLIP_PE.py -j 12 --cluster "qsub -l walltime={params.run_time} -l nodes=1:ppn={params.cores} -q home-yeo -e {params.error_out_file} -o {params.out_file}" --configfile config/preprocess_config/oligope_iter2_tile.yaml --use-conda  --conda-prefix /home/hsher/scratch/oligo_PE/.snakemake/conda -n  
+#snakemake --cluster "sbatch -t {params.run_time} -p home-yeo -e {params.error_out_file} -o {params.out_file} -T {params.cores}"
+#snakemake -s snakeOligoCLIP_PE.py -j 12 --cluster "sbatch -t {params.run_time} -p home-yeo -e {params.error_out_file} -o {params.out_file} -T {params.cores}" --configfile config/preprocess_config/oligope_iter2_simulate.yaml --use-conda  --conda-prefix /home/hsher/scratch/oligo_PE/.snakemake/conda -n  
+#snakemake -s snakeOligoCLIP_PE.py -j 12 --cluster "qsub -l walltime={params.run_time} -l nodes=1:ppn={params.cores} -q home-yeo -e {params.error_out_file} -o {params.out_file}" --configfile config/preprocess_config/oligope_sara_CN.yaml --use-conda --conda-prefix /home/hsher/snakeconda -n  
+MANIFEST=config['MANIFEST']
+SCRIPT_PATH=config['SCRIPT_PATH']
+WORKDIR=config['WORKDIR']
+workdir: WORKDIR
 
+manifest = pd.read_table(MANIFEST, index_col = False, sep = ',')
+barcode_df = pd.read_csv(config['barcode_csv'], header = None, sep = ':', names = ['barcode', 'RBP'])
+
+# basic checking
+assert not barcode_df['barcode'].duplicated().any()
+assert not barcode_df['RBP'].duplicated().any() # cannot have any duplicated RBP names
+assert not barcode_df['RBP'].str.contains(' ').any() # DO NOT CONTAIN white space lah
+assert not manifest['fastq1'].duplicated().any()
+assert not manifest['fastq2'].duplicated().any()
+assert not manifest['libname'].str.contains(' ').any()
+
+libnames = manifest['libname'].tolist() 
+
+config['libnames'] = libnames
+experiments = manifest['experiment'].tolist()
+config['experiments'] = experiments
+rbps = barcode_df['RBP'].tolist()
+config['rbps'] = rbps
+# sample_labels = manifest.uid.tolist()
+# print(sample_labels)
+#sample_labels = ['Dan_singleplex_HEK293_rep1_RBFOX2','Dan_singleplex_HEK293_rep2_RBFOX2','ENCODE_Dan_singleplex_HEK293_rep1_RBFOX2','ENCODE_Dan_singleplex_HEK293_rep2_RBFOX2']
+
+# making the error files directory
 try:
-    MANIFEST=config['MANIFEST']
-    SCRIPT_PATH=config['SCRIPT_PATH']
-    WORKDIR=config['WORKDIR']
-    workdir: WORKDIR
+    os.mkdir('error_files')
+except:
+    pass
 
-    print('WORKDIR', os.getcwd())
+# making the stdout directory
+try:
+    os.mkdir('stdout')
+except:
+    pass
 
-    manifest = pd.read_table(MANIFEST, index_col = False, sep = ',')
-    barcode_df = pd.read_csv(config['barcode_csv'], header = None, sep = ':', names = ['barcode', 'RBP'])
-    #print(manifest.head())
 
-    # basic checking
-    assert not barcode_df['barcode'].duplicated().any()
-    assert not barcode_df['RBP'].duplicated().any() # cannot have any duplicated RBP names
-    assert not barcode_df['RBP'].str.contains(' ').any() # DO NOT CONTAIN white space lah
-    assert not manifest['fastq1'].duplicated().any()
-    assert not manifest['fastq2'].duplicated().any()
-    assert not manifest['libname'].str.contains(' ').any()
-
-    libnames = manifest['libname'].tolist() 
-    config['libnames'] = libnames
-    experiments = manifest['experiment'].tolist()
-    config['experiments'] = experiments
-    rbps = barcode_df['RBP'].tolist()
-    config['rbps'] = rbps
-    # sample_labels = manifest.uid.tolist()
-    # print(sample_labels)
-    #sample_labels = ['Dan_singleplex_HEK293_rep1_RBFOX2','Dan_singleplex_HEK293_rep2_RBFOX2','ENCODE_Dan_singleplex_HEK293_rep1_RBFOX2','ENCODE_Dan_singleplex_HEK293_rep2_RBFOX2']
-    
-    # making the error files directory
-    try:
-        os.mkdir('error_files')
-    except:
-        pass
-    
-    # making the stdout directory
-    try:
-        os.mkdir('stdout')
-    except:
-        pass
-    
-
-    config['GENOME_FA'] = config['GENOMEFA']
-    R_EXE = config['R_EXE']
-    # all_rbfox = [s for s in sample_labels if 'RBFOX2' in s or '676' in s]
-    # print(','.join(all_rbfox))
-except Exception as e:
-    print('config:', e)
+config['GENOME_FA'] = config['GENOMEFA']
+R_EXE = config['R_EXE']
+# all_rbfox = [s for s in sample_labels if 'RBFOX2' in s or '676' in s]
+# print(','.join(all_rbfox))
 
 module preprocess:
     snakefile:
         "rules/pe_preprocess.py"
+    config: config
+
+module mapr1:
+    snakefile:
+        "rules/map_r1.py"
     config: config
 
 module QC:
@@ -78,6 +80,12 @@ module make_track:
     config:
         config
 
+module analysis:
+    snakefile:
+        "rules/analysis.py"
+    config:
+        config
+
 
 rule all:
     input:
@@ -91,16 +99,23 @@ rule all:
         'QC/demux_read_count.txt',
         expand("QC/nobarcode_blast_output/{libname}.blast.tsv", libname = libnames),
         expand("QC/unmapped_blast_output/{libname}.{sample_label}.1.blast.tsv", libname = libnames, sample_label = rbps),
+        expand("QC/unmapped_blast_output/{libname}.{sample_label}.short.blast.tsv", libname = libnames, sample_label = rbps),
         expand("output/enriched_windows/{libname}.{clip_sample_label}.{bg_sample_label}.enriched_windows.tsv.gz",
         libname = libnames,
         clip_sample_label = list(set(rbps)-set([config['AS_INPUT']])), # cannot call on itself
-        bg_sample_label = [config['AS_INPUT']]
+        bg_sample_label = [config['AS_INPUT']] if config['AS_INPUT'] else []
         ,),
         expand("internal_output/enriched_windows/{libname}.{clip_sample_label}.enriched_windows.tsv.gz",
         libname = libnames,
         clip_sample_label = list(set(rbps)-set([config['AS_INPUT']])), # cannot call on itself
         ),
-        expand("{libname}/bw/{type}/{sample_label}.r1.{strand}.bw", libname = libnames, sample_label = rbps, strand = ['pos', 'neg'], type = ['CITS', 'COV'])
+        expand("{libname}/bw/{type}/{sample_label}.r1.{strand}.bw", libname = libnames, sample_label = rbps, strand = ['pos', 'neg'], type = ['CITS', 'COV', 'COV_r1']),
+        "QC/genome_r1_mapping_stats.csv",
+        expand("output/homer/results/{libname}.{clip_sample_label}.{region}/homerMotifs.all.motifs",
+        libname = libnames,
+        clip_sample_label = list(set(rbps)-set([config['AS_INPUT']])),
+        region = ['CDS', 'UTR5', 'INTRON', 'UTR3']
+        )
 
         
     output:
@@ -118,6 +133,8 @@ rule all:
         """
 
 use rule * from preprocess as pre_*
+use rule * from mapr1 as r1_*
+use rule * from analysis as analysis_*
 
 ############# Quality control #################
 
@@ -127,10 +144,18 @@ use rule gather_trimming_stat from QC as qc_trim with:
     output:
         tr1='QC/cutadapt_stat.csv'
 
+# use rule gather_trimming_stat from QC as qc_barcode_trim with:
+#     input:
+#         tr1=expand("QC/{libname}.{sample_label}.barcodeTr.metrics", 
+#         libname = libnames,
+#         sample_label = rbps)
+#     output:
+#         tr1=expand('QC/cutadapt_barcode.csv')
+
 use rule gather_fastqc_report from QC as fastqc_gather with:
     input:
-        expand("{libname}/fastqc/ultraplex_demux_{sample_label}_Rev_fastqc/fastqc_data.txt", libname = libnames, sample_label = rbps)+
-        expand("{libname}/fastqc/ultraplex_demux_{sample_label}_Fwd_fastqc/fastqc_data.txt", libname = libnames, sample_label = rbps)
+        expand("{libname}/fastqc/ultraplex_demux_{sample_label}_Rev.Tr_fastqc/fastqc_data.txt", libname = libnames, sample_label = rbps)+
+        expand("{libname}/fastqc/ultraplex_demux_{sample_label}_Fwd.Tr_fastqc/fastqc_data.txt", libname = libnames, sample_label = rbps)
 
 use rule gather_mapstat from QC as mapstat_gather_repeat with:
     input:
@@ -154,6 +179,7 @@ use rule duplication_rate from QC as qc_duplication_rate with:
 use rule what_is_read_wo_barcode from QC
 use rule blast_unmapped_reads from QC
 use rule count_demultiplex_ultraplex from QC
+use rule  blast_unmapped_reads_too_short from QC
 
 ### region caller ###
 use rule * from normalization as skipper_*
@@ -195,6 +221,7 @@ rule bedgraph_to_bw:
         run_time="6:00:00",
         chr_size=config['CHROM_SIZES'],
         error_out_file = "error_files/{something}.bedgraph_to_bw",
+        out_file = "stdout/{something}.bedgraph_to_bw",
         cores = 1,
     shell:
         """
