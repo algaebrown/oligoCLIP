@@ -11,6 +11,8 @@ experiment = args[3]
 given_clip_replicate = args[4]
 outf = args[5]
 
+# redirect all outputs
+
 coef_dir = dirname(outf)
 distribution_dir = file.path(dirname(coef_dir), "figures", "clip_distributions")
 dir.create(coef_dir, showWarnings = FALSE, recursive = TRUE) # "output/clip_model_coef/" or "internal_output/clip_model_coef/
@@ -21,8 +23,11 @@ n_bin = 10
 
 sample_cols = names(count_data)[7:ncol(count_data)]
 other_clip_replicates = setdiff(sample_cols, given_clip_replicate)
-print(sample_cols)
-print(other_clip_replicates)
+write('sample columns', stdout())
+write(sample_cols, stdout())
+write('other clip replicates', stdout())
+write(other_clip_replicates, stdout())
+
 count_data$pct_gc = nuc_data$`8_pct_gc`
 
 count_gc_data = count_data[count_data[sample_cols] %>% rowSums > 0,] %>% group_by(gc_bin = cut_number(pct_gc,n_bin))

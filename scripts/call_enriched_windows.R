@@ -9,13 +9,13 @@ args = commandArgs(trailingOnly=TRUE)
 nuc_data = read_tsv(args[1])
 count_data = read_tsv(args[2])
 accession_data = read_tsv(args[3]) %>% arrange(rank)
-feature_annotations = read_tsv(args[4]) %>% rename(name = row_id)
+feature_annotations = read_tsv(args[4]) %>% rename(name = row_id) # internal_output/counts/genome/bgtables/internal/fake_oligoCLIP_from_eCLIP.IGF2BP2.tsv.gz 
 model_data = read_tsv(args[5]) # "internal_output/clip_model_coef/{libname}.{clip_sample_label}.tsv"
 input_replicate_label = args[6]
 clip_replicate_label = args[7]
 output_stem = args[8]
 
-root_folder = dirname(dirname(args[5])) # internal_output
+root_folder = dirname(dirname(dirname(dirname(dirname(args[2]))))) # internal_output
 threshold_scan_folder = file.path(root_folder, "threshold_scan")
 dir.create(threshold_scan_folder, showWarnings = FALSE, recursive = TRUE) # "output/threshold_scan/"
 tested_window_folder = file.path(root_folder, "tested_windows")
