@@ -3,6 +3,7 @@ R_EXE = config['R_EXE']
 rbps = config['rbps']
 experiments = config['experiments']
 libnames = config['libnames']
+SCRIPT_PATH=config['SCRIPT_PATH']
 manifest = pd.read_table(config['MANIFEST'], index_col = False, sep = ',')
 module region_call:
     snakefile:
