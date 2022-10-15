@@ -1,13 +1,15 @@
 import pandas as pd
 manifest = pd.read_csv(config['MANIFEST'])
+SCRIPT_PATH=config['SCRIPT_PATH']
 # /projects/ps-yeolab3/eboyle/encode/pipeline/04_20220506
 
 barcode_df = pd.read_csv(config['barcode_csv'], header = None, sep = ':', names = ['barcode', 'RBP'])
 rbps = barcode_df['RBP'].tolist()
+
 rule tile_adaptor:
     output:
-        adafwd="params/adaptor_fwd.fasta",
-        adarev="params/adaptor_rev.fasta"
+        adafwd = "params/adaptor_fwd.fasta",
+        adarev = "params/adaptor_rev.fasta"
     params:
         run_time = "00:20:00",
         cores="1",
@@ -21,8 +23,8 @@ rule tile_adaptor:
     benchmark: "benchmarks/tile_adaptor"
     shell:      
         """
-        python {SCRIPT_PATH}/create_adaptor_tile.py {params.adaptor_fwd} {output.adafwd} {params.tiling_length}
-        python {SCRIPT_PATH}/create_adaptor_tile.py {params.adaptor_rev} {output.adarev} {params.tiling_length}
+        python {SCRIPT_PATH}create_adaptor_tile.py {params.adaptor_fwd} {output.adafwd} {params.tiling_length}
+        python {SCRIPT_PATH}create_adaptor_tile.py {params.adaptor_rev} {output.adarev} {params.tiling_length}
         """
 
 rule trim_adaptor:
