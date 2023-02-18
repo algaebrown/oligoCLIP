@@ -69,8 +69,8 @@ rule gather_mapstat:
 
 rule duplication_rate:
     input:
-        dup=expand("{libname}/bams/genome/{sample_label}.genome-mapped.Log.final.out", libname = libnames, sample_label = rbps),
-        rmdup=expand("{libname}/bams/genome/{sample_label}.genome-mapped.rmDup.Aligned.sortedByCoord.out.bam",libname = libnames, sample_label = rbps)
+        dup=expand("{libname}/bams/{sample_label}.Log.final.out", libname = libnames, sample_label = rbps),
+        rmdup=expand("{libname}/bams/{sample_label}.rmDup.Aligned.sortedByCoord.out.bam",libname = libnames, sample_label = rbps)
     output:
         'QC/dup_level.csv'
     params:
@@ -88,9 +88,9 @@ rule duplication_rate:
         python {params.QC_PATH}/dup_level.py "{input.dup}" "{input.rmdup}" {output}
         """
 
+#echo haha $(echo $(zcat multiplex_HEK293_3/fastqs/ultraplex_demux_QKI_Rev.fastq.gz | wc -l)/4 | bc)
 rule count_demultiplex_ultraplex:
     input:
-        fq2=expand("{libname}/fastqs/ultraplex_demux_{sample_label}_Fwd.fastq.gz", libname = libnames, sample_label = rbps),
         fq1=expand("{libname}/fastqs/ultraplex_demux_{sample_label}_Rev.fastq.gz", libname = libnames, sample_label = rbps)
     output:
         'QC/demux_read_count.txt'
@@ -104,8 +104,9 @@ rule count_demultiplex_ultraplex:
     shell:
         """
         touch {output}
-        for f in {input.fq2} ; do echo "$f $(zcat $f | wc -l)" >> {output}; done
-        for f in {input.fq1} ; do echo "$f $(zcat $f | wc -l)" >> {output}; done
+        for f in {input.fq1} ; do \
+        echo "$f $(echo $(zcat $f | wc -l)/4 | bc)" >> {output}; \
+        done
         """
 
 rule what_is_read_wo_barcode:
@@ -134,8 +135,8 @@ rule blast_unmapped_reads:
     input:
         target=HUMAN_RNA_NUCLEOTIDE,
         target_db=HUMAN_RNA_NUCLEOTIDE + '.nog',
-        unmapped1_fq= "{libname}/bams/genome/{sample_label}.genome-mapped.Unmapped.out.mate1",
-        unmapped2_fq= "{libname}/bams/genome/{sample_label}.genome-mapped.Unmapped.out.mate2"
+        unmapped1_fq= "{libname}/bams/{sample_label}.Unmapped.out.mate1",
+        unmapped2_fq= "{libname}/bams/{sample_label}.Unmapped.out.mate2"
     output:
         blast_result1="QC/unmapped_blast_output/{libname}.{sample_label}.1.blast.tsv",
         blast_result2="QC/unmapped_blast_output/{libname}.{sample_label}.2.blast.tsv",
@@ -162,7 +163,7 @@ rule blast_unmapped_reads_too_short:
     input:
         target=HUMAN_RNA_NUCLEOTIDE,
         target_db=HUMAN_RNA_NUCLEOTIDE + '.nog',
-        bam= "{libname}/bams/genome/{sample_label}.genome-mapped.Aligned.sortedByCoord.out.bam",
+        bam= "{libname}/bams/{sample_label}.Aligned.sortedByCoord.out.bam",
     output:
         blast_result="QC/unmapped_blast_output/{libname}.{sample_label}.short.blast.tsv",
         fasta="QC/unmapped_blast_output/{libname}.{sample_label}.short.fasta",

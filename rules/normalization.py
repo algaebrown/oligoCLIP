@@ -1,10 +1,18 @@
 import pandas as pd
 R_EXE = config['R_EXE']
+BLACKLIST = config['BLACKLIST'] if 'BLACKLIST' in config else None
 rbps = config['rbps']
 experiments = config['experiments']
 libnames = config['libnames']
 SCRIPT_PATH=config['SCRIPT_PATH']
 manifest = pd.read_table(config['MANIFEST'], index_col = False, sep = ',')
+UNINFORMATIVE_READ = 3 - int(config['INFORMATIVE_READ']) # whether read 1 or read 2 is informative
+
+try:
+    os.mkdir('log')
+except:
+    pass
+
 module region_call:
     snakefile:
         "region_call.py"
@@ -26,10 +34,10 @@ def experiment_to_libname(experiment):
 ############ region calling ################
 # count reads in each region for each library
 # line 0 is the {libname}.{sample_label}
-use rule partition_bam_reads_r1 from region_call as region_partition_bam_reads with:
+use rule partition_bam_reads from region_call as region_partition_bam_reads with:
     input:
         chrom_size = config['CHROM_SIZES'],
-        bam = "{libname}/bams/genome/{sample_label}.genome-mapped.Aligned.sortedByCoord.out.bam",        
+        bam = "{libname}/bams/{sample_label}.rmDup.Aligned.sortedByCoord.out.bam",        
         region_partition = config['PARTITION'],
     output:
         counts= "output/counts/genome/vectors/{libname}.{sample_label}.counts",
@@ -153,7 +161,6 @@ rule call_enriched_windows:
     #     "docker://algaebrown/beta-binom" # TODO: THIS FUCKING SHIT WORKS WITH COPY AND PASTE BUT NOT SNAKEMAKE. no error msg
     shell:
         """
-        set +o pipefail;
         {R_EXE} --vanilla {SCRIPT_PATH}/call_enriched_windows.R \
             {input.nuc} \
             {input.table} \
@@ -227,7 +234,6 @@ rule fit_clip_betabinom_internal:
     benchmark: "benchmarks/fit_clip_betabinomial_model/{libname}.{clip_sample_label}.fit_clip.txt"
     shell:
         """
-        set +o pipefail;
         {R_EXE} --vanilla {SCRIPT_PATH}/fit_clip_betabinom_no_other_col.R {input.nuc} {input.table} {wildcards.libname} {wildcards.libname}.internal {output.coef} 2> {params.out_file}
         """
 
@@ -298,7 +304,6 @@ rule call_enriched_windows_internal:
     #     "docker://algaebrown/beta-binom" # TODO: THIS FUCKING SHIT WORKS WITH COPY AND PASTE BUT NOT SNAKEMAKE. no error msg
     shell:
         """
-        set +o pipefail;
         {R_EXE} --vanilla {SCRIPT_PATH}/call_enriched_windows.R \
             {input.nuc} \
             {input.table} \
@@ -309,3 +314,80 @@ rule call_enriched_windows_internal:
             {wildcards.libname}.{wildcards.clip_sample_label} \
             {wildcards.libname}.{wildcards.clip_sample_label} &> {params.out_file}
         """
+
+rule call_enriched_windows_internal_dlogs:
+    # overdispersion from parameters
+    # mean from table, sum of all other CLIP libraries
+    input:
+        feature_annotations = config['FEATURE_ANNOTATIONS'],
+        accession_rankings = config['ACCESSION_RANKINGS'],
+        nuc = config['PARTITION'].replace(".bed", ".nuc"),
+        table = lambda wildcards: f"internal_output/counts/genome/bgtables/internal/"+libname_to_experiment(wildcards.libname)+f".{wildcards.clip_sample_label}.tsv.gz",
+        #parameters = lambda wildcards: "internal_output/clip_model_coef/{libname}.{clip_sample_label}.tsv", # overdispersion from that sum of other CLIP library
+        parameters = lambda wildcards: "output/clip_model_coef/{libname}.{clip_sample_label}.tsv", # overdispersion from that CLIP library
+    output:
+        "internal_output/threshold_scan/{libname}.{clip_sample_label}.dlogs.threshold_data.tsv",
+        "internal_output/tested_windows/{libname}.{clip_sample_label}.dlogs.tested_windows.tsv.gz",
+        "internal_output/enriched_windows/{libname}.{clip_sample_label}.dlogs.enriched_windows.tsv.gz",
+        "internal_output/enrichment_summaries/{libname}.{clip_sample_label}.dlogs.enriched_window_feature_data.tsv",
+        "internal_output/enrichment_summaries/{libname}.{clip_sample_label}.dlogs.enriched_window_transcript_data.tsv",
+        "internal_output/enrichment_summaries/{libname}.{clip_sample_label}.dlogs.enriched_window_gene_data.tsv",
+        "internal_output/all_reads/{libname}.{clip_sample_label}.dlogs.all_reads_fractions_feature_data.tsv",
+        "internal_output/all_reads/{libname}.{clip_sample_label}.dlogs.all_reads_odds_feature_data.tsv",
+        "internal_output/all_reads/{libname}.{clip_sample_label}.dlogs.all_reads_odds_transcript_data.tsv",
+        "internal_output/all_reads/{libname}.{clip_sample_label}.dlogs.all_reads_odds_feature_gc_data.tsv",
+        "internal_output/figures/threshold_scan/{libname}.{clip_sample_label}.dlogs.threshold_scan.pdf",
+        "internal_output/figures/enriched_windows/{libname}.{clip_sample_label}.dlogs.enriched_window_coverage.pdf",
+        "internal_output/figures/enriched_windows/{libname}.{clip_sample_label}.dlogs.enriched_window_rates.pdf",
+        "internal_output/figures/enriched_windows/{libname}.{clip_sample_label}.dlogs.enriched_window_counts.linear.pdf",
+        "internal_output/figures/enriched_windows/{libname}.{clip_sample_label}.dlogs.enriched_window_counts.log10.pdf",
+        "internal_output/figures/enriched_windows/{libname}.{clip_sample_label}.dlogs.enriched_window_odds.feature.pdf",
+        "internal_output/figures/enriched_windows/{libname}.{clip_sample_label}.dlogs.enriched_window_odds.all_transcript_types.pdf",
+        "internal_output/figures/enriched_windows/{libname}.{clip_sample_label}.dlogs.enriched_window_odds.select_transcript_types.pdf",
+        "internal_output/figures/enriched_windows/{libname}.{clip_sample_label}.dlogs.enriched_window_counts.per_gene_feature.pdf",
+        "internal_output/figures/all_reads/{libname}.{clip_sample_label}.dlogs.all_reads_fractions.feature.pdf",
+        "internal_output/figures/all_reads/{libname}.{clip_sample_label}.dlogs.all_reads_odds.feature.pdf",
+        "internal_output/figures/all_reads/{libname}.{clip_sample_label}.dlogs.all_reads_odds.all_transcript_types.pdf",
+        "internal_output/figures/all_reads/{libname}.{clip_sample_label}.dlogs.all_reads_odds.feature_gc.pdf"
+    params:
+        error_out_file = "error_files/{libname}.{clip_sample_label}.dlogs.internal.call_enriched_windows.err",
+        out_file = "stdout/{libname}.{clip_sample_label}.dlogs.internal.call_enriched_windows.out",
+        run_time = "00:25:00",
+        memory = "10000",
+        job_name = "call_enriched_windows",
+        cores = "8",
+    benchmark: "benchmarks/call_enriched_windows/{libname}.{clip_sample_label}.dlogs.internal.call_enriched_windows.txt"
+    # container:
+    #     "docker://algaebrown/beta-binom" # TODO: THIS FUCKING SHIT WORKS WITH COPY AND PASTE BUT NOT SNAKEMAKE. no error msg
+    shell:
+        """
+        {R_EXE} --vanilla {SCRIPT_PATH}/call_enriched_windows_threshold_d_log.R \
+            {input.nuc} \
+            {input.table} \
+            {input.accession_rankings} \
+            {input.feature_annotations} \
+            {input.parameters} \
+            {wildcards.libname}.internal \
+            {wildcards.libname}.{wildcards.clip_sample_label} \
+            {wildcards.libname}.{wildcards.clip_sample_label}.dlogs &> {params.out_file}
+        """
+
+
+rule find_reproducible_enriched_windows:
+    input: # "internal_output/enriched_windows/{libname}.{clip_sample_label}.enriched_windows.tsv.gz",
+        windows = lambda wildcards: expand(
+            "internal_output/enriched_windows/{libname}.{{clip_sample_label}}.enriched_windows.tsv.gz", 
+            libname = manifest.loc[manifest['experiment']==wildcards.experiment, 'libname'].tolist()) # find all library of the same experiment
+    output:
+        reproducible_windows = "output/reproducible_enriched_windows/{experiment}.{clip_sample_label}.reproducible_enriched_windows.tsv.gz",
+        linear_bar = "output/figures/reproducible_enriched_windows/{experiment}.{clip_sample_label}.reproducible_enriched_window_counts.linear.pdf",
+        log_bar = "output/figures/reproducible_enriched_windows/{experiment}.{clip_sample_label}.reproducible_enriched_window_counts.log10.pdf"
+    params:
+        error_file = "stderr/{experiment}.{clip_sample_label}.find_reproducible_enriched_windows.err",
+        out_file = "stdout/{experiment}.{clip_sample_label}.find_reproducible_enriched_windows.out",
+        run_time = "5:00",
+        memory = "2000",
+        job_name = "find_reproducible_enriched_windows"
+    benchmark: "benchmarks/find_reproducible_enriched_windows/{experiment}.{clip_sample_label}.all_replicates.reproducible.txt"
+    shell:
+        "{R_EXE} --vanilla {SCRIPT_PATH}/identify_reproducible_windows.R internal_output/enriched_windows/ {wildcards.clip_sample_label} " + (BLACKLIST if BLACKLIST is not None else "") 

@@ -4,8 +4,9 @@ PARTITION = config['PARTITION']
 GENOME = config['GENOMEFA']
 FEATURE_ANNOTATIONS = config['FEATURE_ANNOTATIONS']
 ACCESSION_RANKINGS = config['ACCESSION_RANKINGS']
+UNINFORMATIVE_READ = 3 - int(config['INFORMATIVE_READ']) # whether read 1 or read 2 is informative
 
-rule partition_bam_reads_r2:
+rule partition_bam_reads:
     input:
         chrom_size = config['CHROM_SIZES'],
         bam = "output/bams/dedup/genome/{replicate_label}.genome.Aligned.sort.dedup.bam",        
@@ -22,26 +23,7 @@ rule partition_bam_reads_r2:
         replicate_label = "{replicate_label}"
     benchmark: "benchmarks/counts/unassigned_experiment.{replicate_label}.partition_bam_reads.txt"
     shell:
-        "bedtools bamtobed -i {input.bam} | awk '($1 != \"chrEBV\") && ($4 !~ \"/1$\")' | bedtools flank -s -l 1 -r 0 -g {input.chrom_size} -i - | bedtools shift -p -1 -m 1 -g {input.chrom_size} -i - | bedtools coverage -counts -s -a {input.region_partition} -b - | cut -f 7 | awk 'BEGIN {{print \"{params.replicate_label}\"}} {{print}}' > {output.counts};"
-
-rule partition_bam_reads_r1:
-    input:
-        chrom_size = config['CHROM_SIZES'],
-        bam = "output/bams/dedup/genome/{replicate_label}.genome.Aligned.sort.dedup.bam",        
-        region_partition = PARTITION,
-    output:
-        counts = "output/counts/genome/vectors/{replicate_label}.counts",
-    params:
-        error_out_file = "stderr/{replicate_label}.partition_bam_reads.err",
-        out_file = "stdout/{replicate_label}.partition_bam_reads.out",
-        run_time = "20:00",
-        cores = "1",
-        memory = "10000",
-        job_name = "partition_bam_reads",
-        replicate_label = "{replicate_label}"
-    benchmark: "benchmarks/counts/unassigned_experiment.{replicate_label}.partition_bam_reads.txt"
-    shell:
-        "bedtools bamtobed -i {input.bam} | awk '($1 != \"chrEBV\") && ($4 !~ \"/2$\")' | bedtools flank -s -l 1 -r 0 -g {input.chrom_size} -i - | bedtools shift -p -1 -m 1 -g {input.chrom_size} -i - | bedtools coverage -counts -s -a {input.region_partition} -b - | cut -f 7 | awk 'BEGIN {{print \"{params.replicate_label}\"}} {{print}}' > {output.counts};"
+        "bedtools bamtobed -i {input.bam} | awk '($1 != \"chrEBV\") && ($4 !~ \"/{UNINFORMATIVE_READ}$\")' | bedtools flank -s -l 1 -r 0 -g {input.chrom_size} -i - | bedtools shift -p -1 -m 1 -g {input.chrom_size} -i - | bedtools coverage -counts -s -a {input.region_partition} -b - | cut -f 7 | awk 'BEGIN {{print \"{params.replicate_label}\"}} {{print}}' > {output.counts};"
 
 rule make_genome_count_table:
     input:
@@ -58,7 +40,8 @@ rule make_genome_count_table:
         job_name = "make_genome_count_table"
     benchmark: "benchmarks/counts/{experiment_label}.all_replicates.make_genome_count_table.txt"
     shell:
-        "paste <(awk -v OFS=\"\\t\" 'BEGIN {{print \"chr\\tstart\\tend\\tname\\tscore\\tstrand\"}} {{print}}' {input.partition}) {input.replicate_counts} | gzip -c > {output.count_table};"
+        "paste <(zcat {input.partition} | awk -v OFS=\"\\t\" 'BEGIN {{print \"chr\\tstart\\tend\\tname\\tscore\\tstrand\"}} {{print $1,$2,$3,$4,$5,$6}}' ) {input.replicate_counts} | gzip -c > {output.count_table}"
+         #"paste                          <(awk -v OFS=\"\\t\" 'BEGIN {{print \"chr\\tstart\\tend\\tname\\tscore\\tstrand\"}} {{print}}' {input.partition})                 {input.replicate_counts} | gzip -c > {output.count_table};"
 
 rule calc_partition_nuc:
     input:

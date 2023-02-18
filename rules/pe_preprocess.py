@@ -218,108 +218,161 @@ rule fastqc_post_trim:
         fastqc {input.fq2} --extract --outdir {params.outdir} -t {params.cores}
         """
 
-
-rule align_reads_to_REPEAT:
+rule align_reads:
     input:
         fq1="{libname}/fastqs/ultraplex_demux_{sample_label}_Rev.Tr.fastq.gz",
         fq2="{libname}/fastqs/ultraplex_demux_{sample_label}_Fwd.Tr.fastq.gz",
     output:
-        ubam = "{libname}/bams/repeat/{sample_label}.Aligned.out.bam",
-        unmapped1= "{libname}/bams/repeat/{sample_label}.Unmapped.out.mate1",
-        unmapped2= "{libname}/bams/repeat/{sample_label}.Unmapped.out.mate2",
-        log= "{libname}/bams/repeat/{sample_label}.Log.final.out",
+        bam = "{libname}/bams/{sample_label}.Aligned.sortedByCoord.out.bam",
+        bai = "{libname}/bams/{sample_label}.Aligned.sortedByCoord.out.bam.bai",
+        unmapped1= "{libname}/bams/{sample_label}.Unmapped.out.mate1",
+        unmapped2= "{libname}/bams/{sample_label}.Unmapped.out.mate2",
+        log= "{libname}/bams/{sample_label}.Log.final.out",
     params:
-        error_out_file = "error_files/{sample_label}_align_reads",
-        out_file = "stdout/{sample_label}_align_reads",
-        run_time = "06:40:00",
-        cores = "4",
-        memory = "10000",
+        error_out_file = "error_files/{libname}.{sample_label}.align_reads_genome.err",
+        out_file = "stdout/{libname}.{sample_label}.align_reads_genome.out",
+        run_time = "02:00:00",
+        memory = "40000",
         job_name = "align_reads",
-        star_sjdb = config['STAR_REP'],
-        outprefix = "{libname}/bams/repeat/{sample_label}.",
-    benchmark: "benchmarks/align/{libname}.{sample_label}.align_reads.txt"
-    shell:
+        star_sjdb = config['STAR_DIR'],
+        outprefix = "{libname}/bams/{sample_label}.",
+        cores = "8",
+    benchmark: "benchmarks/align/{libname}.{sample_label}.align_reads_genome.txt"
+    shell:        
         """
-        module load star ;
+        module load star
         STAR \
             --alignEndsType EndToEnd \
             --genomeDir {params.star_sjdb} \
             --genomeLoad NoSharedMemory \
             --outBAMcompression 10 \
             --outFileNamePrefix {params.outprefix} \
-            --outFilterMultimapNmax 30 \
+            --winAnchorMultimapNmax 100 \
+            --outFilterMultimapNmax 100 \
             --outFilterMultimapScoreRange 1 \
+            --outSAMmultNmax 1 \
+            --outMultimapperOrder Random \
             --outFilterScoreMin 10 \
             --outFilterType BySJout \
+            --limitOutSJcollapsed 5000000 \
             --outReadsUnmapped Fastx \
-            --outSAMattrRGline ID:foo \
+            --outSAMattrRGline ID:{wildcards.sample_label} \
             --outSAMattributes All \
             --outSAMmode Full \
-            --outSAMtype BAM Unsorted \
+            --outSAMtype BAM SortedByCoordinate \
             --outSAMunmapped Within \
             --outStd Log \
-            --readFilesIn {input.fq1} {input.fq2}\
+            --readFilesIn {input.fq1} {input.fq2} \
             --readFilesCommand zcat \
             --runMode alignReads \
-            --runThreadN 8
-        """
-
-rule align_to_GENOME:
-    input:
-        fq1= "{libname}/bams/repeat/{sample_label}.Unmapped.out.mate1",
-        fq2= "{libname}/bams/repeat/{sample_label}.Unmapped.out.mate2",
-    output:
-        bam = "{libname}/bams/genome/{sample_label}.genome-mapped.Aligned.sortedByCoord.out.bam",
-        bai = "{libname}/bams/genome/{sample_label}.genome-mapped.Aligned.sortedByCoord.out.bam.bai",
-        unmapped1= "{libname}/bams/genome/{sample_label}.genome-mapped.Unmapped.out.mate1",
-        unmapped2= "{libname}/bams/genome/{sample_label}.genome-mapped.Unmapped.out.mate2",
-        log= "{libname}/bams/genome/{sample_label}.genome-mapped.Log.final.out",
-    params:
-        error_out_file = "error_files/{libname}.{sample_label}_align_reads_genome",
-        out_file = "stdout/{sample_label}_align_reads_genome",
-        run_time = "06:40:00",
-        cores = "4",
-        memory = "10000",
-        job_name = "align_reads",
-        star_sjdb = config['STAR_DIR'],
-        outprefix = "{libname}/bams/genome/{sample_label}.genome-mapped.",
-    benchmark: "benchmarks/align/{libname}.{sample_label}.align_reads.txt"
-    shell:
-        """
-        module load star ;
-        STAR \
-        --alignEndsType EndToEnd \
-        --genomeDir {params.star_sjdb} \
-        --genomeLoad NoSharedMemory \
-        --outBAMcompression 10 \
-        --outFileNamePrefix {params.outprefix} \
-        --outFilterMultimapNmax 1 \
-        --outFilterMultimapScoreRange 1 \
-        --outFilterScoreMin 10 \
-        --outFilterType BySJout \
-        --outReadsUnmapped Fastx \
-        --outSAMattrRGline ID:foo \
-        --outSAMattributes All \
-        --outSAMmode Full \
-        --outSAMtype BAM SortedByCoordinate \
-        --outSAMunmapped Within \
-        --outStd Log \
-        --readFilesIn {input.fq1} {input.fq2} \
-        --runMode alignReads \
-        --runThreadN 8
+            --runThreadN {params.cores}\
 
         module load samtools
         samtools index {output.bam}
         """
 
+# rule align_reads_to_REPEAT:
+#     input:
+#         fq1="{libname}/fastqs/ultraplex_demux_{sample_label}_Rev.Tr.fastq.gz",
+#         fq2="{libname}/fastqs/ultraplex_demux_{sample_label}_Fwd.Tr.fastq.gz",
+#     output:
+#         ubam = "{libname}/bams/repeat/{sample_label}.Aligned.out.bam",
+#         unmapped1= "{libname}/bams/repeat/{sample_label}.Unmapped.out.mate1",
+#         unmapped2= "{libname}/bams/repeat/{sample_label}.Unmapped.out.mate2",
+#         log= "{libname}/bams/repeat/{sample_label}.Log.final.out",
+#     params:
+#         error_out_file = "error_files/{sample_label}_align_reads",
+#         out_file = "stdout/{sample_label}_align_reads",
+#         run_time = "06:40:00",
+#         cores = "4",
+#         memory = "10000",
+#         job_name = "align_reads",
+#         star_sjdb = config['STAR_REP'],
+#         outprefix = "{libname}/bams/repeat/{sample_label}.",
+#     benchmark: "benchmarks/align/{libname}.{sample_label}.align_reads.txt"
+#     shell:
+#         """
+#         module load star ;
+#         STAR \
+#             --alignEndsType EndToEnd \
+#             --genomeDir {params.star_sjdb} \
+#             --genomeLoad NoSharedMemory \
+#             --outBAMcompression 10 \
+#             --outFileNamePrefix {params.outprefix} \
+#             --outFilterMultimapNmax 30 \
+#             --outFilterMultimapScoreRange 1 \
+#             --outFilterScoreMin 10 \
+#             --outFilterType BySJout \
+#             --outReadsUnmapped Fastx \
+#             --outSAMattrRGline ID:foo \
+#             --outSAMattributes All \
+#             --outSAMmode Full \
+#             --outSAMtype BAM Unsorted \
+#             --outSAMunmapped Within \
+#             --outStd Log \
+#             --readFilesIn {input.fq1} {input.fq2}\
+#             --readFilesCommand zcat \
+#             --runMode alignReads \
+#             --runThreadN 8
+#         """
+
+# rule align_to_GENOME:
+#     input:
+#         fq1= "{libname}/bams/repeat/{sample_label}.Unmapped.out.mate1",
+#         fq2= "{libname}/bams/repeat/{sample_label}.Unmapped.out.mate2",
+#     output:
+#         bam = "{libname}/bams/genome/{sample_label}.genome-mapped.Aligned.sortedByCoord.out.bam",
+#         bai = "{libname}/bams/genome/{sample_label}.genome-mapped.Aligned.sortedByCoord.out.bam.bai",
+#         unmapped1= "{libname}/bams/genome/{sample_label}.genome-mapped.Unmapped.out.mate1",
+#         unmapped2= "{libname}/bams/genome/{sample_label}.genome-mapped.Unmapped.out.mate2",
+#         log= "{libname}/bams/genome/{sample_label}.genome-mapped.Log.final.out",
+#     params:
+#         error_out_file = "error_files/{libname}.{sample_label}_align_reads_genome",
+#         out_file = "stdout/{sample_label}_align_reads_genome",
+#         run_time = "06:40:00",
+#         cores = "4",
+#         memory = "10000",
+#         job_name = "align_reads",
+#         star_sjdb = config['STAR_DIR'],
+#         outprefix = "{libname}/bams/genome/{sample_label}.genome-mapped.",
+#     benchmark: "benchmarks/align/{libname}.{sample_label}.align_reads.txt"
+#     shell:
+#         """
+#         module load star ;
+#         STAR \
+#         --alignEndsType EndToEnd \
+#         --genomeDir {params.star_sjdb} \
+#         --genomeLoad NoSharedMemory \
+#         --outBAMcompression 10 \
+#         --outFileNamePrefix {params.outprefix} \
+#         --outFilterMultimapNmax 1 \
+#         --outFilterMultimapScoreRange 1 \
+#         --outFilterScoreMin 10 \
+#         --outFilterType BySJout \
+#         --outReadsUnmapped Fastx \
+#         --outSAMattrRGline ID:foo \
+#         --outSAMattributes All \
+#         --outSAMmode Full \
+#         --outSAMtype BAM SortedByCoordinate \
+#         --outSAMunmapped Within \
+#         --outStd Log \
+#         --readFilesIn {input.fq1} {input.fq2} \
+#         --runMode alignReads \
+#         --runThreadN 8
+
+#         module load samtools
+#         samtools index {output.bam}
+#         """
+
 
 rule umi_dedup:
-    # TODO: containerize
     input:
-        bam="{libname}/bams/genome/{sample_label}.genome-mapped.Aligned.sortedByCoord.out.bam",
-        bai="{libname}/bams/genome/{sample_label}.genome-mapped.Aligned.sortedByCoord.out.bam.bai",
+        #bam="{libname}/bams/genome/{sample_label}.genome-mapped.Aligned.sortedByCoord.out.bam",
+        bam="{libname}/bams/{sample_label}.Aligned.sortedByCoord.out.bam",
+        #bai="{libname}/bams/genome/{sample_label}.genome-mapped.Aligned.sortedByCoord.out.bam.bai",
+        bai="{libname}/bams/{sample_label}.Aligned.sortedByCoord.out.bam.bai"
     output:
-        bam_dedup="{libname}/bams/genome/{sample_label}.genome-mapped.rmDup.Aligned.sortedByCoord.out.bam",
+        bam_dedup="{libname}/bams/{sample_label}.rmDup.Aligned.sortedByCoord.out.bam",
     params:
         error_out_file = "error_files/dedup.{libname}.{sample_label}",
         out_file = "stdout/{libname}.{sample_label}.index_reads",
@@ -339,9 +392,9 @@ rule umi_dedup:
         """
 rule index_genome_bams:
     input:
-        bam = "{libname}/bams/genome/{sample_label}.genome-mapped.rmDup.Aligned.sortedByCoord.out.bam"
+        bam = "{libname}/bams/{sample_label}.rmDup.Aligned.sortedByCoord.out.bam"
     output:
-        bai = "{libname}/bams/genome/{sample_label}.genome-mapped.rmDup.Aligned.sortedByCoord.out.bam.bai"
+        bai = "{libname}/bams/{sample_label}.rmDup.Aligned.sortedByCoord.out.bam.bai"
     params:
         error_out_file = "error_files/index_bam.{libname}.{sample_label}",
         out_file = "stdout/index_bam.{libname}.{sample_label}",
