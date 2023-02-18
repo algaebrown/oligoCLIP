@@ -1,0 +1,6 @@
+name: bigwigmerge
+channels:
+  - bioconda
+dependencies:
+  - ucsc-bigwigmerge
+prefix: /home/hsher/miniconda3/envs/ucsc-bigwigmerge
