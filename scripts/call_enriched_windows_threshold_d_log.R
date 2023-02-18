@@ -64,28 +64,30 @@ p_data = processed_count_data %>% group_by(clip, input, gc_bin, b_log_odds) %>%
 	inner_join(processed_count_data,.)
 
 p_clip = with(p_data, sum(clip) / sum(clip + input))
-# Optimize coverage threshold for calling enriched windows by 20% FDR
-threshold_max = p_data %>% mutate(total_counts = input + clip) %>% arrange(desc(total_counts)) %>% head(100) %>% tail(1) %>% pull(total_counts)
-threshold_data = tibble(threshold = seq(2, threshold_max), n_enriched = sapply(seq(2, threshold_max), function(i) sum((p_data %>% filter(input + clip >= i) %>% pull(pvalue) %>% p.adjust(.,"fdr")) < 0.2)) )
-print('threshold data has nrows')
-print(nrow(threshold_data))
-print(paste0(output_stem, ".threshold_data.tsv"))
-threshold_data_path = file.path(threshold_scan_folder, paste0(output_stem, ".threshold_data.tsv"))
-write_tsv(threshold_data, threshold_data_path)
 
-#optimized_threshold = min(threshold_data[threshold_data$n_enriched>0, 'threshold']) # use anything > 0
-print(threshold_data[threshold_data$n_enriched>0, 'threshold'])
+# Optimize coverage threshold for calling enriched windows by 20% FDR
+threshold_max_dlogs = p_data %>% arrange(desc(d_log_odds)) %>% head(1) %>% pull(d_log_odds)
+threshold_data_dlogs = tibble(threshold = seq(-threshold_max_dlogs, threshold_max_dlogs, by = 0.5), 
+                        n_enriched = sapply(seq(-threshold_max_dlogs, threshold_max_dlogs, by = 0.5), 
+                                    function(i) sum((p_data %>% filter(d_log_odds >= i) 
+                                                     %>% pull(pvalue) %>% p.adjust(.,"fdr")) < 0.2)) )
+print('threshold data has nrows')
+print(nrow(threshold_data_dlogs))
+threshold_data_path = file.path(threshold_scan_folder, paste0(output_stem, ".threshold_data.tsv"))
+write_tsv(threshold_data_dlogs, threshold_data_path)
+
+optimized_threshold = threshold_data_dlogs %>% arrange(n_enriched %>% desc) %>% head(1) %>% pull(threshold) # use the max n_enriched
 print('Optimized threshold=')
 print(optimized_threshold)
-optimized_threshold = threshold_data %>% arrange(n_enriched %>% desc) %>% head(1) %>% pull(threshold) # use the max n_enriched
+#optimized_threshold = threshold_data %>% arrange(n_enriched %>% desc) %>% head(1) %>% pull(threshold) # use the max n_enriched
 
 pdf(file.path(fig_folder, "threshold_scan", paste0(output_stem, '.threshold_scan.pdf')), height = 1.5, width = 1.7) # 'output/figures/threshold_scan/', 
-ggplot(threshold_data %>% mutate(replicate = clip_replicate_label), aes(threshold, n_enriched)) + theme_bw(base_size = 7) +
+ggplot(threshold_data_dlogs %>% mutate(replicate = clip_replicate_label), aes(threshold, n_enriched)) + theme_bw(base_size = 7) +
 	geom_line() + xlab("Total read threshold") + ylab("# of hits (q < 20%)") + scale_x_log10()+
 	geom_vline(xintercept=optimized_threshold, color = "#f86808") + theme(aspect.ratio = 1) + facet_wrap(~replicate) 
 dev.off()
 
-q_data = p_data %>% group_by(above_threshold = input + clip >= optimized_threshold) %>% 
+q_data = p_data %>% group_by(above_threshold = d_log_odds >= optimized_threshold) %>% 
 	mutate(qvalue = ifelse(above_threshold, p.adjust(pvalue,"fdr"), NA)) %>% ungroup
 
 all_reads_fractions_feature_data = q_data %>% inner_join(select(feature_annotations, name, feature_type_top)) %>% 
