@@ -1,0 +1,5 @@
+,Sample,bam,barcode,bam_control
+0,278_01_PRPF8,/home/hsher/scratch/encode_recall/encode3.278_01_PRPF8_CLIP.A04.r1.fq.umitools.genome-mappedSo.bam.sorted.bam,A04,/home/hsher/scratch/encode_recall/encode3.278_01_PRPF8_INPUT.NIL.r1.fq.genome-mappedSo.rmDupSo.r2.bam
+1,278_01_PRPF8,/home/hsher/scratch/encode_recall/encode3.278_01_PRPF8_CLIP.F05.r1.fq.umitools.genome-mappedSo.bam.sorted.bam,F05,/home/hsher/scratch/encode_recall/encode3.278_01_PRPF8_INPUT.NIL.r1.fq.genome-mappedSo.rmDupSo.r2.bam
+42,278_02_PRPF8,/home/hsher/scratch/encode_recall/encode3.278_02_PRPF8_CLIP.A03.r1.fq.umitools.genome-mappedSo.bam.sorted.bam,A03,/home/hsher/scratch/encode_recall/encode3.278_02_PRPF8_INPUT.NIL.r1.fq.genome-mappedSo.rmDupSo.r2.bam
+43,278_02_PRPF8,/home/hsher/scratch/encode_recall/encode3.278_02_PRPF8_CLIP.G07.r1.fq.umitools.genome-mappedSo.bam.sorted.bam,G07,/home/hsher/scratch/encode_recall/encode3.278_02_PRPF8_INPUT.NIL.r1.fq.genome-mappedSo.rmDupSo.r2.bam
