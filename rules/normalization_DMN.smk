@@ -226,3 +226,63 @@ rule find_reproducible_enriched_windows:
     benchmark: "benchmarks/find_reproducible_enriched_windows/{experiment}.{clip_sample_label}.all_replicates.reproducible.txt"
     shell:
         "{R_EXE} --vanilla {SCRIPT_PATH}/identify_reproducible_windows.R internal_output/enriched_windows/ {wildcards.clip_sample_label} " + (BLACKLIST if BLACKLIST is not None else "") 
+
+rule make_window_by_barcode_table:
+    input:
+        counts = expand("output/counts/genome/vectors/{libname}.{sample_label}.counts",
+            libname = ["{libname}"],
+            sample_label = rbps),
+    output:
+        counts = "DMN/table/{libname}.tsv.gz",
+    params:
+        error_out_file = "error_files/{libname}.window_by_barcode_table.err",
+        out_file = "stdout/{libname}.window_by_barcode_table.out",
+        run_time = "20:00",
+        cores = 1
+    shell:
+        """
+        paste -d '\t' {input.counts} | gzip  > {output.counts}
+        """
+
+rule make_read_count_summary:
+    input:
+        feature_annotations = config['FEATURE_ANNOTATIONS'],
+        counts = "DMN/table/{libname}.tsv.gz"
+    output:
+        region_summary =  "QC/read_count/{libname}.region.csv",
+        type_summary =  "QC/read_count/{libname}.genetype.csv",
+        name_summary =  "QC/read_count/{libname}.genename.csv",
+        dist = "QC/read_count/{libname}.cosine_similarity.csv"
+    params:
+        error_out_file = "error_files/{libname}.read_count_summary.err",
+        out_file = "stdout/{libname}.read_count_summary.out",
+        run_time = "1:20:00",
+        cores = 1
+    run:
+        import os
+        print(output.region_summary)
+        try:
+            os.mkdir('QC/read_count')
+        except Exception as e:
+            print(e)
+        import pandas as pd
+        cnt = pd.read_csv(input.counts, sep = '\t')
+        feature_annotations = pd.read_csv(input.feature_annotations, sep = '\t')
+
+        df = pd.concat([feature_annotations, cnt], axis = 1)
+
+        by_type = df.groupby(by = 'feature_type_top')[cnt.columns].sum()
+        by_gene = df.groupby(by = 'gene_type_top')[cnt.columns].sum()
+        by_name = df.groupby(by = 'gene_name')[cnt.columns].sum()
+
+        by_type.to_csv(output.region_summary)
+        by_gene.to_csv(output.type_summary)
+        by_name.to_csv(output.name_summary)
+
+        # distance
+        from scipy.spatial.distance import pdist, squareform
+        cov_filter = 10
+        dist = squareform(pdist(cnt.loc[cnt.sum(axis = 1)>cov_filter].T, 'cosine'))
+
+        dist_df = pd.DataFrame(1-dist, columns = cnt.columns, index = cnt.columns)
+        dist_df.to_csv(output.dist)
