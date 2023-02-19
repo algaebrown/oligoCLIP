@@ -1,6 +1,7 @@
 import pandas as pd
 
 #snakemake -s snakeABC_SE.py -j 12 --cluster "qsub -l walltime={params.run_time} -l nodes=1:ppn={params.cores} -q home-yeo -e {params.error_out_file} -o {params.out_file}" --configfile config/preprocess_config/oligose_single_slbp_k562.yaml --use-conda --conda-prefix /home/hsher/snakeconda -np
+#snakemake -s snakeABC_SE.py -j 12 --configfile config/preprocess_config/oligose_k562.yaml --use-conda --conda-prefix /home/hsher/snakeconda -np
 MANIFEST=config['MANIFEST']
 SCRIPT_PATH=config['SCRIPT_PATH']
 WORKDIR=config['WORKDIR']
@@ -127,7 +128,8 @@ def preprocess_outputs():
         "QC/dup_level.csv",
         'QC/demux_read_count.txt'
         ]+expand("output/counts/genome/vectors/{libname}.{sample_label}.counts",
-        libname = libnames, sample_label = rbps)
+        libname = libnames, sample_label = rbps
+    )+expand("QC/read_count/{libname}.{metric}.csv", libname = libnames, metric = ['region', 'genetype', 'cosine_similarity'])
     return outputs
 def skipper_outputs():
     # skipper
@@ -169,7 +171,7 @@ def DMN_outputs():
     signal_type = ['CITS', 'COV']
     )+expand("{libname}/bw_bg/COV/{sample_label}.{strand}.bw", libname = libnames, sample_label = rbps, strand = ['pos', 'neg']
     )
-    return output
+    return outputs
 def clipper_outputs():
     outputs = expand("output/CLIPper.{bg}/{libname}.{sample_label}.peaks.normed.compressed.bed",
         bg = [config['AS_INPUT']] if config['AS_INPUT'] else [],
