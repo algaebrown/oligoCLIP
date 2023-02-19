@@ -2,6 +2,10 @@ MANIFEST: /home/hsher/projects/oligoCLIP/config/fastq_csv/ABC_2rep.csv
 barcode_csv: /home/hsher/projects/oligoCLIP/config/barcode_csv/ABC_barcode.csv
 WORKDIR: /home/hsher/scratch/ABC_2rep_skipper_k562window
 
+run_clipper: False
+run_skipper: False
+run_comparison: False
+
 # ADAPTOR_PATH: /projects/ps-yeolab4/software/eclip/0.7.0/examples/inputs
 # adaptor: InvRiL19
 adaptor_fwd: AGATCGGAAGAGCACACGTC
