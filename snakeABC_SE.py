@@ -1,6 +1,6 @@
 import pandas as pd
 
-#snakemake -s snakeABC_SE.py -j 12 --cluster "qsub -l walltime={params.run_time} -l nodes=1:ppn={params.cores} -q home-yeo -e {params.error_out_file} -o {params.out_file}" --configfile config/preprocess_config/oligose_k562.yaml --use-conda --conda-prefix /home/hsher/snakeconda -np
+#snakemake -s snakeABC_SE.py -j 12 --cluster "qsub -l walltime={params.run_time} -l nodes=1:ppn={params.cores} -q home-yeo -e {params.error_out_file} -o {params.out_file}" --configfile config/preprocess_config/oligose_single_slbp_k562.yaml --use-conda --conda-prefix /home/hsher/snakeconda -np
 MANIFEST=config['MANIFEST']
 SCRIPT_PATH=config['SCRIPT_PATH']
 WORKDIR=config['WORKDIR']
@@ -23,7 +23,6 @@ assert not barcode_df['RBP'].duplicated().any() # cannot have any duplicated RBP
 assert not barcode_df['RBP'].str.contains(' ').any() # DO NOT CONTAIN white space lah
 assert not manifest['fastq'].duplicated().any()
 assert not manifest['libname'].str.contains(' ').any()
-
 libnames = manifest['libname'].tolist() 
 
 config['libnames'] = libnames
@@ -32,6 +31,13 @@ config['experiments'] = experiments
 rbps = barcode_df['RBP'].tolist()
 config['rbps'] = rbps
 
+if config['RBP_TO_RUN_MOTIF'] is None:
+    config['RBP_TO_RUN_MOTIF'] = []
+
+if len(rbps)==1:
+    singleplex = True
+else:
+    singleplex = False
 # making the error files directory
 try:
     os.mkdir('error_files')
@@ -109,79 +115,100 @@ module compare:
     config:
         config
 
-rule all:
-    input:
-        expand("{libname}/bams/{sample_label}.rmDup.Aligned.sortedByCoord.out.bam.bai", libname = libnames, sample_label = rbps),
-        'QC/fastQC_basic_summary.csv',
+
+def preprocess_outputs():
+    ''' return preprocessing outputs'''
+    outputs = expand("{libname}/bams/{sample_label}.rmDup.Aligned.sortedByCoord.out.bam.bai", libname = libnames, sample_label = rbps
+    )+expand("{libname}/bw/COV/{sample_label}.{strand}.bw", libname = libnames, sample_label = rbps, strand = ['pos', 'neg']
+    )+expand("{libname}/bw_bg/COV/{sample_label}.{strand}.bw", libname = libnames, sample_label = rbps, strand = ['pos', 'neg']
+    )+['QC/fastQC_basic_summary.csv',
         'QC/fastQC_passfail.csv',
         'QC/cutadapt_stat.csv',
         "QC/mapping_stats.csv",
         "QC/dup_level.csv",
-        'QC/demux_read_count.txt',
-        expand("{libname}/bw/COV/{sample_label}.{strand}.bw", libname = libnames, sample_label = rbps, strand = ['pos', 'neg']),
-        expand("{libname}/bw_bg/COV/{sample_label}.{strand}.bw", libname = libnames, sample_label = rbps, strand = ['pos', 'neg']),
-        expand("internal_output/enriched_windows/{libname}.{clip_sample_label}.enriched_windows.tsv.gz",
-        libname = libnames,
-        clip_sample_label = list(set(rbps)-set([config['AS_INPUT']])), # cannot call on itself
-        ),
-        expand("internal_output/enriched_windows/{libname}.{clip_sample_label}.dlogs.enriched_windows.tsv.gz",
-        libname = libnames,
-        clip_sample_label = list(set(rbps)-set([config['AS_INPUT']])), # cannot call on itself
-        ),
-        expand("internal_output/DMN/{libname}.{clip_sample_label}.mixture_weight.tsv",
-        libname = libnames,
-        clip_sample_label = list(set(rbps)-set([config['AS_INPUT']])), # cannot call on itself
-        ),
-        # expand("internal_output/finemapping/mapped_sites/{signal_type}/{libname}.{sample_label}.finemapped_windows.bed.gz",
-        # libname = libnames,
-        # sample_label = list(set(rbps)-set([config['AS_INPUT']])), 
-        # signal_type = ['CITS', 'COV'] # cannot call on itself
-        # ),
-        expand("internal_output/enriched_re/{libname}.{sample_label}.enriched_re.tsv.gz",
-        libname = libnames,
-        sample_label = list(set(rbps)-set([config['AS_INPUT']])), # cannot call on itself
-        ),
-        expand("internal_output/homer/finemapped_results/{signal_type}/{libname}.{sample_label}/homerResults.html",
-        libname = libnames,
-        sample_label = config['RBP_TO_RUN_MOTIF'],
-        signal_type = ['CITS', 'COV']
-        ),
-        expand("output/CLIPper.{bg}/{libname}.{sample_label}.peaks.normed.compressed.bed",
+        'QC/demux_read_count.txt'
+        ]+expand("output/counts/genome/vectors/{libname}.{sample_label}.counts",
+        libname = libnames, sample_label = rbps)
+    return outputs
+def skipper_outputs():
+    # skipper
+    outputs = expand("internal_output/enriched_windows/{libname}.{clip_sample_label}.enriched_windows.tsv.gz",
+    libname = libnames,
+    clip_sample_label = list(set(rbps)-set([config['AS_INPUT']])), # cannot call on itself
+    )+expand("internal_output/enriched_windows/{libname}.{clip_sample_label}.dlogs.enriched_windows.tsv.gz",
+    libname = libnames,
+    clip_sample_label = list(set(rbps)-set([config['AS_INPUT']])), # cannot call on itself
+    )+expand("internal_output/finemapping/mapped_sites/{signal_type}/{libname}.{sample_label}.finemapped_windows.bed.gz",
+    libname = libnames,
+    sample_label = list(set(rbps)-set([config['AS_INPUT']])), 
+    signal_type = ['CITS', 'COV'] # cannot call on itself
+    )+expand("internal_output/enriched_re/{libname}.{sample_label}.enriched_re.tsv.gz",
+    libname = libnames,
+    sample_label = list(set(rbps)-set([config['AS_INPUT']])), # cannot call on itself
+    )+expand("internal_output/homer/finemapped_results/{signal_type}/{libname}.{sample_label}/homerResults.html",
+    libname = libnames,
+    sample_label = config['RBP_TO_RUN_MOTIF'],
+    signal_type = ['CITS', 'COV']
+    )
+    return outputs
+
+def DMN_outputs():
+    outputs = expand("internal_output/DMN/{libname}.{clip_sample_label}.mixture_weight.tsv",
+    libname = libnames,
+    clip_sample_label = list(set(rbps)-set([config['AS_INPUT']])), # cannot call on itself
+    )+expand("internal_output/DMN/most_enriched_selected/{libname}.{sample_label}.enriched_window.tsv",
+    sample_label = list(set(rbps)-set([config['AS_INPUT']])),
+    libname = libnames
+    )+expand("internal_output/DMN/finemapping/mapped_sites/{signal_type}/{libname}.{sample_label}.finemapped_windows.{strand}.bw",
+    libname = libnames,
+    sample_label = list(set(rbps)-set([config['AS_INPUT']])),
+    signal_type = ['CITS', 'COV'],
+    strand = ['pos', 'neg']
+    )+expand("internal_output/DMN/homer/finemapped_results/{signal_type}/{libname}.{sample_label}/homerResults.html",
+    libname = libnames,
+    sample_label = config['RBP_TO_RUN_MOTIF'],
+    signal_type = ['CITS', 'COV']
+    )
+    return output
+def clipper_outputs():
+    outputs = expand("output/CLIPper.{bg}/{libname}.{sample_label}.peaks.normed.compressed.bed",
         bg = [config['AS_INPUT']] if config['AS_INPUT'] else [],
         sample_label = list(set(rbps)-set([config['AS_INPUT']])),
         libname = libnames
-        ),
-        expand("output/CLIPper-CC/{libname}.{sample_label}.peaks.normed.compressed.bed",
+        )+expand("output/CLIPper-CC/{libname}.{sample_label}.peaks.normed.compressed.bed",
         sample_label = list(set(rbps)-set([config['AS_INPUT']])),
         libname = libnames
-        ),
-        expand("internal_output/DMN/most_enriched_selected/{libname}.{sample_label}.enriched_window.tsv",
-        sample_label = list(set(rbps)-set([config['AS_INPUT']])),
-        libname = libnames
-        ),
-        expand("internal_output/DMN/finemapping/mapped_sites/{signal_type}/{libname}.{sample_label}.finemapped_windows.{strand}.bw",
-        libname = libnames,
-        sample_label = list(set(rbps)-set([config['AS_INPUT']])),
-        signal_type = ['CITS', 'COV'],
-        strand = ['pos', 'neg']
-        ),
-        expand("internal_output/DMN/homer/finemapped_results/{signal_type}/{libname}.{sample_label}/homerResults.html",
-        libname = libnames,
-        sample_label = config['RBP_TO_RUN_MOTIF'],
-        signal_type = ['CITS', 'COV']
-        ),
-        expand("comparison/piranha/CC/{libname}.{sample_label}.bed",
+        )
+    return outputs
+
+def comparison_outputs():
+    outputs = expand("comparison/piranha/CC/{libname}.{sample_label}.bed",
         libname = libnames,
         sample_label =list(set(rbps)-set([config['AS_INPUT']])),
-        ),
-        # expand("comparison/omniCLIP/output/{libname}.{sample_label}.omniclip_done.txt",
-        # libname = libnames,
-        # sample_label = list(set(rbps)-set([config['AS_INPUT']]))
-        # ),
-        expand("comparison/pureclip/{libname}.{sample_label}.bind.bed",
+    )+expand("comparison/omniCLIP/output/{libname}.{sample_label}.omniclip_done.txt",
         libname = libnames,
         sample_label = list(set(rbps)-set([config['AS_INPUT']]))
-        ),
+    )+expand("comparison/pureclip/{libname}.{sample_label}.bind.bed",
+        libname = libnames,
+        sample_label = list(set(rbps)-set([config['AS_INPUT']]))
+    )
+    return outputs
+def get_output(singleplex, clipper, skipper, comparison):
+    output = preprocess_outputs()
+    if singleplex:
+        return output
+    output += DMN_outputs()
+    if skipper:
+        output += skipper_outputs()
+    if clipper:
+        output += clipper_outputs()
+    if comparison:
+        output += comparison_outputs()
+    return output
+
+rule all:
+    input:
+        get_output(singleplex, config['run_clipper'], config['run_skipper'], config['run_comparison'])
     params:
         error_out_file = "error_files/all",
         run_time = "00:04:00",
