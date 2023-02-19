@@ -2,9 +2,10 @@
 from importlib.resources import path
 import pandas as pd
 import os
-#snakemake -s snakeOligoCLIP_PE.py -j 12 --cluster "qsub -l walltime={params.run_time} -l nodes=1:ppn={params.cores} -q home-yeo -e {params.error_out_file} -o {params.out_file}" --configfile config/preprocess_config/oligope_iter4.yaml --use-conda --conda-prefix /home/hsher/snakeconda -n
-#snakemake -s snakeOligoCLIP_PE.py -j 12 --cluster "qsub -l walltime={params.run_time} -l nodes=1:ppn={params.cores} -q home-yeo -e {params.error_out_file} -o {params.out_file}" --configfile config/preprocess_config/oligope_iter3_multimap.yaml --use-conda --conda-prefix /home/hsher/snakeconda -n  
-#snakemake -s snakeOligoCLIP_PE.py -j 12 --cluster "qsub -l walltime={params.run_time} -l nodes=1:ppn={params.cores} -q home-yeo -e {params.error_out_file} -o {params.out_file}" --configfile config/preprocess_config/oligope_sara_MN.yaml --use-conda --conda-prefix /home/hsher/snakeconda -n  
+#snakemake -s snakeOligoCLIP_PE.smk -j 12 --cluster "qsub -l walltime={params.run_time} -l nodes=1:ppn={params.cores} -q home-yeo -e {params.error_out_file} -o {params.out_file}" --configfile config/preprocess_config/oligope_iter4.yaml --use-conda --conda-prefix /home/hsher/snakeconda -n
+#snakemake -s snakeOligoCLIP_PE.smk -j 12 --cluster "qsub -l walltime={params.run_time} -l nodes=1:ppn={params.cores} -q home-yeo -e {params.error_out_file} -o {params.out_file}" --configfile config/preprocess_config/oligope_iter5.yaml --use-conda --conda-prefix /home/hsher/snakeconda QC/read_count/{oCLIP_25_1,oCLIP_25_2,oCLIP_10_2,oCLIP_10_1}.region.csv  
+#snakemake -s snakeOligoCLIP_PE.smk -j 12 --cluster "qsub -l walltime={params.run_time} -l nodes=1:ppn={params.cores} -q home-yeo -e {params.error_out_file} -o {params.out_file}" --configfile config/preprocess_config/oligope_sara_MN.yaml --use-conda --conda-prefix /home/hsher/snakeconda -n  
+
 MANIFEST=config['MANIFEST']
 SCRIPT_PATH=config['SCRIPT_PATH']
 WORKDIR=config['WORKDIR']
@@ -33,6 +34,11 @@ config['experiments'] = experiments
 rbps = barcode_df['RBP'].tolist()
 config['rbps'] = rbps
 
+if len(rbps)==1:
+    singleplex = True
+else:
+    singleplex = False
+
 # making the error files directory
 try:
     os.mkdir('error_files')
@@ -46,27 +52,25 @@ except:
     pass
 
 
-
-
 module preprocess:
     snakefile:
-        "rules/pe_preprocess.py"
+        "rules/pe_preprocess.smk"
     config: config
 
 module mapr1:
     snakefile:
-        "rules/map_r1.py"
+        "rules/map_r1.smk"
     config: config
 
 module QC:
     snakefile:
-        "rules/QC.py"
+        "rules/QC.smk"
     config:
         config
 
 module normalization:
     snakefile:
-        "rules/normalization.py"
+        "rules/normalization.smk"
     config:
         config
 
@@ -135,53 +139,50 @@ rule all:
         "QC/mapping_stats.csv",
         "QC/dup_level.csv",
         'QC/demux_read_count.txt',
+        expand("QC/read_count/{libname}.{metric}.csv", libname = libnames, metric = ['region', 'genetype', 'cosine_similarity']),
         # expand("QC/nobarcode_blast_output/{libname}.blast.tsv", libname = libnames),
         # expand("QC/unmapped_blast_output/{libname}.{sample_label}.1.blast.tsv", libname = libnames, sample_label = rbps),
         # expand("QC/unmapped_blast_output/{libname}.{sample_label}.short.blast.tsv", libname = libnames, sample_label = rbps),
         expand("{libname}/bw/COV/{sample_label}.r1.{strand}.bw", libname = libnames, sample_label = rbps, strand = ['pos', 'neg']),
         expand("{libname}/bw_bg/COV/{sample_label}.r1.{strand}.bw", libname = libnames, sample_label = rbps, strand = ['pos', 'neg']),
         ############### skipper #####################
-        # expand("output/enriched_windows/{libname}.{clip_sample_label}.{bg_sample_label}.enriched_windows.tsv.gz",
-        # libname = libnames,
-        # clip_sample_label = list(set(rbps)-set([config['AS_INPUT']])), # cannot call on itself
-        # bg_sample_label = [config['AS_INPUT']] if config['AS_INPUT'] else []
-        # ,),
-        # expand("internal_output/enriched_windows/{libname}.{clip_sample_label}.enriched_windows.tsv.gz",
-        # libname = libnames,
-        # clip_sample_label = list(set(rbps)-set([config['AS_INPUT']])), # cannot call on itself
-        # ),
-        # expand("internal_output/enriched_re/{libname}.{sample_label}.enriched_re.tsv.gz",
-        # libname = libnames,
-        # sample_label = list(set(rbps)-set([config['AS_INPUT']])), # cannot call on itself
-        # ),
-        # expand("debug/counts/genome/tables/{libname}.{sample_label}.tsv.gz",
-        # libname = libnames,
-        # sample_label =['SLBP', 'PUM2', 'DDX3']
-        # ),
-        # expand("internal_output/finemapping/mapped_sites/{signal_type}/{libname}.{sample_label}.finemapped_windows.bed.gz",
-        # libname = libnames,
-        # sample_label = list(set(rbps)-set([config['AS_INPUT']])), 
-        # signal_type = ['CITS', 'COV'] # cannot call on itself
-        # ),
-        # expand("internal_output/homer/finemapped_results/{signal_type}/{libname}.{sample_label}/homerResults.html",
-        # libname = libnames,
-        # sample_label = config['RBP_TO_RUN_MOTIF'],
-        # signal_type = ['CITS', 'COV']
-        # ),
+        expand("output/enriched_windows/{libname}.{clip_sample_label}.{bg_sample_label}.enriched_windows.tsv.gz",
+        libname = libnames,
+        clip_sample_label = list(set(rbps)-set([config['AS_INPUT']])), # cannot call on itself
+        bg_sample_label = [config['AS_INPUT']] if config['AS_INPUT'] else []
+        ,),
+        expand("internal_output/enriched_windows/{libname}.{clip_sample_label}.enriched_windows.tsv.gz",
+        libname = libnames,
+        clip_sample_label = list(set(rbps)-set([config['AS_INPUT']])), # cannot call on itself
+        ),
+        expand("internal_output/enriched_re/{libname}.{sample_label}.enriched_re.tsv.gz",
+        libname = libnames,
+        sample_label = list(set(rbps)-set([config['AS_INPUT']])), # cannot call on itself
+        ),
+        expand("internal_output/finemapping/mapped_sites/{signal_type}/{libname}.{sample_label}.finemapped_windows.bed.gz",
+        libname = libnames,
+        sample_label = list(set(rbps)-set([config['AS_INPUT']])), 
+        signal_type = ['CITS', 'COV'] # cannot call on itself
+        ),
+        expand("internal_output/homer/finemapped_results/{signal_type}/{libname}.{sample_label}/homerResults.html",
+        libname = libnames,
+        sample_label = config['RBP_TO_RUN_MOTIF'],
+        signal_type = ['CITS', 'COV']
+        ),
         ####### CLIPper ########
-        # expand("output/CLIPper.{bg}/{libname}.{sample_label}.peaks.normed.compressed.annotate.bed",
-        # bg = [config['AS_INPUT']] if config['AS_INPUT'] else [],
-        # sample_label = list(set(rbps)-set([config['AS_INPUT']])),
-        # libname = libnames
-        # ),
-        # expand("output/CLIPper-CC/{libname}.{sample_label}.peaks.normed.compressed.annotate.bed",
-        # sample_label = list(set(rbps)-set([config['AS_INPUT']])),
-        # libname = libnames
-        # ),
-        # expand("output/CLIPper-CC/{libname}.{sample_label}.peaks.normed.compressed.motif.svg",
-        # sample_label = config['RBP_TO_RUN_MOTIF'],
-        # libname = libnames
-        # ),
+        expand("output/CLIPper.{bg}/{libname}.{sample_label}.peaks.normed.compressed.annotate.bed",
+        bg = [config['AS_INPUT']] if config['AS_INPUT'] else [],
+        sample_label = list(set(rbps)-set([config['AS_INPUT']])),
+        libname = libnames
+        ),
+        expand("output/CLIPper-CC/{libname}.{sample_label}.peaks.normed.compressed.annotate.bed",
+        sample_label = list(set(rbps)-set([config['AS_INPUT']])),
+        libname = libnames
+        ),
+        expand("output/CLIPper-CC/{libname}.{sample_label}.peaks.normed.compressed.motif.svg",
+        sample_label = config['RBP_TO_RUN_MOTIF'],
+        libname = libnames
+        ),
         expand("internal_output/DMN/most_enriched_selected/{libname}.{sample_label}.enriched_window.tsv",
         libname = libnames,
         sample_label = list(set(rbps)-set([config['AS_INPUT']])),

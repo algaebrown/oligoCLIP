@@ -15,13 +15,13 @@ except:
 
 module region_call:
     snakefile:
-        "region_call.py"
+        "region_call.smk"
     config:
         config
 
 module QC:
     snakefile:
-        "QC.py"
+        "QC.smk"
     config:
         config
 

@@ -1,7 +1,7 @@
 import pandas as pd
 
-#snakemake -s snakeABC_SE.py -j 12 --cluster "qsub -l walltime={params.run_time} -l nodes=1:ppn={params.cores} -q home-yeo -e {params.error_out_file} -o {params.out_file}" --configfile config/preprocess_config/oligose_single_slbp_k562.yaml --use-conda --conda-prefix /home/hsher/snakeconda -np
-#snakemake -s snakeABC_SE.py -j 12 --configfile config/preprocess_config/oligose_k562.yaml --use-conda --conda-prefix /home/hsher/snakeconda -np
+#snakemake -s snakeABC_SE.smk -j 12 --cluster "qsub -l walltime={params.run_time} -l nodes=1:ppn={params.cores} -q home-yeo -e {params.error_out_file} -o {params.out_file}" --configfile config/preprocess_config/oligose_k562.yaml --use-conda --conda-prefix /home/hsher/snakeconda -np
+#snakemake -s snakeABC_SE.smk -j 12 --configfile config/preprocess_config/oligose_k562.yaml --use-conda --conda-prefix /home/hsher/snakeconda -np
 MANIFEST=config['MANIFEST']
 SCRIPT_PATH=config['SCRIPT_PATH']
 WORKDIR=config['WORKDIR']
@@ -58,13 +58,13 @@ module preprocess:
 
 module QC:
     snakefile:
-        "rules/QC.py"
+        "rules/QC.smk"
     config:
         config
 
 module normalization:
     snakefile:
-        "rules/normalization.py"
+        "rules/normalization.smk"
     config:
         config
 
