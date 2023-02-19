@@ -120,7 +120,6 @@ def preprocess_outputs():
     ''' return preprocessing outputs'''
     outputs = expand("{libname}/bams/{sample_label}.rmDup.Aligned.sortedByCoord.out.bam.bai", libname = libnames, sample_label = rbps
     )+expand("{libname}/bw/COV/{sample_label}.{strand}.bw", libname = libnames, sample_label = rbps, strand = ['pos', 'neg']
-    )+expand("{libname}/bw_bg/COV/{sample_label}.{strand}.bw", libname = libnames, sample_label = rbps, strand = ['pos', 'neg']
     )+['QC/fastQC_basic_summary.csv',
         'QC/fastQC_passfail.csv',
         'QC/cutadapt_stat.csv',
@@ -168,6 +167,7 @@ def DMN_outputs():
     libname = libnames,
     sample_label = config['RBP_TO_RUN_MOTIF'],
     signal_type = ['CITS', 'COV']
+    )+expand("{libname}/bw_bg/COV/{sample_label}.{strand}.bw", libname = libnames, sample_label = rbps, strand = ['pos', 'neg']
     )
     return output
 def clipper_outputs():
