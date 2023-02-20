@@ -8,22 +8,6 @@ SCRIPT_PATH=config['SCRIPT_PATH']
 manifest = pd.read_table(config['MANIFEST'], index_col = False, sep = ',')
 UNINFORMATIVE_READ = 3 - int(config['INFORMATIVE_READ']) # whether read 1 or read 2 is informative
 
-try:
-    os.mkdir('log')
-except:
-    pass
-
-module region_call:
-    snakefile:
-        "region_call.smk"
-    config:
-        config
-
-module QC:
-    snakefile:
-        "QC.smk"
-    config:
-        config
 
 def libname_to_experiment(libname):
     return manifest.loc[manifest['libname']==libname, 'experiment'].iloc[0]
@@ -31,10 +15,10 @@ def experiment_to_libname(experiment):
     libnames = manifest.loc[manifest['experiment']==experiment, 'libname'].tolist()
     assert len(libnames)>0
     return libnames
-############ region calling ################
+############ counting ################
 # count reads in each region for each library
 # line 0 is the {libname}.{sample_label}
-use rule partition_bam_reads from region_call as region_partition_bam_reads with:
+rule partition_bam_reads:
     input:
         chrom_size = config['CHROM_SIZES'],
         bam = "{libname}/bams/{sample_label}.rmDup.Aligned.sortedByCoord.out.bam",        
@@ -50,10 +34,12 @@ use rule partition_bam_reads from region_call as region_partition_bam_reads with
         job_name = "partition_bam_reads",
         replicate_label = "{libname}.{sample_label}"
     benchmark: "benchmarks/counts/unassigned_experiment.{libname}.{sample_label}.partition_bam_reads.txt"
+    shell:
+        "bedtools bamtobed -i {input.bam} | awk '($1 != \"chrEBV\") && ($4 !~ \"/{UNINFORMATIVE_READ}$\")' | bedtools flank -s -l 1 -r 0 -g {input.chrom_size} -i - | bedtools shift -p -1 -m 1 -g {input.chrom_size} -i - | bedtools coverage -counts -s -a {input.region_partition} -b - | cut -f 7 | awk 'BEGIN {{print \"{params.replicate_label}\"}} {{print}}' > {output.counts};"
 
-
-# concat all the experiments of the same set into table
-use rule make_genome_count_table from region_call as make_genome_count_IPonly with:
+# concat all reps of the same experiment into 1 table with annotation
+# outputs columns: [annotation] [repcounts]
+rule make_genome_count_table:
     input:
         partition=config['PARTITION'],
         replicate_counts = lambda wildcards: expand("output/counts/genome/vectors/{libname}.{sample_label}.counts", 
@@ -69,8 +55,25 @@ use rule make_genome_count_table from region_call as make_genome_count_IPonly wi
         memory = "200",
         job_name = "make_genome_count_table"
     benchmark: "benchmarks/counts/{experiment}.{sample_label}.all_replicates.make_genome_count_table.txt"
+    shell:
+        "paste <(zcat {input.partition} | awk -v OFS=\"\\t\" 'BEGIN {{print \"chr\\tstart\\tend\\tname\\tscore\\tstrand\"}} {{print $1,$2,$3,$4,$5,$6}}' ) {input.replicate_counts} | gzip -c > {output.count_table}"
 
-use rule calc_partition_nuc from QC
+rule calc_partition_nuc:
+    input:
+        partition = config['PARTITION'],
+        genome = config['GENOMEFA']
+    output:
+        nuc = config['PARTITION'].replace(".bed", ".nuc")
+    params:
+        error_out_file = "stderr/calc_partition_nuc.err",
+        out_file = "stdout/calc_partition_nuc.out",
+        run_time = "00:10:00",
+        memory = "1000",
+        job_name = "calc_partition_nuc"
+    benchmark: "benchmarks/partition_nuc.txt"
+    shell:
+        "bedtools nuc -s -fi {input.genome} -bed {input.partition} > {output.nuc}"
+
 
 ################# for IgG normalization only ##########################
 rule fit_clip_betabinom_no_other:
