@@ -1,166 +1,247 @@
-'''
-python /home/hsher/projects/oligoCLIP/scripts/analyze_betabinom_mixture_most_enriched.py \
-    /home/hsher/scratch/oligo_PE_iter4/internal_output/DMN \
-    Rep2.PRPF8 \
-    /home/hsher/scratch/oligo_PE_iter4/internal_output/counts/genome/bgtables/internal/iter4.PRPF8.tsv.gz \
-    /projects/ps-yeolab4/software/skipper/1.0.0/bin/skipper/annotations/gencode.v38.annotation.k562_totalrna.gt1.tiled_partition.features.tsv.gz
-
-python /home/hsher/projects/oligoCLIP/scripts/analyze_betabinom_mixture_most_enriched.py \
-    /home/hsher/scratch/oligo_PE_iter4/internal_output/DMN \
-    Rep2.FXR2 \
-    /home/hsher/scratch/oligo_PE_iter4/internal_output/counts/genome/bgtables/internal/iter4.FXR2.tsv.gz \
-    /projects/ps-yeolab4/software/skipper/1.0.0/bin/skipper/annotations/gencode.v38.annotation.k562_totalrna.gt1.tiled_partition.features.tsv.gz
-
-python /home/hsher/projects/oligoCLIP/scripts/analyze_betabinom_mixture_most_enriched.py \
-    /home/hsher/scratch/ABC_2rep_skipper_k562window/internal_output/DMN \
-    K562_rep4.SF3B4 \
-    /home/hsher/scratch/ABC_2rep_skipper_k562window/internal_output/counts/genome/bgtables/internal/K562.SF3B4.tsv.gz \
-    /projects/ps-yeolab4/software/skipper/1.0.0/bin/skipper/annotations/gencode.v38.annotation.k562_totalrna.gt1.tiled_partition.features.tsv.gz
-'''
 import sys
 import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from pathlib import Path
+from scipy import stats
 
 from statsmodels.stats.multitest import fdrcorrection
 from scipy.stats import betabinom
 
-
-def label_component(model_alphas, null_alphas, label, min_fold = 3):
-    ''' label which components are RBP-enriched by the alpha(generalization of p)
-    model_alphas: alphas from beta-binom mixture model.
-    null_alphas: alphas from single component beta-binom model
-    label: string to search for enrichment,
-    min_fold: f, for a component to be included, its RI has to be > f*(min(all RI))
-    '''
-    
-    # p*log(p/q)
-    model_alphas_ri = model_alphas.apply(
-        lambda col: (col/np.sum(col))*np.log2((col/np.sum(col))/(null_alphas.iloc[:,0]/null_alphas.iloc[:,0].sum())), axis = 0)
+class Beta_Mixture_Model:
+    def __init__(self, alphas, betas, weights, n):
+        self.alphas = alphas # (alpha, beta) of each component, K*2 matrix
+        self.betas = betas
+        self.weights = weights # vector of length K
+        self.n = n
         
-    ri_cutoff = model_alphas_ri.sum(axis = 0).min()*min_fold
-    return model_alphas_ri
-
-def beta_binom_cdf(counts, alphas, column):
-    n = counts.sum()
-    dist = betabinom(n, alphas[0], alphas[1])
+        self.distributions = []
+        
+        for a,b in zip(self.alphas, self.betas):
+            self.distributions.append(betabinom(a = a, b = b, n = n))
+        
+    def pmf(self,k):
+        ''' return pmf of  mixture model'''
+        p = 0
+        for w, dist in zip(self.weights, self.distributions):
+            p += w*dist.pmf(k)
+        return p
     
-    return dist.cdf(counts[column])
+    def cdf(self,k):
+        p = 0
+        for w, dist in zip(self.weights, self.distributions):
+            p += w*dist.cdf(k)
+        return p
+    def logpmf(self,k):
+        return np.log(self.pmf(k))
+    def pvalue(self,k):
+        return 1-self.cdf(k)
 
-def calculate_pvalue(raw_counts, col_to_search, null_alpha, annotation_df):
-    ''' calculate p-value using beta-binom mixture given alphas '''
-    data_col = null_alpha.index.tolist()
-
-    # find unique count combinations
-    rcount = raw_counts[data_col].drop_duplicates()
-    rcount['pvalue']=rcount.apply(
-        lambda row:1-beta_binom_cdf(row, 
-                                  null_alpha.loc[data_col].tolist(), 
-                                  column = col_to_search)
-                , axis = 1)
-    
-    # map p-value back to 
-    raw_counts = raw_counts.merge(rcount, left_on = data_col,
-                                  right_on = data_col,
-                             how = 'left')
-
-    mcol = ['chr', 'start', 'end', 'name', 'strand']
-    mcol1 = ['chrom', 'start', 'end', 'name', 'strand']
-    raw_counts = raw_counts.merge(annotation_df, left_on = mcol, right_on = mcol1)
-    _, raw_counts['qvalue'] = fdrcorrection(raw_counts['pvalue'])
-    
-    return raw_counts
 if __name__=='__main__':
     basedir = Path(sys.argv[1]) # internal_output/DMN
     outstem = sys.argv[2] # K562_rep4.RBFOX2
+    exp, rbp = outstem.split('.')
     raw_counts = pd.read_csv(sys.argv[3], sep = '\t') # basedir/f'internal_output/counts/genome/bgtables/internal/{pre}.{rbp}.tsv.gz
     annotation_df = pd.read_csv(sys.argv[4], sep = '\t')
-    outdir = basedir / 'most_enriched_selected'
-    
-    
-    score_cutoff = 0.6
-    fdr_cutoff = 0.2
-    nread_thres = 10
+    outdir = basedir
 
-    # read files, weights of each component
+    # constants
+    component_fold_threshold = 1
+    fc_bar_threshold = 1
+    logLR_threshold = 2
+    FDR_cutoff = 0.2
+
+
+    # find control columns
+    col = raw_counts.columns
+    control_col = [c for c in col if exp in c and c != outstem]
+    assert len(control_col)==1
+    control_col = control_col[0]
+
+    # read files, weights of each component #pi
     component_weights = pd.read_csv(basedir/f'{outstem}.weights.tsv', sep = '\t',index_col = 0)
     component_weights.index = ['X'+str(i) for i in component_weights.index]
-    
-    # alphas
-    null_alpha = pd.read_csv(basedir/f'{outstem}.null.alpha.tsv', sep = '\t',index_col = 0)
+
+    # alpha 
     component_alpha = pd.read_csv(basedir/f'{outstem}.alpha.tsv', sep = '\t',index_col = 0)
-    
+    model_mean = component_alpha.div(component_alpha.sum(axis = 0), axis = 1)
+
+    # E[z_ik]
     # weight of each window
     data = pd.read_csv(basedir/f'{outstem}.mixture_weight.tsv', sep = '\t',index_col = 0)
     data.rename({'Row.names':'name'}, inplace = True, axis = 1)
     to_rename = [c for c in data.columns if c.startswith('V')]
     new_name = [c.replace('V', 'X') for c in to_rename]
     data.rename(dict(zip(to_rename, new_name)), axis = 1, inplace = True)
-    
-    # label components
-    model_alphas_ri = label_component(component_alpha, null_alpha, outstem)
-    normalized_alpha = component_alpha.div(component_alpha.sum(axis = 0), axis = 1)
-    comp = [normalized_alpha.idxmax(axis = 1)[outstem]] # TODO: can we select multiple components
-    print('selected', comp) 
 
-    # filter raw_counts
-    raw_counts = raw_counts.loc[raw_counts[null_alpha.index].sum(axis = 1)> nread_thres]
+    # find total mapped reads
+    raw_counts = raw_counts.loc[raw_counts['name'].isin(data['name'])] # only those modelled
+    raw_counts.set_index('name', inplace = True)
+    counts = raw_counts[[outstem, control_col]]
+    nread_per_window = counts.sum(axis = 1)
+    mapped_reads = counts.sum(axis = 0)
+    mapped_reads_fraction = mapped_reads.div(mapped_reads.sum())
+    print('========Fraction mapped reads: \n ========',mapped_reads_fraction)
 
-    try:
-        sns.clustermap(model_alphas_ri.T,cbar_kws = {'label': 'p*log(p/q)'},
-                      metric = 'correlation', cmap = 'Greys', figsize = (4,4))
-        plt.savefig(outdir / f'{outstem}.model_ri.pdf')
-    
-    except Exception as e:
-        print(e)
-
-    ########## WHEN THERE IS MORE THAN 1 COMP, USE MIXTURE WEIGHT ##############
     if component_alpha.shape[1]>1:
-        # output which component is selected and why
-        metadata = component_alpha.copy()
-        metadata.index = [c+'_alpha' for c in metadata.index]
+        print('======== Multiple components detects, use mixture model to estimate binding========')
+        # select components
+        component_fc = model_mean.div(mapped_reads_fraction, axis = 0).T
+        comp = component_fc.loc[component_fc[outstem]>component_fold_threshold].index
+        not_bound_comp = component_fc.loc[component_fc[outstem]<=component_fold_threshold].index
 
-        model_alphas_ri.index = [c+'_ri' for c in metadata.index]
-        model_alphas_ri.loc['RI'] = model_alphas_ri.sum(axis = 0)
-
-        metadata = pd.concat([metadata.T, model_alphas_ri.T, component_weights], axis = 1)
-        metadata.loc[comp, 'selected'] = True
-        metadata['selected'].fillna(False, inplace = True)
-        metadata.to_csv(outdir / f'{outstem}.label_component.csv')
-
-        # calculate qvalue from the least enriched
-        print(component_alpha)
-        print(normalized_alpha)
-        least_enriched_component = normalized_alpha.idxmin(axis = 1)[outstem]
-        print(least_enriched_component, 'least enrich')
-        raw_counts = calculate_pvalue(raw_counts, outstem, 
-        component_alpha[least_enriched_component],
-         annotation_df)
+        print(f'components with bindinig: {comp}')
         
-        # label
-        print(data.columns)
-        print(data.head())
-        print(data[comp].mean())
-        data['mixture_model_score'] = data[comp].mean(axis = 1)
-        print(data['mixture_model_score'].isnull().sum())
-        data['pvalue'] = data['name'].map(raw_counts.set_index('name')['pvalue'])
-        data['qvalue'] = data['name'].map(raw_counts.set_index('name')['qvalue'])
-        if len(comp)>0:
-            enriched_features = data.loc[data[comp].ge(score_cutoff).any(axis = 1)]
-        else:
-            enriched_features = data.loc[data['qvalue']<fdr_cutoff]
-
+        ezik = data.set_index('name')[model_mean.columns]
+        ezik_marginalized = ezik[comp].sum(axis = 1)
+        
+        
+        
+        # p-value based on all non-bound components
+        not_bound_mixture = Beta_Mixture_Model(component_alpha.loc[outstem, not_bound_comp],
+                                            component_alpha.loc[control_col, not_bound_comp],
+                                            component_weights.loc[not_bound_comp, 'pi'],
+                                            n = nread_per_window)
+        bound_mixture = Beta_Mixture_Model(component_alpha.loc[outstem, comp],
+                                            component_alpha.loc[control_col, comp],
+                                            component_weights.loc[comp, 'pi'],
+                                            n = nread_per_window)
+        p_alt = pd.Series(bound_mixture.logpmf(counts[outstem]), index = counts.index)
+        p_null = pd.Series(not_bound_mixture.logpmf(counts[outstem]), index = counts.index)
+        
+        # binding score: estimated p from E[x_zik] and model_mean
+        p_bar = np.matmul(ezik, model_mean.T)
+        p_bar.columns = model_mean.index
+        p_raw = counts[outstem]/nread_per_window
+        
+        
+        
+        p_df = pd.concat([p_raw, p_bar[outstem], ezik_marginalized, p_alt, p_null], axis = 1)
+        p_df.columns = ['p_raw', 'p_bar', 'posterior_bound', 'log_L_bound', 'log_L_notbound']
+        p_df['logLR']=p_df['log_L_bound']-p_df['log_L_notbound']
+        
+        f, ax=plt.subplots(4,1, figsize = (6,12))
+        p_df.plot.scatter(x = 'p_raw', y = 'p_bar', color = 'grey', marker = '+', ax = ax[0])
+        ax[0].set_title(outstem)
+        
+        
+        p_df['fc_raw']=p_df['p_raw']/mapped_reads_fraction[outstem]
+        p_df['fc_bar']=p_df['p_bar']/mapped_reads_fraction[outstem]
+        
+        p_df['fc_bar'].hist(bins = 100, color = 'grey', ax=ax[1])
+        ax[1].set_xlabel('fc_bar')
+        ax[1].set_ylabel('# windows')
+        
+        p_df.plot.scatter(x = 'posterior_bound', y = 'fc_bar', color = 'grey', marker = '+', ax = ax[2])
+        
+        
+        
+        p_df.plot.scatter(x = 'logLR', y = 'fc_bar', color = 'grey', marker = '+', ax = ax[3])
+        plt.suptitle(outstem)
+        plt.tight_layout()
+        sns.despine()
+        plt.savefig(outdir / f'{outstem}.model_output.pdf')
+        
+        plt.show()
+        
+        results = data.merge(p_df, left_on = 'name', right_index = True)
+        results['enriched']=(results['fc_bar']>fc_bar_threshold)&(results['logLR']>logLR_threshold)
+        
+        # save metadata
+        component_alpha.index = [f'alpha.{c}' for c in component_alpha.index]
+        model_mean.index = [f'mean.{c}' for c in model_mean.index]
+        component_fc.columns = [f'fc.{c}' for c in component_fc.columns]
+        metadata = pd.concat([component_fc, model_mean.T, component_alpha.T], axis = 1)
+        metadata['selected'] = metadata.index.isin(comp)
+        metadata.to_csv(outdir / f'{outstem}.label_component.csv')
+        
+        bg_metadata = pd.concat([mapped_reads,mapped_reads_fraction], axis = 1)
+        bg_metadata.columns = ['total_reads', 'fraction_reads']
+        
+        
         
     else:
-        print(f'{outstem} has single component, fall back to hypothesis testing')
-        data = calculate_pvalue(raw_counts, outstem, null_alpha['single_component_weight'], annotation_df)
-        enriched_features = data.loc[data['qvalue']<fdr_cutoff]
+        print(f'======== {outstem} has single component, fall back to hypothesis testing========')
+        #data = calculate_pvalue(raw_counts, outstem, component_alpha.iloc[:, ], annotation_df)
+        pvalue=1-betabinom.cdf(n = nread_per_window, a = component_alpha.loc[outstem].iloc[0], b = component_alpha.loc[control_col].iloc[0], k = counts[outstem])
+        _, qvalue = fdrcorrection(pvalue)
         
+        # fold change
+        p_raw = raw_counts[outstem]/nread_per_window
+        
+        p_df = pd.DataFrame([pvalue, qvalue, p_raw], index = ['pvalue', 'qvalue', 'p_raw'], columns = counts.index).T
+        p_df['fc_raw']=p_df['p_raw']/mapped_reads_fraction[outstem]
+        
+        results = data.merge(p_df, left_on = 'name', right_index = True)
+        results['enriched']=(results['qvalue']<FDR_cutoff)
+
+    enriched_windows = results.loc[results['enriched']]
+    print(f'Finish testing, found enriched_windows: ', enriched_windows.shape[0])
 
     # save raw output
-    data.to_csv(outdir / f'{outstem}.window_score.tsv', sep = '\t')
-    enriched_features.to_csv(outdir / f'{outstem}.enriched_window.tsv', sep = '\t')
+    results.to_csv(outdir / f'{outstem}.window_score.tsv', sep = '\t')
+    enriched_windows.to_csv(outdir / f'{outstem}.enriched_windows.tsv', sep = '\t')
+
+    # analysis
+    fcount = results.groupby(by = 'enriched')['feature_type_top'].value_counts().unstack().fillna(0).T
+    fcount['Positive rate'] = fcount[True]/(fcount[True]+fcount[False])
+    fcount.to_csv(outdir / f'{outstem}.feature_type_summary.tsv', sep = '\t')
+
+    gcount = results.groupby(by = 'enriched')['gene_type_top'].value_counts().unstack().fillna(0).T
+    gcount['Positive rate'] = gcount[True]/(gcount[True]+gcount[False])
+    gcount.to_csv(outdir / f'{outstem}.gene_type_summary.tsv', sep = '\t')
+
+    tcount = results.groupby(by = 'enriched')['transcript_type_top'].value_counts().unstack().fillna(0).T
+    tcount['Positive rate'] = tcount[True]/(tcount[True]+tcount[False])
+    tcount.to_csv(outdir / f'{outstem}.transcript_type_summary.tsv', sep = '\t')
+
+    f, ax=plt.subplots(3,2, figsize = (12,12))
+
+    for i, cnt in enumerate([fcount, gcount, tcount]):
+        cnt[True].sort_values().plot.barh(ax = ax[i,0], color = 'lightgrey')
+        cnt['Positive rate'].sort_values().plot.barh(ax = ax[i,1], color = 'lightgrey')
+
+    ax[i,0].set_xlabel('# enriched window')
+    ax[i,1].set_xlabel('Positive rate')
+    sns.despine()
+    plt.tight_layout()
+    plt.savefig(outdir / f'{outstem}.summaries.pdf')
+    plt.show()
+
+    # classification by feature
+    binary_df = pd.DataFrame(False, index = results.index, columns = results['feature_type_top'].unique())
+    for index, row in results.iterrows():
+        binary_df.loc[index, row['feature_type_top'].split(':')] = True
+
+    from sklearn.linear_model import LogisticRegression
+    X = binary_df
+    y = results.loc[binary_df.index, 'enriched']
+    clf = LogisticRegression().fit(X, y)
+    clf.score(X, y)
+
+    pd.Series(clf.coef_[0], index = binary_df.columns).sort_values().plot.barh()
+    plt.xlabel('Logistic Regression Coef')
+    plt.tight_layout()
+    plt.savefig(outdir / f'{outstem}.feature_logistic.pdf')
+    plt.show()
+
+    from sklearn.linear_model import RidgeClassifier
+    X = binary_df
+    y = results.loc[binary_df.index, 'enriched']
+    clf = RidgeClassifier().fit(X, y)
+    clf.score(X, y)
+
+    pd.Series(clf.coef_[0], index = binary_df.columns).sort_values().plot.barh()
+    plt.xlabel('Ridge Regression Coef')
+    plt.tight_layout()
+    plt.savefig(outdir / f'{outstem}.feature_ridge.pdf')
+    plt.show()
+
+
+
+
+
+
 
 

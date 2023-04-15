@@ -14,8 +14,9 @@ model_data = read_tsv(args[5]) # "internal_output/clip_model_coef/{libname}.{cli
 input_replicate_label = args[6]
 clip_replicate_label = args[7]
 output_stem = args[8]
+root_folder = args[9]
 
-root_folder = dirname(dirname(dirname(dirname(dirname(args[2]))))) # internal_output
+#root_folder = dirname(dirname(args[5])) # internal_output
 threshold_scan_folder = file.path(root_folder, "threshold_scan")
 dir.create(threshold_scan_folder, showWarnings = FALSE, recursive = TRUE) # "output/threshold_scan/"
 tested_window_folder = file.path(root_folder, "tested_windows")
@@ -76,8 +77,8 @@ write_tsv(threshold_data, threshold_data_path)
 #optimized_threshold = min(threshold_data[threshold_data$n_enriched>0, 'threshold']) # use anything > 0
 print(threshold_data[threshold_data$n_enriched>0, 'threshold'])
 print('Optimized threshold=')
-print(optimized_threshold)
 optimized_threshold = threshold_data %>% arrange(n_enriched %>% desc) %>% head(1) %>% pull(threshold) # use the max n_enriched
+print(optimized_threshold)
 
 pdf(file.path(fig_folder, "threshold_scan", paste0(output_stem, '.threshold_scan.pdf')), height = 1.5, width = 1.7) # 'output/figures/threshold_scan/', 
 ggplot(threshold_data %>% mutate(replicate = clip_replicate_label), aes(threshold, n_enriched)) + theme_bw(base_size = 7) +
