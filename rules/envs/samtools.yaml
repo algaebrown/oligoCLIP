@@ -1,0 +1,6 @@
+name: metadensity
+channels:
+  - bioconda
+dependencies:
+  - samtools
+prefix: /home/hsher/miniconda3/envs/samtools
