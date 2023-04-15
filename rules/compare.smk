@@ -22,7 +22,7 @@ def experiment_to_libname(experiment):
 
 rule piranha_internal:
     input:
-        counts = lambda wildcards: f"internal_output/counts/genome/bgtables/internal/"+libname_to_experiment(wildcards.libname)+f".{wildcards.clip_sample_label}.tsv.gz",
+        counts = lambda wildcards: f"counts_CC/genome/bgtables/internal/"+libname_to_experiment(wildcards.libname)+f".{wildcards.clip_sample_label}.tsv.gz",
     output:
         ip = temp("comparison/piranha/CC/{libname}.{clip_sample_label}.IP.bed"),
         filtered_ip = temp("comparison/piranha/CC/{libname}.{clip_sample_label}.IP.filtered.bed"),
@@ -50,10 +50,10 @@ rule piranha_internal:
 rule uniquely_mapped_reads_for_omni_and_pure:
     input:
         bam_ip="{libname}/bams/{sample_label}.rmDup.Aligned.sortedByCoord.out.bam",
-        bam_in="output/CLIPper/CC_bams/{libname}.{sample_label}.sorted.bam",
+        bam_in="CLIPper/CC_bams/{libname}.{sample_label}.sorted.bam",
     output:
         bam_ip_umap = "{libname}/bams/{sample_label}.rmDup.Aligned.sortedByCoord.out.umap.bam",
-        bam_in_umap = "output/CLIPper/CC_bams_umap/{libname}.{sample_label}.sorted.bam",
+        bam_in_umap = "CLIPper/CC_bams_umap/{libname}.{sample_label}.sorted.bam",
     params:
         error_out_file = "error_files/uniquemap.{libname}.{sample_label}.err",
         out_file = "stdout/uniquemap.{libname}.{sample_label}.out",
@@ -74,7 +74,7 @@ rule uniquely_mapped_reads_for_omni_and_pure:
 rule pureclip_internal:
     input:
         bam_ip_umap = "{libname}/bams/{sample_label}.rmDup.Aligned.sortedByCoord.out.umap.bam",
-        bam_in_umap = "output/CLIPper/CC_bams_umap/{libname}.{sample_label}.sorted.bam",
+        bam_in_umap = "CLIPper/CC_bams_umap/{libname}.{sample_label}.sorted.bam",
     output:
         csln = "comparison/pureclip/{libname}.{sample_label}.csln.bed",
         bind = "comparison/pureclip/{libname}.{sample_label}.bind.bed",
@@ -103,7 +103,7 @@ rule pureclip_internal:
 rule omniclip_parse:
     input:
         bam_ip_umap = "{libname}/bams/{sample_label}.rmDup.Aligned.sortedByCoord.out.umap.bam",
-        bam_in_umap = "output/CLIPper/CC_bams_umap/{libname}.{sample_label}.sorted.bam",
+        bam_in_umap = "CLIPper/CC_bams_umap/{libname}.{sample_label}.sorted.bam",
     output:
         cc_data = "comparison/omniCLIP/{libname}.{sample_label}.cc.h5py",
         ip_data = "comparison/omniCLIP/{libname}.{sample_label}.ip.h5py"

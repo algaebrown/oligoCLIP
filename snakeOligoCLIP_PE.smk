@@ -2,9 +2,9 @@
 from importlib.resources import path
 import pandas as pd
 import os
+#snakemake -s snakeOligoCLIP_PE.smk -j 12 --cluster "qsub -l walltime={params.run_time} -l nodes=1:ppn={params.cores} -q home-yeo -e {params.error_out_file} -o {params.out_file}" --configfile config/preprocess_config/oligope_v5_trim55.yaml --use-conda --conda-prefix /home/hsher/snakeconda -n
 #snakemake -s snakeOligoCLIP_PE.smk -j 12 --cluster "qsub -l walltime={params.run_time} -l nodes=1:ppn={params.cores} -q home-yeo -e {params.error_out_file} -o {params.out_file}" --configfile config/preprocess_config/oligope_iter4.yaml --use-conda --conda-prefix /home/hsher/snakeconda -n
-#snakemake -s snakeOligoCLIP_PE.smk -j 12 --cluster "qsub -l walltime={params.run_time} -l nodes=1:ppn={params.cores} -q home-yeo -e {params.error_out_file} -o {params.out_file}" --configfile config/preprocess_config/oligope_iter5.yaml --use-conda --conda-prefix /home/hsher/snakeconda QC/read_count/{oCLIP_25_1,oCLIP_25_2,oCLIP_10_2,oCLIP_10_1}.region.csv  
-#snakemake -s snakeOligoCLIP_PE.smk -j 12 --cluster "qsub -l walltime={params.run_time} -l nodes=1:ppn={params.cores} -q home-yeo -e {params.error_out_file} -o {params.out_file}" --configfile config/preprocess_config/oligope_sara_MN.yaml --use-conda --conda-prefix /home/hsher/snakeconda -n  
+#snakemake -s snakeOligoCLIP_PE.smk -j 12 --cluster "qsub -l walltime={params.run_time} -l nodes=1:ppn={params.cores} -q home-yeo -e {params.error_out_file} -o {params.out_file}" --configfile config/preprocess_config/oligope_iter6.yaml --use-conda --conda-prefix /home/hsher/snakeconda  -n
 
 MANIFEST=config['MANIFEST']
 SCRIPT_PATH=config['SCRIPT_PATH']
@@ -14,6 +14,7 @@ CHROM_SIZES = config['CHROM_SIZES']
 workdir: WORKDIR
 config['GENOME_FA'] = config['GENOMEFA']
 R_EXE = config['R_EXE']
+
 
 manifest = pd.read_table(MANIFEST, index_col = False, sep = ',')
 barcode_df = pd.read_csv(config['barcode_csv'], header = None, sep = ':', names = ['barcode', 'RBP'])
@@ -34,8 +35,17 @@ config['experiments'] = experiments
 rbps = barcode_df['RBP'].tolist()
 config['rbps'] = rbps
 
+try:
+    external_normalization = config['external_bam']
+    print(external_normalization)
+    print('External normalization libs:',list(external_normalization.keys()))
+except:
+    external_normalization = None
+
+
 if len(rbps)==1:
     singleplex = True
+    print('Detected singleplex')
 else:
     singleplex = False
 
@@ -70,7 +80,7 @@ module QC:
 
 module normalization:
     snakefile:
-        "rules/normalization.smk"
+        "rules/skipper.smk"
     config:
         config
 
@@ -98,11 +108,11 @@ module analysis:
     config:
         config
 
-module multimap:
-    snakefile:
-        "rules/multimap.smk"
-    config:
-        config
+# module multimap:
+#     snakefile:
+#         "rules/multimap.smk"
+#     config:
+#         config
 
 module merge_bw:
     snakefile:
@@ -128,101 +138,118 @@ module clipper_analysis:
     config:
         config
 
+def preprocess_outputs():
+    outputs = expand("{libname}/bams/{sample_label}.rmDup.Aligned.sortedByCoord.out.bam.bai", libname = libnames, sample_label = rbps)+[
+    'QC/fastQC_basic_summary.csv',
+    'QC/fastQC_passfail.csv',
+    'QC/cutadapt_stat.csv',
+    "QC/mapping_stats.csv",
+    "QC/dup_level.csv",
+    'QC/demux_read_count.txt'
+    ]+expand("QC/read_count/{libname}.{metric}.csv", libname = libnames, metric = ['region', 'genetype', 'cosine_similarity']
+    )+expand("{libname}/bw/COV/{sample_label}.{strand}.bw", libname = libnames, sample_label = rbps, strand = ['pos', 'neg']
+    )+expand("counts/genome/vectors/{libname}.{sample_label}.counts",
+        libname = libnames, sample_label = rbps
+    )+expand("QC/read_count/{libname}.{metric}.csv", libname = libnames, metric = ['region', 'genetype', 'cosine_similarity'])
+    return outputs
 
-
-rule all:
-    input:
-        expand("{libname}/bams/{sample_label}.rmDup.Aligned.sortedByCoord.out.bam.bai", libname = libnames, sample_label = rbps),
-        'QC/fastQC_basic_summary.csv',
-        'QC/fastQC_passfail.csv',
-        'QC/cutadapt_stat.csv',
-        "QC/mapping_stats.csv",
-        "QC/dup_level.csv",
-        'QC/demux_read_count.txt',
-        expand("QC/read_count/{libname}.{metric}.csv", libname = libnames, metric = ['region', 'genetype', 'cosine_similarity']),
-        # expand("QC/nobarcode_blast_output/{libname}.blast.tsv", libname = libnames),
-        # expand("QC/unmapped_blast_output/{libname}.{sample_label}.1.blast.tsv", libname = libnames, sample_label = rbps),
-        # expand("QC/unmapped_blast_output/{libname}.{sample_label}.short.blast.tsv", libname = libnames, sample_label = rbps),
-        expand("{libname}/bw/COV/{sample_label}.r1.{strand}.bw", libname = libnames, sample_label = rbps, strand = ['pos', 'neg']),
-        expand("{libname}/bw_bg/COV/{sample_label}.r1.{strand}.bw", libname = libnames, sample_label = rbps, strand = ['pos', 'neg']),
-        ############### skipper #####################
-        expand("output/enriched_windows/{libname}.{clip_sample_label}.{bg_sample_label}.enriched_windows.tsv.gz",
+def skipper_outputs():
+    outputs = []
+    if not singleplex:
+        outputs+=expand("skipper/enriched_windows/{libname}.{clip_sample_label}.{bg_sample_label}.enriched_windows.tsv.gz",
         libname = libnames,
         clip_sample_label = list(set(rbps)-set([config['AS_INPUT']])), # cannot call on itself
         bg_sample_label = [config['AS_INPUT']] if config['AS_INPUT'] else []
-        ,),
-        expand("internal_output/enriched_windows/{libname}.{clip_sample_label}.enriched_windows.tsv.gz",
+        )+expand("skipper_CC/enriched_windows/{libname}.{clip_sample_label}.enriched_windows.tsv.gz",
         libname = libnames,
         clip_sample_label = list(set(rbps)-set([config['AS_INPUT']])), # cannot call on itself
-        ),
-        expand("internal_output/enriched_re/{libname}.{sample_label}.enriched_re.tsv.gz",
-        libname = libnames,
-        sample_label = list(set(rbps)-set([config['AS_INPUT']])), # cannot call on itself
-        ),
-        expand("internal_output/finemapping/mapped_sites/{signal_type}/{libname}.{sample_label}.finemapped_windows.bed.gz",
+        )+expand("skipper_CC/finemapping/mapped_sites/{signal_type}/{libname}.{sample_label}.finemapped_windows.bed.gz",
         libname = libnames,
         sample_label = list(set(rbps)-set([config['AS_INPUT']])), 
         signal_type = ['CITS', 'COV'] # cannot call on itself
-        ),
-        expand("internal_output/homer/finemapped_results/{signal_type}/{libname}.{sample_label}/homerResults.html",
+        )+expand("skipper_CC/homer/finemapped_results/{signal_type}/{libname}.{sample_label}/homerResults.html",
         libname = libnames,
         sample_label = config['RBP_TO_RUN_MOTIF'],
         signal_type = ['CITS', 'COV']
-        ),
-        ####### CLIPper ########
-        expand("output/CLIPper.{bg}/{libname}.{sample_label}.peaks.normed.compressed.annotate.bed",
-        bg = [config['AS_INPUT']] if config['AS_INPUT'] else [],
-        sample_label = list(set(rbps)-set([config['AS_INPUT']])),
-        libname = libnames
-        ),
-        expand("output/CLIPper-CC/{libname}.{sample_label}.peaks.normed.compressed.annotate.bed",
-        sample_label = list(set(rbps)-set([config['AS_INPUT']])),
-        libname = libnames
-        ),
-        expand("output/CLIPper-CC/{libname}.{sample_label}.peaks.normed.compressed.motif.svg",
-        sample_label = config['RBP_TO_RUN_MOTIF'],
-        libname = libnames
-        ),
-        expand("internal_output/DMN/most_enriched_selected/{libname}.{sample_label}.enriched_window.tsv",
+        )
+
+    if external_normalization:
+        outputs+=expand("skipper_external/{external_label}/enriched_windows/{libname}.{clip_sample_label}.enriched_windows.tsv.gz",
+        external_label = list(external_normalization.keys()),
+        libname = libnames,
+        clip_sample_label = list(set(rbps)-set([config['AS_INPUT']]))
+        ), # cannot call on itself
+
+    return outputs
+
+def DMN_outputs():
+    outputs = []
+    if not singleplex:
+        outputs+=expand("beta-mixture_CC/{libname}.{sample_label}.enriched_windows.tsv",
         libname = libnames,
         sample_label = list(set(rbps)-set([config['AS_INPUT']])),
         signal_type = ['CITS', 'COV'],
         strand = ['pos', 'neg']
-        ),
-        ####### DMN ########
-        ### CC ###
-        expand("internal_output/DMN/finemapping/mapped_sites_most_enriched/{signal_type}/{libname}.{sample_label}.finemapped_windows.{strand}.bw",
+        )+expand("beta-mixture_CC/finemapping/mapped_sites/{signal_type}/{libname}.{sample_label}.finemapped_windows.{strand}.bw",
         libname = libnames,
         sample_label = list(set(rbps)-set([config['AS_INPUT']])),
         signal_type = ['CITS', 'COV'],
         strand = ['pos', 'neg']
-        ),
-        expand("internal_output/DMN/homer_most_enriched/finemapped_results/{signal_type}/{libname}.{sample_label}/homerResults.html",
+        )+expand("beta-mixture_CC/homer/finemapped_results/{signal_type}/{libname}.{sample_label}/homerResults.html",
         libname = libnames,
         sample_label = config['RBP_TO_RUN_MOTIF'],
         signal_type = ['CITS', 'COV']
-        ),
-        ### IgG ###
-        expand("output/DMN/{bg_sample_label}/most_enriched_selected/{libname}.{clip_sample_label}.enriched_window.tsv",
+        )+expand("beta-mixture/{bg_sample_label}/{libname}.{clip_sample_label}.enriched_windows.tsv",
         libname = libnames,
         clip_sample_label = list(set(rbps)-set([config['AS_INPUT']])),
         bg_sample_label = [config['AS_INPUT']] if config['AS_INPUT'] else []
-        ),
-        
-    output:
-        "snakeCLIP.txt"
-    params:
-        error_out_file = "error_files/all",
-        run_time = 1,
-        cores = "1",
-        memory = "20",
-        job_name = "all"
-    shell:
-        """
-        echo $(date)  > {output};
-        echo created by HLH and the Yeo lab >> {output}
-        """
+        )+expand("{libname}/bw_bg/COV/{sample_label}.{strand}.bw", libname = libnames, sample_label = rbps, strand = ['pos', 'neg']
+        )+expand("DMM/{libname}.mixture_weight.tsv", libname = libnames
+        )+expand("DMM/homer/finemapped_results/{signal_type}/{libname}.{sample_label}/homerResults.html", libname = libnames,
+        sample_label = config['RBP_TO_RUN_MOTIF'],
+        signal_type = ['CITS', 'COV']
+        )+expand("DMM/finemapping/mapped_sites/{signal_type}/{libname}.{sample_label}.finemapped_windows.bed.gz",
+        libname = libnames,
+        sample_label = rbps,
+        signal_type = ['CITS', 'COV'])
+    return outputs
 
+def clipper_outputs():
+    outputs = []
+    if not singleplex:
+        outputs+=expand("CLIPper.{bg}/{libname}.{sample_label}.peaks.normed.compressed.annotate.bed",
+        bg = [config['AS_INPUT']] if config['AS_INPUT'] else [],
+        sample_label = list(set(rbps)-set([config['AS_INPUT']])),
+        libname = libnames
+        )+expand("CLIPper_CC/{libname}.{sample_label}.peaks.normed.compressed.annotate.bed",
+        sample_label = list(set(rbps)-set([config['AS_INPUT']])),
+        libname = libnames
+        )+expand("CLIPper_CC/{libname}.{sample_label}.peaks.normed.compressed.motif.svg",
+        sample_label = config['RBP_TO_RUN_MOTIF'],
+        libname = libnames
+        )
+
+    if external_normalization:
+        outputs+= expand("CLIPper-{external_label}/{libname}.{sample_label}.peaks.normed.compressed.annotate.bed",
+            sample_label = list(set(rbps)-set([config['AS_INPUT']])),
+            libname = libnames,
+            external_label = list(external_normalization.keys())
+            )
+    return outputs
+
+def get_output(singleplex, clipper, skipper):
+    output = preprocess_outputs()
+    output += DMN_outputs()
+    if skipper:
+        output += skipper_outputs()
+    if clipper:
+        output += clipper_outputs()
+    return output
+
+rule all:
+    input:
+        get_output(singleplex, config['run_clipper'], config['run_skipper'])
+    
 use rule * from preprocess as pre_*
 use rule * from analysis as analysis_*
 
@@ -257,6 +284,7 @@ use rule what_is_read_wo_barcode from QC
 use rule blast_unmapped_reads from QC
 use rule count_demultiplex_ultraplex from QC
 use rule  blast_unmapped_reads_too_short from QC
+use rule make_read_count_summary from QC
 
 ### region caller ###
 use rule * from normalization as skipper_*
@@ -283,71 +311,26 @@ use rule strand_specific_bam from make_track as strand_specific_bam with:
     input:
         bam = "{libname}/bw/{sample_label}.r1.bam"
     output:
-        pos_bam = "{libname}/bw/{sample_label}.r1.pos.bam",
-        neg_bam = "{libname}/bw/{sample_label}.r1.neg.bam"
+        pos_bam = "{libname}/bw/{sample_label}.pos.bam",
+        neg_bam = "{libname}/bw/{sample_label}.neg.bam"
 
 use rule CITS_bam_to_bedgrah from make_track as CITS_bedgraph with:
     input:
         bam="{libname}/bw/{sample_label}.r1.bam"
     output:
-        pos="{libname}/bw/CITS/{sample_label}.r1.pos.bedgraph",
-        neg="{libname}/bw/CITS/{sample_label}.r1.neg.bedgraph"
+        pos="{libname}/bw/CITS/{sample_label}.pos.bedgraph",
+        neg="{libname}/bw/CITS/{sample_label}.neg.bedgraph"
 use rule COV_bam_to_bedgraph from make_track as COV_bedgraph with:
     input:
         bam="{libname}/bw/{sample_label}.r1.bam"
     output:
-        pos="{libname}/bw/COV/{sample_label}.r1.pos.bedgraph",
-        neg="{libname}/bw/COV/{sample_label}.r1.neg.bedgraph"
+        pos="{libname}/bw/COV/{sample_label}.pos.bedgraph",
+        neg="{libname}/bw/COV/{sample_label}.neg.bedgraph"
 
-rule bedgraph_to_bw:
-    input:
-        bedgraph="{something}.bedgraph",
-    output:
-        bw="{something}.bw"
-    params:
-        run_time="6:00:00",
-        chr_size=config['CHROM_SIZES'],
-        error_out_file = "error_files/{something}.bedgraph_to_bw",
-        out_file = "stdout/{something}.bedgraph_to_bw",
-        cores = 1,
-    shell:
-        """
-        module load ucsctools
-        bedGraphToBigWig {input.bedgraph} {params.chr_size} {output.bw}
-        """
+use rule bedgraph_to_bw from make_track
 ########## MERGE BW ############
 use rule * from merge_bw
 
 ########## DEBUG: FILTER MULTIMAPPED ############
-use rule * from multimap
 
-use rule get_nt_coverage from finemap with:
-    input:
-        windows = "internal_output/enriched_windows/{libname}.{sample_label}.enriched_windows.tsv.gz",
-        clip_bw_pos = "{libname}/bw/{signal_type}/{sample_label}.r1.pos.bw",
-        clip_bw_neg = "{libname}/bw/{signal_type}/{sample_label}.r1.neg.bw",
-        input_bw_pos = "{libname}/bw_bg/{signal_type}/{sample_label}.r1.pos.bw",
-        input_bw_neg = "{libname}/bw_bg/{signal_type}/{sample_label}.r1.neg.bw",
-
-use rule get_nt_coverage_dmn from finemap with:
-    input:
-        windows = "internal_output/DMN/{libname}.{sample_label}.enriched_windows.tsv.gz",
-        clip_bw_pos = "{libname}/bw/{signal_type}/{sample_label}.r1.pos.bw",
-        clip_bw_neg = "{libname}/bw/{signal_type}/{sample_label}.r1.neg.bw",
-        input_bw_pos = "{libname}/bw_bg/{signal_type}/{sample_label}.r1.pos.bw",
-        input_bw_neg = "{libname}/bw_bg/{signal_type}/{sample_label}.r1.neg.bw",
-
-use rule get_nt_coverage_dmn_most_enriched from finemap with:
-    input:
-        windows = "internal_output/DMN/most_enriched_selected/{libname}.{sample_label}.enriched_window.tsv",
-        clip_bw_pos = "{libname}/bw/{signal_type}/{sample_label}.r1.pos.bw",
-        clip_bw_neg = "{libname}/bw/{signal_type}/{sample_label}.r1.neg.bw",
-        input_bw_pos = "{libname}/bw_bg/{signal_type}/{sample_label}.r1.pos.bw",
-        input_bw_neg = "{libname}/bw_bg/{signal_type}/{sample_label}.r1.neg.bw",
-
-
-
-use rule finemap_windows from finemap
-use rule finemap_windows_dmn from finemap
-use rule finemap_windows_dmn_most_enriched from finemap
-use rule finemap_to_bedgraph from finemap
+use rule * from finemap

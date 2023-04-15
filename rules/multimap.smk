@@ -16,13 +16,13 @@ rule extract_multimap_and_uniquemap:
         bamtools filter -in {input} -out {output.uniq} -mapQuality ">3"
         """
 
-module region_call:
+module skipper:
     snakefile:
-        "region_call.smk"
+        "skipper.smk"
     config:
         config
 
-use rule partition_bam_reads from region_call as partition_map_by_status with:
+use rule partition_bam_reads from skipper as partition_map_by_status with:
     input:
         chrom_size = config['CHROM_SIZES'],
         bam = "debug/bam/{libname}.{sample_label}.{mapstat}.bam",        
@@ -40,7 +40,7 @@ use rule partition_bam_reads from region_call as partition_map_by_status with:
     benchmark: "benchmarks/counts/unassigned_experiment.{libname}.{sample_label}.{mapstat}.partition_bam_reads.txt"
 
 # concat all the experiments of the same set into table
-use rule make_genome_count_table from region_call as make_genome_count_bymap with:
+use rule make_genome_count_table from skipper as make_genome_count_bymap with:
     input:
         partition=config['PARTITION'],
         replicate_counts = lambda wildcards: expand("debug/counts/genome/vectors/{libname}.{sample_label}.{mapstat}.counts", 

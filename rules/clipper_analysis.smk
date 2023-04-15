@@ -15,27 +15,7 @@ rule annotate:
         module load annotator
         annotator --input {input.peak} --output {output} --gtfdb {params.gtf_db} --species {params.sps}
         """
-# rule calc_partition_nuc:
-#     input:
-#         partition = "output/{sample_label}.peaks.normed.compressed.bed",
-#         genome = config['GENOMEFA']
-#     output:
-#         nuc = "output/{sample_label}.peaks.normed.compressed.nuc",
-#         gc = "output/{sample_label}.peaks.normed.compressed.gc",
-#     params:
-#         error_out_file = "error_files/partition_nuc",
-#         run_time = "1",
-#         memory = "1000",
-#         job_name = "calc_partition_nuc",
-#         cores=1
-#     benchmark: "benchmarks/partition_nuc.{sample_label}.txt"
-#     shell:
-#         """ 
-#         module load bedtools;
-#         bedtools nuc -s -fi {input.genome} -bed {input.partition} > {output.nuc};
-#         cut -d $'\t' -f 1,2,3,8 {output.nuc} > {output.gc}
-#         """
-
+        
 rule motif_analysis:
     input:
         peak="{something}.normed.compressed.bed"

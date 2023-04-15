@@ -70,7 +70,8 @@ rule gather_mapstat:
 rule duplication_rate:
     input:
         dup=expand("{libname}/bams/{sample_label}.Log.final.out", libname = libnames, sample_label = rbps),
-        rmdup=expand("{libname}/bams/{sample_label}.rmDup.Aligned.sortedByCoord.out.bam",libname = libnames, sample_label = rbps)
+        rmdup=expand("{libname}/bams/{sample_label}.rmDup.Aligned.sortedByCoord.out.bam",libname = libnames, sample_label = rbps),
+        rmdup_bai=expand("{libname}/bams/{sample_label}.rmDup.Aligned.sortedByCoord.out.bam.bai",libname = libnames, sample_label = rbps)
     output:
         'QC/dup_level.csv'
     params:
@@ -181,3 +182,45 @@ rule blast_unmapped_reads_too_short:
         module load blast
         blastn -db {input.target} -query {output.fasta} -out {output.blast_result} -outfmt 6 -max_target_seqs 1 
         """
+rule make_read_count_summary:
+    input:
+        feature_annotations = config['FEATURE_ANNOTATIONS'],
+        counts = "counts/genome/megatables/{libname}.tsv.gz",
+    output:
+        region_summary =  "QC/read_count/{libname}.region.csv",
+        type_summary =  "QC/read_count/{libname}.genetype.csv",
+        name_summary =  "QC/read_count/{libname}.genename.csv",
+        dist = "QC/read_count/{libname}.cosine_similarity.csv"
+    params:
+        error_out_file = "error_files/{libname}.read_count_summary.err",
+        out_file = "stdout/{libname}.read_count_summary.out",
+        run_time = "1:20:00",
+        cores = 1
+    run:
+        import os
+        print(output.region_summary)
+        try:
+            os.mkdir('QC/read_count')
+        except Exception as e:
+            print(e)
+        import pandas as pd
+        cnt = pd.read_csv(input.counts, sep = '\t')
+        feature_annotations = pd.read_csv(input.feature_annotations, sep = '\t')
+
+        df = pd.concat([feature_annotations, cnt], axis = 1)
+
+        by_type = df.groupby(by = 'feature_type_top')[cnt.columns].sum()
+        by_gene = df.groupby(by = 'gene_type_top')[cnt.columns].sum()
+        by_name = df.groupby(by = 'gene_name')[cnt.columns].sum()
+
+        by_type.to_csv(output.region_summary)
+        by_gene.to_csv(output.type_summary)
+        by_name.to_csv(output.name_summary)
+
+        # distance
+        from scipy.spatial.distance import pdist, squareform
+        cov_filter = 10
+        dist = squareform(pdist(cnt.loc[cnt.sum(axis = 1)>cov_filter].T, 'cosine'))
+
+        dist_df = pd.DataFrame(1-dist, columns = cnt.columns, index = cnt.columns)
+        dist_df.to_csv(output.dist)

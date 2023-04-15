@@ -16,6 +16,7 @@ GENOME_dir='/home/hsher/scratch/GRCh38.primary/'
 GENOMEFA=config['GENOMEFA']
 
 manifest = pd.read_table(MANIFEST, index_col = False, sep = ',')
+print(manifest)
 barcode_df = pd.read_csv(config['barcode_csv'], header = None, sep = ':', names = ['barcode', 'RBP'])
 
 # basic checking
@@ -64,7 +65,7 @@ module QC:
 
 module normalization:
     snakefile:
-        "rules/normalization.smk"
+        "rules/skipper.smk"
     config:
         config
 
@@ -127,57 +128,65 @@ def preprocess_outputs():
         "QC/mapping_stats.csv",
         "QC/dup_level.csv",
         'QC/demux_read_count.txt'
-        ]+expand("output/counts/genome/vectors/{libname}.{sample_label}.counts",
+        ]+expand("counts/genome/vectors/{libname}.{sample_label}.counts",
         libname = libnames, sample_label = rbps
     )+expand("QC/read_count/{libname}.{metric}.csv", libname = libnames, metric = ['region', 'genetype', 'cosine_similarity'])
     return outputs
 def skipper_outputs():
     # skipper
-    outputs = expand("internal_output/enriched_windows/{libname}.{clip_sample_label}.enriched_windows.tsv.gz",
+    outputs = expand("skipper_CC/enriched_windows/{libname}.{clip_sample_label}.enriched_windows.tsv.gz",
     libname = libnames,
     clip_sample_label = list(set(rbps)-set([config['AS_INPUT']])), # cannot call on itself
-    )+expand("internal_output/enriched_windows/{libname}.{clip_sample_label}.dlogs.enriched_windows.tsv.gz",
-    libname = libnames,
-    clip_sample_label = list(set(rbps)-set([config['AS_INPUT']])), # cannot call on itself
-    )+expand("internal_output/finemapping/mapped_sites/{signal_type}/{libname}.{sample_label}.finemapped_windows.bed.gz",
+    )+expand("skipper_CC/finemapping/mapped_sites/{signal_type}/{libname}.{sample_label}.finemapped_windows.bed.gz",
     libname = libnames,
     sample_label = list(set(rbps)-set([config['AS_INPUT']])), 
     signal_type = ['CITS', 'COV'] # cannot call on itself
-    )+expand("internal_output/enriched_re/{libname}.{sample_label}.enriched_re.tsv.gz",
-    libname = libnames,
-    sample_label = list(set(rbps)-set([config['AS_INPUT']])), # cannot call on itself
-    )+expand("internal_output/homer/finemapped_results/{signal_type}/{libname}.{sample_label}/homerResults.html",
+    )+expand("skipper_CC/homer/finemapped_results/{signal_type}/{libname}.{sample_label}/homerResults.html",
     libname = libnames,
     sample_label = config['RBP_TO_RUN_MOTIF'],
     signal_type = ['CITS', 'COV']
     )
+    # +expand("internal_output/enriched_re/{libname}.{sample_label}.enriched_re.tsv.gz",
+    # libname = libnames,
+    # sample_label = list(set(rbps)-set([config['AS_INPUT']])), # cannot call on itself
+    # )
     return outputs
 
 def DMN_outputs():
-    outputs = expand("internal_output/DMN/{libname}.{clip_sample_label}.mixture_weight.tsv",
+    outputs = expand("beta-mixture_CC/{libname}.{clip_sample_label}.mixture_weight.tsv",
     libname = libnames,
     clip_sample_label = list(set(rbps)-set([config['AS_INPUT']])), # cannot call on itself
-    )+expand("internal_output/DMN/most_enriched_selected/{libname}.{sample_label}.enriched_window.tsv",
-    sample_label = list(set(rbps)-set([config['AS_INPUT']])),
-    libname = libnames
-    )+expand("internal_output/DMN/finemapping/mapped_sites/{signal_type}/{libname}.{sample_label}.finemapped_windows.{strand}.bw",
+    )+expand("beta-mixture_CC/finemapping/mapped_sites/{signal_type}/{libname}.{sample_label}.finemapped_windows.{strand}.bw",
     libname = libnames,
     sample_label = list(set(rbps)-set([config['AS_INPUT']])),
     signal_type = ['CITS', 'COV'],
     strand = ['pos', 'neg']
-    )+expand("internal_output/DMN/homer/finemapped_results/{signal_type}/{libname}.{sample_label}/homerResults.html",
+    )+expand("beta-mixture_CC/homer/finemapped_results/{signal_type}/{libname}.{sample_label}/homerResults.html",
     libname = libnames,
     sample_label = config['RBP_TO_RUN_MOTIF'],
     signal_type = ['CITS', 'COV']
     )+expand("{libname}/bw_bg/COV/{sample_label}.{strand}.bw", libname = libnames, sample_label = rbps, strand = ['pos', 'neg']
-    )
+    )+expand("DMM/{libname}.mixture_weight.tsv", libname = libnames
+    )+expand("DMM/homer/finemapped_results/{signal_type}/{libname}.{sample_label}/homerResults.html", libname = libnames,
+    sample_label = config['RBP_TO_RUN_MOTIF'],
+    signal_type = ['CITS', 'COV']
+    )+expand("DMM/finemapping/mapped_sites/{signal_type}/{libname}.{sample_label}.finemapped_windows.bed.gz",
+    libname = libnames,
+    sample_label = rbps,
+    signal_type = ['CITS', 'COV'])
+    # )+expand("DMM/finemapping/mapped_sites/{signal_type}/{libname}.{sample_label}.finemapped_windows.{strand}.bw",
+    # libname = libnames,
+    # sample_label = list(set(rbps)-set([config['AS_INPUT']])),
+    # signal_type = ['CITS', 'COV'],
+    # strand = ['pos', 'neg']
+    # )
     return outputs
 def clipper_outputs():
-    outputs = expand("output/CLIPper.{bg}/{libname}.{sample_label}.peaks.normed.compressed.bed",
+    outputs = expand("CLIPper.{bg}/{libname}.{sample_label}.peaks.normed.compressed.bed",
         bg = [config['AS_INPUT']] if config['AS_INPUT'] else [],
         sample_label = list(set(rbps)-set([config['AS_INPUT']])),
         libname = libnames
-        )+expand("output/CLIPper-CC/{libname}.{sample_label}.peaks.normed.compressed.bed",
+        )+expand("CLIPper_CC/{libname}.{sample_label}.peaks.normed.compressed.bed",
         sample_label = list(set(rbps)-set([config['AS_INPUT']])),
         libname = libnames
         )
@@ -225,7 +234,7 @@ rule all:
 use rule * from preprocess as pre_*
 
 ############## QUALITY CONTROL #################
-
+use rule * from QC as qc_*
 use rule gather_trimming_stat from QC as qc_trim with:
     input:
         tr1=expand("QC/{libname}.Tr.metrics", libname = libnames)
@@ -283,35 +292,10 @@ use rule COV_bam_to_bedgraph from make_track as COV_bedgraph with:
         pos="{libname}/bw/COV/{sample_label}.pos.bedgraph",
         neg="{libname}/bw/COV/{sample_label}.neg.bedgraph"
 
-rule bedgraph_to_bw:
-    input:
-        bedgraph="{something}.bedgraph",
-    output:
-        bw="{something}.bw"
-    params:
-        run_time="6:00:00",
-        chr_size=config['CHROM_SIZES'],
-        error_out_file = "error_files/{something}.bedgraph_to_bw",
-        out_file = "stdout/{something}.bedgraph_to_bw",
-        cores = 1,
-    shell:
-        """
-        module load ucsctools
-        bedGraphToBigWig {input.bedgraph} {params.chr_size} {output.bw}
-        """
+use rule bedgraph_to_bw from make_track
 
 ########## MERGE BW ############
-use rule merge_other_bw_as_bg from merge_bw with:
-    input:
-        bws=lambda wildcards: expand("{libname}/bw/{signal_type}/{sample_label}.{strand}.bw",
-            libname = [wildcards.libname],
-            sample_label = list(set(rbps)-set([wildcards.sample_label])-set([config['AS_INPUT']])),
-            signal_type = [wildcards.signal_type],
-            strand = [wildcards.strand]
-        )
-    output:
-        tem = "{libname}/bw_bg/{signal_type}/{sample_label}.{strand}.temp.bedgraph",
-        merged_bedgraph = "{libname}/bw_bg/{signal_type}/{sample_label}.{strand}.bedgraph",
+use rule * from merge_bw
 
 ########## HOMER ############
 
