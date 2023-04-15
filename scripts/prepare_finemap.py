@@ -133,16 +133,26 @@ if __name__=='__main__':
         if 'chr' not in significant.columns:
             significant['chr'] = significant['chrom']
         
-
+        print(significant.columns)
         if 'd_log_odds' in significant.columns:
             namecol = 'd_log_odds'
-        elif 'mixture_model_score' in significant.columns:
-            namecol = 'mixture_model_score'
+        elif 'fc_bar' in significant.columns:
+            namecol = 'fc_bar'
+            significant['qvalue']= significant['logLR']
         else:
-            significant['qvalue1'] = significant['qvalue']
-            namecol = 'qvalue1'
+            print('else')
+            try:
+                significant['qvalue1'] = significant['qvalue']
+                namecol = 'qvalue1'
+            except:
+                namecol = '.'
+                significant['qvalue']= None
+                significant[namecol] = '.'
+        print(namecol)
+
         # merge adjacent window
         cols = ['chr', 'start', 'end', 'name', 'qvalue', 'strand', namecol]
+        print(cols)
         sig_bed = BedTool.from_dataframe(significant[cols])
         merged_significant = sig_bed.sort().merge(s = True, c = [4,5,6,7], o = ['distinct', 'min', 'distinct', 'max'], d = 1
         ).to_dataframe(names = cols
