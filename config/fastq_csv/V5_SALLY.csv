@@ -1,0 +1,3 @@
+,fastq1,libname,fastq2,experiment
+4,/home/tayu/seqdata/tao/circRNA_seq/scaledown_HTT/igm-storage2.ucsd.edu/230213_A00953_0690_BHVCVKDSX5/SALLY-2_S8_L004_R1_001.fastq.gz,SALLY-2,/home/tayu/seqdata/tao/circRNA_seq/scaledown_HTT/igm-storage2.ucsd.edu/230213_A00953_0690_BHVCVKDSX5/SALLY-2_S8_L004_R2_001.fastq.gz,V5_SALLY
+5,/home/tayu/seqdata/tao/circRNA_seq/scaledown_HTT/igm-storage2.ucsd.edu/230213_A00953_0690_BHVCVKDSX5/SALLY_S7_L004_R1_001.fastq.gz,SALLY,/home/tayu/seqdata/tao/circRNA_seq/scaledown_HTT/igm-storage2.ucsd.edu/230213_A00953_0690_BHVCVKDSX5/SALLY_S7_L004_R2_001.fastq.gz,V5_SALLY

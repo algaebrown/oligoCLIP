@@ -8,6 +8,9 @@ error_rate: 0.2
 
 umi_length: 10
 
+run_skipper: True
+run_clipper: False
+
 barcode_csv: /home/hsher/projects/oligoCLIP/config/barcode_csv/iter4.csv # reverse complemented sequence.
 
 STAR_DIR: /projects/ps-yeolab5/hsher/Tao_circSTAMP/star_2_7_gencode35

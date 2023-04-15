@@ -1,21 +1,17 @@
 # Basic settings
-MANIFEST: /home/hsher/projects/oligoCLIP/config/fastq_csv/katie_pe_iteration5.csv
-barcode_csv: /home/hsher/projects/oligoCLIP/config/barcode_csv/iter5.csv # reverse complemented sequence.
-WORKDIR: /home/hsher/scratch/oligo_PE_iter5
+MANIFEST: /home/hsher/projects/oligoCLIP/config/fastq_csv/V5_Trim55.csv
+barcode_csv: /home/hsher/projects/oligoCLIP/config/barcode_csv/V5_Trim55.csv
+WORKDIR: /home/hsher/scratch/oligo_V5_TRIM55
 AS_INPUT:  # this must be one of the rows in barcode_csv
 RBP_TO_RUN_MOTIF:
-- RBFOX2
-- PUM2
-- TIAL1
-- PRPF8
-- QKI
 
-run_clipper: False
 run_skipper: True
+run_clipper: False
 
+# external normalization
 external_bam:
-  K562_totalRNAseq: /home/hsher/seqdata/20230401_charl_encode_totalrnaseq/output/bams/ENCODE_K562_totalRNAseq.Aligned.sortedByCoord.out.bam
-
+  Trim55_IN1: /home/mgosztyl/yeolab3/zf_eclips/updated_skipper_analysis_all/output/bams/dedup/genome/TRIM55_IN_1.genome.Aligned.sort.dedup.bam
+  
 # dependency
 QC_TOOLS_PATH: /home/hsher/projects/QC_tools
 SCRIPT_PATH: /home/hsher/projects/oligoCLIP/scripts/
@@ -33,7 +29,7 @@ tile_length: 10
 QUALITY_CUTOFF: 15
 error_rate: 0.2
 umi_length: 10
-STAR_DIR: /projects/ps-yeolab5/hsher/Tao_circSTAMP/star_2_7_gencode35
+STAR_DIR: /projects/ps-yeolab4/software/eclip/0.7.0/examples/inputs/star_2_7_gencode29_sjdb
 
 # skipper annotations
 PARTITION: /projects/ps-yeolab4/software/skipper/1.0.0/bin/skipper/annotations/gencode.v38.annotation.k562_totalrna.gt1.tiled_partition.bed.gz
@@ -43,8 +39,8 @@ REPEAT_TABLE: /projects/ps-yeolab3/eboyle/encode/pipeline/05_20220720/repeatmask
 
 
 # other annotations
-CHROM_SIZES: /home/hsher/gencode_coords/GRCh38.primary_assembly.chrom.sizes
-GENOMEFA: /home/hsher/gencode_coords/GRCh38.primary_assembly.genome.fa
+CHROM_SIZES: /home/mgosztyl/packages/skipper/annotations/hg38.chrom.sizes
+GENOMEFA: /projects/ps-yeolab4/genomes/GRCh38/chromosomes/GRCh38_no_alt_analysis_set_GCA_000001405.15.fasta # this should also be the one that is used to process the external bams
 
 
 # Single-end: enter 1. Paired-end: enter read (1 or 2) corresponding to crosslink site

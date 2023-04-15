@@ -1,5 +1,11 @@
 MANIFEST: /home/hsher/projects/oligoCLIP/config/fastq_csv/katie_pe_iteration3.csv
-WORKDIR: /home/hsher/scratch/oligo_PE_iter3_multimap
+barcode_csv: /home/hsher/projects/oligoCLIP/config/barcode_csv/katie_pe_iter3.csv # reverse complemented sequence.
+WORKDIR: /home/hsher/scratch/oligo_PE_iter3_test
+run_clipper: False
+run_skipper: False
+run_comparison: False
+
+
 adaptor_fwd: AGATCGGAAGAGCACACGTC
 adaptor_rev: AGATCGGAAGAGCGTCGTGT
 tile_length: 10
@@ -8,7 +14,6 @@ error_rate: 0.2
 
 umi_length: 10
 
-barcode_csv: /home/hsher/projects/oligoCLIP/config/barcode_csv/katie_pe_iter3.csv # reverse complemented sequence.
 
 STAR_DIR: /projects/ps-yeolab5/hsher/Tao_circSTAMP/star_2_7_gencode35
 
@@ -45,3 +50,9 @@ RBP_TO_RUN_MOTIF:
 - PRPF8
 - QKI
 - TAF2
+
+# CLIPper
+SPECIES: GRCh38v35noalt
+DATADIR: /home/hsher/scratch/clipper/clipper/data
+GTF: /home/hsher/gencode_coords/gencode.v35.gtf.db
+ANNOTATOR_SPECIES: GRCh38

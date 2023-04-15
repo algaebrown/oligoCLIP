@@ -1,10 +1,6 @@
-MANIFEST: /home/hsher/projects/oligoCLIP/config/fastq_csv/ABC_2rep.csv
-barcode_csv: /home/hsher/projects/oligoCLIP/config/barcode_csv/ABC_barcode.csv
-WORKDIR: /home/hsher/scratch/ABC_2rep
-
-run_clipper: False
-run_skipper: True
-run_comparison: False
+MANIFEST: /home/hsher/projects/oligoCLIP/config/fastq_csv/ABC_K562_RBFOX2_singleplex.csv
+barcode_csv: /home/hsher/projects/oligoCLIP/config/barcode_csv/ABC_barcode_rbfox2_k562.csv
+WORKDIR: /home/hsher/scratch/ABC_singleplex_K562_RBFOX2
 
 # ADAPTOR_PATH: /projects/ps-yeolab4/software/eclip/0.7.0/examples/inputs
 # adaptor: InvRiL19
@@ -46,9 +42,6 @@ INFORMATIVE_READ: 1
 #
 RBP_TO_RUN_MOTIF:
 - RBFOX2
-- PUM2
-- ZC3H11A
-- PRPF8
 
 # CLIPper
 SPECIES: GRCh38v35noalt

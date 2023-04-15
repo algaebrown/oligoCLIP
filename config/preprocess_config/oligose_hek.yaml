@@ -2,6 +2,10 @@ MANIFEST: /home/hsher/projects/oligoCLIP/config/fastq_csv/ABC_2rep.csv
 barcode_csv: /home/hsher/projects/oligoCLIP/config/barcode_csv/ABC_barcode.csv
 WORKDIR: /home/hsher/scratch/ABC_2rep_skipper
 
+run_clipper: True
+run_skipper: True
+run_comparison: True
+
 # ADAPTOR_PATH: /projects/ps-yeolab4/software/eclip/0.7.0/examples/inputs
 # adaptor: InvRiL19
 adaptor_fwd: AGATCGGAAGAGCACACGTC
@@ -47,3 +51,7 @@ RBP_TO_RUN_MOTIF:
 - PUM2
 - ZC3H11A
 - PRPF8
+
+# CLIPper
+SPECIES: GRCh38v35noalt
+DATADIR: /home/hsher/scratch/clipper/clipper/data
