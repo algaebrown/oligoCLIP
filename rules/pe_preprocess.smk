@@ -45,7 +45,7 @@ rule trim_adaptor:
         out_file = "stdout/trim_adaptor.{libname}.txt.txt",
     conda:
         "envs/cutadapt.yaml"
-    benchmark: "benchmarks/trim_adaptor.{libname}"
+    benchmark: "benchmarks/pre/trim_adaptor.{libname}"
     shell:      
         """
         cutadapt -a file:{input.adaptor_fwd} \
@@ -80,12 +80,13 @@ rule extract_umi_and_trim_polyG: # TODO: adaptor TRIM first
         umi_length = config['umi_length']
     conda:
         "envs/fastp.yaml"
-    benchmark: "benchmarks/umi/extract_umi.{libname}.txt"
+    benchmark: "benchmarks/pre/extract_umi.{libname}.txt"
     shell:
         """
         fastp -i {input.fq1} -I {input.fq2} \
             -o {output.fq1} -O {output.fq2} \
             --disable_adapter_trimming \
+            --disable_length_filtering \
             --umi \
             --umi_len={params.umi_length} \
             --umi_loc=read1 \
@@ -96,14 +97,15 @@ rule extract_umi_and_trim_polyG: # TODO: adaptor TRIM first
         """
 
 rule trim_umi_from_read2:
+    # sometimes read2 has some UMI left despite fastp claims to trim it.
     input:
         fq2 = "{libname}/fastqs/all.Tr.umi.fq2.gz",
     output:
         fq2_unzip = temp("{libname}/fastqs/all.Tr.umi.fq2"),
         fq2 = "{libname}/fastqs/all.Tr.umi.fq2.trim.gz",
     params:
-        error_out_file = "error_files/extract_umi.{libname}.txt",
-        out_file = "stdout/extract_umi.{libname}.txt",
+        error_out_file = "error_files/remove_UMI_from_r2.{libname}.txt",
+        out_file = "stdout/remove_UMI_from_r2.{libname}.txt",
         run_time = "3:45:00",
         cores = "4",
         memory = "10000",
@@ -111,7 +113,7 @@ rule trim_umi_from_read2:
         umi_length = config['umi_length']
     conda:
         "envs/seqtk.yaml"
-    benchmark: "benchmarks/umi/trim_umi_from_r2.{libname}.txt"
+    benchmark: "benchmarks/pre/trim_umi_from_r2.{libname}.txt"
     shell:
         """
         zcat {input.fq2} > {output.fq2_unzip}
@@ -120,7 +122,7 @@ rule trim_umi_from_read2:
 # reverse read1 and read2 cause ultraplex does not support 3' only demux
 # set adaptor to X to disable adaptor trimming
 # the pgzip thing is slow. always lead to incomplete file
-rule demultiplex:
+rule demultiplex: ################ never used the trimmed fastq file
     input:
         fq1 = "{libname}/fastqs/all.Tr.umi.fq1.gz",
         fq2 = "{libname}/fastqs/all.Tr.umi.fq2.trim.gz",
@@ -146,7 +148,7 @@ rule demultiplex:
         cd {params.prefix}
         # in case there is no not matched ones
         
-        ultraplex -i all.Tr.umi.fq2.gz -i2 all.Tr.umi.fq1.gz -b {input.barcode_csv}  \
+        ultraplex -i all.Tr.umi.fq2.gz -i2 all.Tr.umi.fq2.trim.gz -b {input.barcode_csv}  \
             -m5 1 -m3 0 -t {params.cores} -a XX -a2 XX --ultra
         if [ ! -f ultraplex_demux_5bc_no_match_Rev.fastq.gz ]
         then
@@ -163,7 +165,9 @@ rule trim_barcode_r1:
     output:
         fq1 = "{libname}/fastqs/ultraplex_demux_{sample_label}_Rev.Tr.fastq.gz",
         fq2 = "{libname}/fastqs/ultraplex_demux_{sample_label}_Fwd.Tr.fastq.gz",
-        metric = "QC/{libname}.{sample_label}.n_rev_read_w_bar.txt"
+        metric = "QC/{libname}.{sample_label}.n_rev_read_w_bar.txt",
+        metric_html = "QC/{libname}.{sample_label}.n_rev_read_w_bar.html",
+        metric_json = "QC/{libname}.{sample_label}.n_rev_read_w_bar.json"
     params:
         run_time = "12:04:00",
         cores="4",
@@ -173,21 +177,19 @@ rule trim_barcode_r1:
         barcode_sequence = lambda wildcards:barcode_df.loc[barcode_df['RBP'] == wildcards.sample_label,'barcode'].iloc[0],
     conda:
         "envs/fastp.yaml"
-    benchmark: "benchmarks/trim_adaptor.{libname}.{sample_label}"
-    shell:      
-        # """
-        # cutadapt -a {params.barcode_sequence} \
-        #     --times 1 \
-        #     -e 0.1 \
-        #     -o {output.fq1} \
-        #     --cores=0 \
-        #     --revcomp \
-        #     {input.fq1} > {output.metric}
-        # """
+    benchmark: "benchmarks/pre/trim_barcode.{libname}.{sample_label}"
+    shell:
         """
         set +o pipefail; 
         rev_bar=$(echo {params.barcode_sequence} | tr ACGTacgt TGCAtgca | rev)
-        fastp -i {input.fq1} -I {input.fq2} -o {output.fq1} -O {output.fq2} --adapter_sequence $rev_bar
+        fastp -i {input.fq1} \
+            -I {input.fq2} \
+            -o {output.fq1} \
+            -O {output.fq2} \
+            --adapter_sequence $rev_bar \
+            -j {output.metric_json} \
+            -h {output.metric_html} \
+            --disable_length_filtering
         zcat {input.fq2} | grep -v "@" | grep $rev_bar | wc -l > {output.metric}
         zcat {output.fq2} | grep -v "@" | grep $rev_bar | wc -l >> {output.metric}
         """
@@ -229,20 +231,20 @@ rule align_reads:
         unmapped2= "{libname}/bams/{sample_label}.Unmapped.out.mate2",
         log= "{libname}/bams/{sample_label}.Log.final.out",
     params:
-        error_out_file = "error_files/{libname}.{sample_label}.align_reads_genome.err",
-        out_file = "stdout/{libname}.{sample_label}.align_reads_genome.out",
+        error_out_file = "error_files/align.{libname}.{sample_label}.err",
+        out_file = "stdout/align.{libname}.{sample_label}.out",
         run_time = "02:00:00",
         memory = "40000",
         job_name = "align_reads",
         star_sjdb = config['STAR_DIR'],
         outprefix = "{libname}/bams/{sample_label}.",
         cores = "8",
-    benchmark: "benchmarks/align/{libname}.{sample_label}.align_reads_genome.txt"
+    benchmark: "benchmarks/pre/align.{libname}.{sample_label}.txt"
     shell:        
         """
         module load star
         STAR \
-            --alignEndsType EndToEnd \
+            --alignEndsType Local \
             --genomeDir {params.star_sjdb} \
             --genomeLoad NoSharedMemory \
             --outBAMcompression 10 \
@@ -375,7 +377,7 @@ rule umi_dedup:
         bam_dedup="{libname}/bams/{sample_label}.rmDup.Aligned.sortedByCoord.out.bam",
     params:
         error_out_file = "error_files/dedup.{libname}.{sample_label}",
-        out_file = "stdout/{libname}.{sample_label}.index_reads",
+        out_file = "stdout/dedup.{libname}.{sample_label}",
         run_time = "06:40:00",
         cores = "4",
         memory = "10000",
@@ -385,7 +387,7 @@ rule umi_dedup:
         umicollapse = config['UMICOLLAPSE_PATH']
     conda: 
         "envs/umi_tools.yaml"
-    benchmark: "benchmarks/align/dedup.{libname}.{sample_label}.txt"
+    benchmark: "benchmarks/pre/umi_dedup.{libname}.{sample_label}.txt"
     shell:
         """
         {params.java} -server -Xms8G -Xmx8G -Xss20M -jar {params.umicollapse} bam -i {input.bam} -o {output.bam_dedup} --umi-sep : --two-pass --paired
@@ -402,7 +404,7 @@ rule index_genome_bams:
         cores = "4",
         memory = "1000",
         job_name = "index_bam"
-    benchmark: "benchmarks/align/{libname}.{sample_label}.index_bam.txt"
+    benchmark: "benchmarks/pre/index_bam.{libname}.{sample_label}.txt"
     shell:
         "module load samtools;"
         "samtools index {input.bam};"
