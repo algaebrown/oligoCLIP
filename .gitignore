@@ -1,3 +1,4 @@
 .snakemake
 .ipynb_checkpoints
 __pycache__
+tests/
