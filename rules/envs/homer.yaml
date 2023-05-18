@@ -1,0 +1,8 @@
+name: homer
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - homer
+prefix: /home/hsher/miniconda3/envs/homer

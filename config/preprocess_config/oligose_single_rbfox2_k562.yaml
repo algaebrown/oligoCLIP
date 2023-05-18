@@ -1,0 +1,48 @@
+MANIFEST: /home/hsher/projects/oligoCLIP/config/fastq_csv/ABC_K562_RBFOX2_singleplex.csv
+barcode_csv: /home/hsher/projects/oligoCLIP/config/barcode_csv/ABC_barcode_rbfox2_k562.csv
+WORKDIR: /home/hsher/scratch/ABC_singleplex_K562_RBFOX2
+
+# ADAPTOR_PATH: /projects/ps-yeolab4/software/eclip/0.7.0/examples/inputs
+# adaptor: InvRiL19
+adaptor_fwd: AGATCGGAAGAGCACACGTC
+tile_length: 10
+QUALITY_CUTOFF: 6
+
+# UMI_TOOLS
+umi_pattern: XXXXXNNNNN
+
+# Resources
+STAR_DIR: /projects/ps-yeolab5/hsher/Tao_circSTAMP/star_2_7_gencode35
+
+QC_TOOLS_PATH: /home/hsher/projects/QC_tools
+SCRIPT_PATH: /home/hsher/projects/oligoCLIP/scripts/
+
+# UMI colla[se]
+JAVA_PATH: /projects/ps-yeolab3/eboyle/software/jdk-18.0.1.1/bin/java
+UMICOLLAPSE_PATH: /projects/ps-yeolab3/eboyle/software/UMICollapse/umicollapse.jar
+
+# region caller
+PARTITION: /projects/ps-yeolab4/software/skipper/1.0.0/bin/skipper/annotations/gencode.v38.annotation.k562_totalrna.gt1.tiled_partition.bed.gz
+FEATURE_ANNOTATIONS: /projects/ps-yeolab4/software/skipper/1.0.0/bin/skipper/annotations/gencode.v38.annotation.k562_totalrna.gt1.tiled_partition.features.tsv.gz
+ACCESSION_RANKINGS: /projects/ps-yeolab4/software/skipper/1.0.0/bin/skipper/annotations/accession_type_ranking.txt
+CHROM_SIZES: /home/hsher/gencode_coords/GRCh38.primary_assembly.chrom.sizes
+GENOMEFA: /home/hsher/gencode_coords/GRCh38.primary_assembly.genome.fa
+AS_INPUT:  # this must be one of the rows in barcode_csv
+R_EXE: /projects/ps-yeolab4/software/R-4.1.2/bin/Rscript
+REPEAT_TABLE: /projects/ps-yeolab3/eboyle/encode/pipeline/05_20220720/repeatmasker.grch38.tsv.gz
+
+
+MAKE_TRACK: /home/hsher/projects/make_tracks/Snake_CLIP_track.py
+trackhub_genome: GRCh38
+
+#
+# Single-end: enter 1. Paired-end: enter read (1 or 2) corresponding to crosslink site
+INFORMATIVE_READ: 1
+
+#
+RBP_TO_RUN_MOTIF:
+- RBFOX2
+
+# CLIPper
+SPECIES: GRCh38v35noalt
+DATADIR: /home/hsher/scratch/clipper/clipper/data

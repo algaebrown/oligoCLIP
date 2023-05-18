@@ -1,0 +1,53 @@
+# Basic settings
+MANIFEST: /home/hsher/projects/oligoCLIP/config/fastq_csv/V5_Trim55.csv
+barcode_csv: /home/hsher/projects/oligoCLIP/config/barcode_csv/V5_Trim55.csv
+WORKDIR: /home/hsher/scratch/oligo_V5_TRIM55
+AS_INPUT:  # this must be one of the rows in barcode_csv
+RBP_TO_RUN_MOTIF:
+
+run_skipper: True
+run_clipper: False
+
+# external normalization
+external_bam:
+  Trim55_IN1: /home/mgosztyl/yeolab3/zf_eclips/updated_skipper_analysis_all/output/bams/dedup/genome/TRIM55_IN_1.genome.Aligned.sort.dedup.bam
+  
+# dependency
+QC_TOOLS_PATH: /home/hsher/projects/QC_tools
+SCRIPT_PATH: /home/hsher/projects/oligoCLIP/scripts/
+MAKE_TRACK: /home/hsher/projects/make_tracks/Snake_CLIP_track.py
+
+# Skipper dependencies
+JAVA_PATH: /projects/ps-yeolab3/eboyle/software/jdk-18.0.1.1/bin/java
+UMICOLLAPSE_PATH: /projects/ps-yeolab3/eboyle/software/UMICollapse/umicollapse.jar
+R_EXE: /projects/ps-yeolab4/software/R-4.1.2/bin/Rscript
+
+# preprocessing options
+adaptor_fwd: AGATCGGAAGAGCACACGTC
+adaptor_rev: AGATCGGAAGAGCGTCGTGT
+tile_length: 10
+QUALITY_CUTOFF: 15
+error_rate: 0.2
+umi_length: 10
+STAR_DIR: /projects/ps-yeolab4/software/eclip/0.7.0/examples/inputs/star_2_7_gencode29_sjdb
+
+# skipper annotations
+PARTITION: /projects/ps-yeolab4/software/skipper/1.0.0/bin/skipper/annotations/gencode.v38.annotation.k562_totalrna.gt1.tiled_partition.bed.gz
+FEATURE_ANNOTATIONS: /projects/ps-yeolab4/software/skipper/1.0.0/bin/skipper/annotations/gencode.v38.annotation.k562_totalrna.gt1.tiled_partition.features.tsv.gz
+ACCESSION_RANKINGS: /projects/ps-yeolab3/eboyle/encode/pipeline/01_20211115/input/accession_type_ranking.txt
+REPEAT_TABLE: /projects/ps-yeolab3/eboyle/encode/pipeline/05_20220720/repeatmasker.grch38.tsv.gz
+
+
+# other annotations
+CHROM_SIZES: /home/mgosztyl/packages/skipper/annotations/hg38.chrom.sizes
+GENOMEFA: /projects/ps-yeolab4/genomes/GRCh38/chromosomes/GRCh38_no_alt_analysis_set_GCA_000001405.15.fasta # this should also be the one that is used to process the external bams
+
+
+# Single-end: enter 1. Paired-end: enter read (1 or 2) corresponding to crosslink site
+INFORMATIVE_READ: 1
+
+# CLIPper
+SPECIES: GRCh38v35noalt
+DATADIR: /home/hsher/scratch/clipper/clipper/data
+GTF: /home/hsher/gencode_coords/gencode.v35.gtf.db
+ANNOTATOR_SPECIES: GRCh38

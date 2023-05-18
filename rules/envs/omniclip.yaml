@@ -1,0 +1,22 @@
+name: omniEnv
+channels:
+  - bioconda
+  - conda-forge
+dependencies:
+  - python=3.10
+  - pip
+  - biopython
+  - cython
+  - gffutils
+  - h5py
+  - intervaltree
+  - matplotlib
+  - numpy
+  - pandas
+  - pysam
+  - scikit-learn
+  - scipy
+  - statsmodels
+  - pip:
+    - omniclip
+prefix: /home/hsher/miniconda3/envs/omniEnv

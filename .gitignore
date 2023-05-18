@@ -1,5 +1,3 @@
-*.pyc
-*.dot
-*.pdf
-*-checkpoint*
 .snakemake
+.ipynb_checkpoints
+__pycache__

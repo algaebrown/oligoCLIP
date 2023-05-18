@@ -1,0 +1,6 @@
+name: piranha
+channels:
+  - bioconda
+dependencies:
+  - piranha
+prefix: /home/hsher/miniconda3/envs/prianha

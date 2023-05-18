@@ -1,0 +1,6 @@
+name: fastx_toolkit
+channels:
+  - bioconda
+dependencies:
+  - fastx_toolkit
+prefix: /home/hsher/miniconda3/envs/fastx_toolkit
