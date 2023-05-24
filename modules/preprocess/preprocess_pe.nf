@@ -5,11 +5,14 @@ params.adapter_fwd = "AGATCGGAAGAGCACACGTC"
 params.adapter_rev = "AGATCGGAAGAGCGTCGTGT"
 params.main_path = "/projects/ps-yeolab3/bay001/codebase/oligoCLIP/"
 params.quality_cutoff = 6
-params.libname = 'testing'
-params.fq1 = '/home/bay001/projects/encode5/temporary_data/merged_fastqs/small_test_R1.fastq.gz'
-params.fq2 = '/home/bay001/projects/encode5/temporary_data/merged_fastqs/small_test_R2.fastq.gz'
+params.libName = 'testing'
+params.umi_length = 10
 
 params.greeting = 'Preprocessing eCLIP data!' 
+
+params.reads = "/home/bay001/projects/encode5/temporary_data/merged_fastqs/small_test_R{1,2}.fastq.gz"
+reads_ch = Channel.fromFilePairs(params.reads) 
+
 greeting_ch = Channel.of(params.greeting) 
 
 process tile_adapter {
@@ -27,31 +30,76 @@ process tile_adapter {
 }
 process trim_adapter {
     input:
-        val libname
-        val fq1
-        val fq2
+        val libName
         val adapter_fwd_txt
         val adapter_rev_txt
+        tuple val(replicateId), path(reads)
     output:
-        path "${libname}/all.Tr.fq1.gz"
-        path "${libname}/all.Tr.fq2.gz"
-        path "${libname}.Tr.metrics"
+        path "${libName}/all.Tr.R1.fastq.gz"
+        path "${libName}/all.Tr.R2.fastq.gz"
+        /* path "${libName}.Tr.metrics" */
     script:
         """
-        mkdir ${libname};
+        echo ${libName}
+        echo ${adapter_fwd_txt}
+        echo ${adapter_rev_txt}
+        
+        mkdir ${libName};
         cutadapt -a file:${adapter_fwd_txt} \
         -A file:${adapter_rev_txt} \
         --times 2 \
         -e 0.1 \
         --quality-cutoff ${params.quality_cutoff} \
         -m 23 \
-        -o ${libname}/all.Tr.fq1.gz \
-        -p ${libname}/all.Tr.fq2.gz \
+        -o ${libName}/all.Tr.R1.fastq.gz \
+        -p ${libName}/all.Tr.R2.fastq.gz \
         --cores=0 \
-        ${fq1} ${fq2} > ${libname}.Tr.metrics
+        ${reads[0]} ${reads[1]} > ${libName}.Tr.metrics
         """
 }
+process extract_umi_and_trim_polyG {
+    input:
+        val libName
+        path "${libName}/all.Tr.R1.fastq.gz"
+        path "${libName}/all.Tr.R2.fastq.gz"
+    output:
+        path "${libName}/all.Tr.umi.R1.fastq.gz"
+        path "${libName}/all.Tr.umi.R2.fastq.gz"
+        path "QC/${libName}.umi.json"
+        path "QC/${libName}.umi.html"
+
+    script:
+    """
+    mkdir QC;
+    fastp -i ${libName}/all.Tr.R1.fastq.gz \
+        -I ${libName}/all.Tr.R2.fastq.gz \
+        -o ${libName}/all.Tr.umi.R1.fastq.gz \
+        -O ${libName}/all.Tr.umi.R2.fastq.gz \
+        --disable_adapter_trimming \
+        --umi \
+        --umi_len=${params.umi_length} \
+        --umi_loc=read1 \
+        --trim_poly_g \
+        -j QC/${libName}.umi.json \
+        -h QC/${libName}.umi.html \
+        -w ${task.cpus}
+    """
+}
+
 workflow { 
+    Channel
+        .fromFilePairs(params.reads, checkIfExists: true)
+        .set { read_pairs_ch }
     tile_adapter(params.adapter_fwd, params.adapter_rev)
-    trimmed = trim_adapter(params.libname, params.fq1, params.fq2, tile_adapter.out.adapter_fwd_txt, tile_adapter.out.adapter_rev_txt)
+    trim_ch = trim_adapter(
+        params.libName, 
+        tile_adapter.out.adapter_fwd_txt, 
+        tile_adapter.out.adapter_rev_txt, 
+        read_pairs_ch
+    )
+    extract_umi_ch = extract_umi_and_trim_polyG(
+        params.libName, 
+        trim_ch
+    )
+    
 } 
