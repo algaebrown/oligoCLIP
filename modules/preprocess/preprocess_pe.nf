@@ -7,7 +7,7 @@ params.main_path = "/projects/ps-yeolab3/bay001/codebase/oligoCLIP/"
 params.quality_cutoff = 6
 params.libName = 'testing'
 params.umi_length = 10
-
+params.outDir = '/projects/ps-yeolab3/bay001/codebase/oligoCLIP/nextflow_outputs'
 params.greeting = 'Preprocessing eCLIP data!' 
 
 params.reads = "/home/bay001/projects/encode5/temporary_data/merged_fastqs/small_test_R{1,2}.fastq.gz"
@@ -16,6 +16,7 @@ reads_ch = Channel.fromFilePairs(params.reads)
 greeting_ch = Channel.of(params.greeting) 
 
 process tile_adapter {
+    publishDir "${params.outDir}"
     input:
         val adapter_fwd
         val adapter_rev
@@ -29,6 +30,7 @@ process tile_adapter {
         """
 }
 process trim_adapter {
+    publishDir "${params.outDir}"
     input:
         val libName
         val adapter_fwd_txt
@@ -58,6 +60,7 @@ process trim_adapter {
         """
 }
 process extract_umi_and_trim_polyG {
+    publishDir "${params.outDir}"
     input:
         val libName
         path "${libName}/all.Tr.R1.fastq.gz"
@@ -85,7 +88,24 @@ process extract_umi_and_trim_polyG {
         -w ${task.cpus}
     """
 }
-
+process trim_umi_from_read2 {
+    publishDir "${params.outDir}"
+    input:
+        val libName
+        path "${libName}/all.Tr.umi.R1.fastq.gz"
+        path "${libName}/all.Tr.umi.R2.fastq.gz"
+        path "QC/${libName}.umi.json"
+        path "QC/${libName}.umi.html"
+    output:
+        path "${libName}/all.Tr.umi.Tr.R1.fastq.gz"
+        path "${libName}/all.Tr.umi.Tr.R2.fastq.gz"
+    script:
+    """
+    mv ${libName}/all.Tr.umi.R1.fastq.gz ${libName}/all.Tr.umi.Tr.R1.fastq.gz
+    zcat ${libName}/all.Tr.umi.R2.fastq.gz > ${libName}/all.Tr.umi.R2.fastq
+    seqtk trimfq -e {params.umi_length} ${libName}/all.Tr.umi.R2.fastq | gzip > ${libName}/all.Tr.umi.Tr.R2.fastq.gz
+    """
+}
 workflow { 
     Channel
         .fromFilePairs(params.reads, checkIfExists: true)
@@ -97,9 +117,12 @@ workflow {
         tile_adapter.out.adapter_rev_txt, 
         read_pairs_ch
     )
-    extract_umi_ch = extract_umi_and_trim_polyG(
+    extract_ch = extract_umi_and_trim_polyG(
         params.libName, 
         trim_ch
     )
-    
+    trim_umi_from_read2(
+        params.libName,
+        extract_ch
+    )
 } 
