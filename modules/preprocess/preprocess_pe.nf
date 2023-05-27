@@ -37,8 +37,8 @@ process trim_adapter {
         val adapter_rev_txt
         tuple val(replicateId), path(reads)
     output:
-        path "${libName}/all.Tr.R1.fastq.gz"
-        path "${libName}/all.Tr.R2.fastq.gz"
+        path "${libName}.Tr.R1.fastq.gz"
+        path "${libName}.Tr.R2.fastq.gz"
         /* path "${libName}.Tr.metrics" */
     script:
         """
@@ -53,8 +53,8 @@ process trim_adapter {
         -e 0.1 \
         --quality-cutoff ${params.quality_cutoff} \
         -m 23 \
-        -o ${libName}/all.Tr.R1.fastq.gz \
-        -p ${libName}/all.Tr.R2.fastq.gz \
+        -o ${libName}.Tr.R1.fastq.gz \
+        -p ${libName}.Tr.R2.fastq.gz \
         --cores=0 \
         ${reads[0]} ${reads[1]} > ${libName}.Tr.metrics
         """
@@ -63,28 +63,28 @@ process extract_umi_and_trim_polyG {
     publishDir "${params.outDir}"
     input:
         val libName
-        path "${libName}/all.Tr.R1.fastq.gz"
-        path "${libName}/all.Tr.R2.fastq.gz"
+        path "${libName}.Tr.R1.fastq.gz"
+        path "${libName}.Tr.R2.fastq.gz"
     output:
-        path "${libName}/all.Tr.umi.R1.fastq.gz"
-        path "${libName}/all.Tr.umi.R2.fastq.gz"
-        path "QC/${libName}.umi.json"
-        path "QC/${libName}.umi.html"
+        path "${libName}.Tr.umi.R1.fastq.gz"
+        path "${libName}.Tr.umi.R2.fastq.gz"
+        path "${libName}.QC.umi.json"
+        path "${libName}.QC.umi.html"
 
     script:
     """
     mkdir QC;
-    fastp -i ${libName}/all.Tr.R1.fastq.gz \
-        -I ${libName}/all.Tr.R2.fastq.gz \
-        -o ${libName}/all.Tr.umi.R1.fastq.gz \
-        -O ${libName}/all.Tr.umi.R2.fastq.gz \
+    fastp -i ${libName}.Tr.R1.fastq.gz \
+        -I ${libName}.Tr.R2.fastq.gz \
+        -o ${libName}.Tr.umi.R1.fastq.gz \
+        -O ${libName}.Tr.umi.R2.fastq.gz \
         --disable_adapter_trimming \
         --umi \
         --umi_len=${params.umi_length} \
         --umi_loc=read1 \
         --trim_poly_g \
-        -j QC/${libName}.umi.json \
-        -h QC/${libName}.umi.html \
+        -j ${libName}.QC.umi.json \
+        -h ${libName}.QC.umi.html \
         -w ${task.cpus}
     """
 }
@@ -92,18 +92,17 @@ process trim_umi_from_read2 {
     publishDir "${params.outDir}"
     input:
         val libName
-        path "${libName}/all.Tr.umi.R1.fastq.gz"
-        path "${libName}/all.Tr.umi.R2.fastq.gz"
-        path "QC/${libName}.umi.json"
-        path "QC/${libName}.umi.html"
+        path "${libName}.Tr.umi.R1.fastq.gz"
+        path "${libName}.Tr.umi.R2.fastq.gz"
+        path "${libName}.QC.umi.json"
+        path "${libName}.QC.umi.html"
     output:
-        path "${libName}/all.Tr.umi.Tr.R1.fastq.gz"
-        path "${libName}/all.Tr.umi.Tr.R2.fastq.gz"
+        path("${libName}.Tr.umi.Tr.R{1,2}.fastq.gz")
     script:
     """
-    mv ${libName}/all.Tr.umi.R1.fastq.gz ${libName}/all.Tr.umi.Tr.R1.fastq.gz
-    zcat ${libName}/all.Tr.umi.R2.fastq.gz > ${libName}/all.Tr.umi.R2.fastq
-    seqtk trimfq -e {params.umi_length} ${libName}/all.Tr.umi.R2.fastq | gzip > ${libName}/all.Tr.umi.Tr.R2.fastq.gz
+    mv ${libName}.Tr.umi.R1.fastq.gz ${libName}.Tr.umi.Tr.R1.fastq.gz
+    zcat ${libName}.Tr.umi.R2.fastq.gz > ${libName}.Tr.umi.R2.fastq
+    seqtk trimfq -e {params.umi_length} ${libName}.Tr.umi.R2.fastq | gzip > ${libName}.Tr.umi.Tr.R2.fastq.gz
     """
 }
 workflow { 
@@ -121,6 +120,7 @@ workflow {
         params.libName, 
         trim_ch
     )
+        
     trim_umi_from_read2(
         params.libName,
         extract_ch
