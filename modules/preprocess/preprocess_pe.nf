@@ -9,7 +9,7 @@ params.libName = 'testing'
 params.umi_length = 10
 params.outDir = '/projects/ps-yeolab3/bay001/codebase/oligoCLIP/nextflow_outputs'
 params.greeting = 'Preprocessing eCLIP data!' 
-
+params.barcode_csv = '/projects/ps-yeolab3/bay001/codebase/oligoCLIP/config/barcode_csv/iter6.csv'
 params.reads = "/home/bay001/projects/encode5/temporary_data/merged_fastqs/small_test_R{1,2}.fastq.gz"
 reads_ch = Channel.fromFilePairs(params.reads) 
 
@@ -95,13 +95,29 @@ process trim_umi_from_read2 {
         path "${libName}.Tr.umi.R1.fastq.gz"
         path "${libName}.Tr.umi.R2.fastq.gz"
     output:
-        path("${libName}.Tr.umi.Tr.R1.fastq.gz")
-        path("${libName}.Tr.umi.Tr.R2.fastq.gz")
+        path("${libName}.Tr.umi.Tr.R1.fastq.gz"), emit: read1
+        path("${libName}.Tr.umi.Tr.R2.fastq.gz"), emit: read2
     script:
     """
     mv ${libName}.Tr.umi.R1.fastq.gz ${libName}.Tr.umi.Tr.R1.fastq.gz
     zcat ${libName}.Tr.umi.R2.fastq.gz > ${libName}.Tr.umi.R2.fastq
     seqtk trimfq -e {params.umi_length} ${libName}.Tr.umi.R2.fastq | gzip > ${libName}.Tr.umi.Tr.R2.fastq.gz
+    """
+}
+process demultiplex {
+    publishDir "${params.outDir}"
+    input:
+        val libName
+        path("${libName}.Tr.umi.R1.fastq.gz")
+        path("${libName}.Tr.umi.R2.fastq.gz")
+    output:
+        path("ultraplex_demux_5bc_no_match_Rev.fastq.gz"), emit: read1
+        path("ultraplex_demux_5bc_no_match_Fwd.fastq.gz"), emit: read2
+    script:
+    """
+    ultraplex -i ${libName}.Tr.umi.R2.fastq.gz -i2 ${libName}.Tr.umi.R1.fastq.gz -b ${params.barcode_csv}  \
+        -m5 1 -m3 0 -t ${task.cpus} -a XX -a2 XX --ultra
+    
     """
 }
 workflow { 
@@ -113,13 +129,13 @@ workflow {
         params.adapter_fwd, 
         params.adapter_rev
     )
-    trim_ch = trim_adapter(
+    trim_adapter(
         params.libName, 
         tile_adapter.out.adapter_fwd_txt, 
         tile_adapter.out.adapter_rev_txt, 
         read_pairs_ch
     )
-    extract_ch = extract_umi_and_trim_polyG(
+    extract_umi_and_trim_polyG(
         params.libName, 
         trim_adapter.out.read1,
         trim_adapter.out.read2
@@ -128,6 +144,11 @@ workflow {
         params.libName,
         extract_umi_and_trim_polyG.out.read1,
         extract_umi_and_trim_polyG.out.read2
+    )
+    demultiplex(
+        params.libName,
+        trim_umi_from_read2.out.read1,
+        trim_umi_from_read2.out.read2
     )
     
 } 
