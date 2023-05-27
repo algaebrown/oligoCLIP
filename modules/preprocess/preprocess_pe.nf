@@ -37,9 +37,9 @@ process trim_adapter {
         val adapter_rev_txt
         tuple val(replicateId), path(reads)
     output:
-        path "${libName}.Tr.R1.fastq.gz"
-        path "${libName}.Tr.R2.fastq.gz"
-        /* path "${libName}.Tr.metrics" */
+        path "${libName}.Tr.R1.fastq.gz", emit: read1
+        path "${libName}.Tr.R2.fastq.gz", emit: read2
+        path "${libName}.Tr.metrics"
     script:
         """
         echo ${libName}
@@ -66,8 +66,8 @@ process extract_umi_and_trim_polyG {
         path "${libName}.Tr.R1.fastq.gz"
         path "${libName}.Tr.R2.fastq.gz"
     output:
-        path "${libName}.Tr.umi.R1.fastq.gz"
-        path "${libName}.Tr.umi.R2.fastq.gz"
+        path "${libName}.Tr.umi.R1.fastq.gz", emit: read1
+        path "${libName}.Tr.umi.R2.fastq.gz", emit: read2
         path "${libName}.QC.umi.json"
         path "${libName}.QC.umi.html"
 
@@ -94,10 +94,9 @@ process trim_umi_from_read2 {
         val libName
         path "${libName}.Tr.umi.R1.fastq.gz"
         path "${libName}.Tr.umi.R2.fastq.gz"
-        path "${libName}.QC.umi.json"
-        path "${libName}.QC.umi.html"
     output:
-        path("${libName}.Tr.umi.Tr.R{1,2}.fastq.gz")
+        path("${libName}.Tr.umi.Tr.R1.fastq.gz")
+        path("${libName}.Tr.umi.Tr.R2.fastq.gz")
     script:
     """
     mv ${libName}.Tr.umi.R1.fastq.gz ${libName}.Tr.umi.Tr.R1.fastq.gz
@@ -109,7 +108,11 @@ workflow {
     Channel
         .fromFilePairs(params.reads, checkIfExists: true)
         .set { read_pairs_ch }
-    tile_adapter(params.adapter_fwd, params.adapter_rev)
+        
+    tile_adapter(
+        params.adapter_fwd, 
+        params.adapter_rev
+    )
     trim_ch = trim_adapter(
         params.libName, 
         tile_adapter.out.adapter_fwd_txt, 
@@ -118,11 +121,13 @@ workflow {
     )
     extract_ch = extract_umi_and_trim_polyG(
         params.libName, 
-        trim_ch
+        trim_adapter.out.read1,
+        trim_adapter.out.read2
     )
-        
     trim_umi_from_read2(
         params.libName,
-        extract_ch
+        extract_umi_and_trim_polyG.out.read1,
+        extract_umi_and_trim_polyG.out.read2
     )
+    
 } 
