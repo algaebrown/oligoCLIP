@@ -9,7 +9,7 @@ params.libName = 'testing'
 params.umi_length = 10
 params.outDir = '/projects/ps-yeolab3/bay001/codebase/oligoCLIP/nextflow_outputs'
 params.greeting = 'Preprocessing eCLIP data!' 
-params.barcode_csv = '/projects/ps-yeolab3/bay001/codebase/oligoCLIP/config/barcode_csv/iter6.csv'
+params.barcode_csv = '/home/bay001/projects/codebase/oligoCLIP/test_files/iter7.csv'
 params.reads = "/home/bay001/projects/codebase/oligoCLIP/test_files/GN_1020_SMALL.R{1,2}.fastq.gz"
 reads_ch = Channel.fromFilePairs(params.reads) 
 
@@ -128,12 +128,24 @@ process trim_barcode_r1 {
     publishDir "${params.outDir}"
     input:
         val libName
-        tuple val(barcode), val(rbp)
+        tuple val(rbp_label), val(rbp)
     output:
-        path("mylist.txt")
+        path("ultraplex_demux_${rbp_label}_{Fwd,Rev}.fastq.Tr.fastq.gz"), optional: true
+        path("${rbp_label}_trim_barcode_r1.metrics")
     shell:
     """
-        echo \"${rbp}\" >> mylist.txt
+    # rbptrimmed=\$(echo -n ${rbp_label} | tail -c +2 | head -c -1)
+    bcstring=\$(grep -P ${rbp_label}\$ ${params.barcode_csv} | cut -f1 -d:)
+    if [ -z "\$bcstring" ]
+    then
+        echo ${rbp[0]} ${rbp[1]} \$bcstring "Nothing Nothing"> ${rbp_label}_trim_barcode_r1.metrics
+    else
+        rev_bar=\$(echo \$bcstring | tr ACGTacgt TGCAtgca | rev)
+        echo ${rbp[0]} ${rbp[1]} \$bcstring \$rev_bar > ${rbp_label}_trim_barcode_r1.metrics
+        fastp -i ${rbp[0]} -I ${rbp[1]} -o ${rbp[0].baseName}.Tr.fastq.gz -O ${rbp[1].baseName}.Tr.fastq.gz --adapter_sequence \$rev_bar 2>> ${rbp_label}_trim_barcode_r1.metrics
+        zcat ${rbp[1]} | grep -v "@" | grep \$rev_bar | wc -l >> ${rbp_label}_trim_barcode_r1.metrics
+        zcat ${rbp[1].baseName}.Tr.fastq.gz | grep -v "@" | grep \$rev_bar | wc -l >> ${rbp_label}_trim_barcode_r1.metrics
+    fi
     """
 }
 workflow { 
@@ -167,16 +179,13 @@ workflow {
         trim_umi_from_read2.out.read2
     )
         | flatten
-        | map {tuple(it.baseName.split( '_' )[0..2].join('_'), it) }
+        | map {tuple(it.baseName.replace("ultraplex_demux_", "").replace("_Fwd.fastq", "").replace("_Rev.fastq", ""), it) }
         | groupTuple
-        | view
         | set { rbps_group }
         
-    trim_ch2 = trim_barcode_r1(
+    trim_barcode_r1(
         params.libName,
         rbps_group
     )
-        | view
-    
 } 
 
