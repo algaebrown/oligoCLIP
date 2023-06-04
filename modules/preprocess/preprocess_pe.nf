@@ -10,7 +10,7 @@ params.umi_length = 10
 params.outDir = '/projects/ps-yeolab3/bay001/codebase/oligoCLIP/nextflow_outputs'
 params.greeting = 'Preprocessing eCLIP data!' 
 params.barcode_csv = '/projects/ps-yeolab3/bay001/codebase/oligoCLIP/config/barcode_csv/iter6.csv'
-params.reads = "/home/bay001/projects/encode5/temporary_data/merged_fastqs/small_test_R{1,2}.fastq.gz"
+params.reads = "/home/bay001/projects/codebase/oligoCLIP/test_files/GN_1020_SMALL.R{1,2}.fastq.gz"
 reads_ch = Channel.fromFilePairs(params.reads) 
 
 greeting_ch = Channel.of(params.greeting) 
@@ -111,13 +111,29 @@ process demultiplex {
         path("${libName}.Tr.umi.R1.fastq.gz")
         path("${libName}.Tr.umi.R2.fastq.gz")
     output:
-        path("ultraplex_demux_5bc_no_match_Rev.fastq.gz"), emit: read1
-        path("ultraplex_demux_5bc_no_match_Fwd.fastq.gz"), emit: read2
+        path("ultraplex_demux_*.fastq.gz")
     script:
     """
     ultraplex -i ${libName}.Tr.umi.R2.fastq.gz -i2 ${libName}.Tr.umi.R1.fastq.gz -b ${params.barcode_csv}  \
         -m5 1 -m3 0 -t ${task.cpus} -a XX -a2 XX --ultra
-    
+        
+    if [ ! -f ultraplex_demux_5bc_no_match_Rev.fastq.gz ]
+    then
+        touch ultraplex_demux_5bc_no_match_Rev.fastq.gz
+        touch ultraplex_demux_5bc_no_match_Fwd.fastq.gz
+    fi
+    """
+}
+process trim_barcode_r1 {
+    publishDir "${params.outDir}"
+    input:
+        val libName
+        tuple val(barcode), val(rbp)
+    output:
+        path("mylist.txt")
+    shell:
+    """
+        echo \"${rbp}\" >> mylist.txt
     """
 }
 workflow { 
@@ -150,5 +166,17 @@ workflow {
         trim_umi_from_read2.out.read1,
         trim_umi_from_read2.out.read2
     )
+        | flatten
+        | map {tuple(it.baseName.split( '_' )[0..2].join('_'), it) }
+        | groupTuple
+        | view
+        | set { rbps_group }
+        
+    trim_ch2 = trim_barcode_r1(
+        params.libName,
+        rbps_group
+    )
+        | view
     
 } 
+
