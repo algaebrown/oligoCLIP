@@ -130,8 +130,8 @@ process trim_barcode_r1 {
         val libName
         tuple val(rbp_label), val(rbp)
     output:
-        path("ultraplex_demux_${rbp_label}_{Fwd,Rev}.fastq.Tr.fastq.gz"), optional: true
-        path("${rbp_label}_trim_barcode_r1.metrics")
+        path("ultraplex_demux_${rbp_label}_{Fwd,Rev}.fastq.Tr.fastq.gz"), optional: true, emit: trimmed_reads
+        /* path("${rbp_label}_trim_barcode_r1.metrics") */
     shell:
     """
     # rbptrimmed=\$(echo -n ${rbp_label} | tail -c +2 | head -c -1)
@@ -148,6 +148,20 @@ process trim_barcode_r1 {
     fi
     """
 }
+process fastqc_post_trim {
+    publishDir "${params.outDir}"
+    input:
+        tuple val(rbp_label), path(rbp_path)
+    output:
+        path("ultraplex_demux_${rbp_label}_{Fwd,Rev}.fastq.Tr_fastqc.html")
+        path("ultraplex_demux_${rbp_label}_{Fwd,Rev}.fastq.Tr_fastqc.zip")
+    shell:
+    """
+    fastqc ultraplex_demux_${rbp_label}_Fwd.fastq.Tr.fastq.gz -t ${task.cpus}
+    fastqc ultraplex_demux_${rbp_label}_Rev.fastq.Tr.fastq.gz -t ${task.cpus}
+    """
+}
+
 workflow { 
     Channel
         .fromFilePairs(params.reads, checkIfExists: true)
@@ -181,11 +195,20 @@ workflow {
         | flatten
         | map {tuple(it.baseName.replace("ultraplex_demux_", "").replace("_Fwd.fastq", "").replace("_Rev.fastq", ""), it) }
         | groupTuple
+        | view
         | set { rbps_group }
         
     trim_barcode_r1(
         params.libName,
         rbps_group
+    )
+        | flatten
+        | map {tuple(it.baseName.replace("ultraplex_demux_", "").replace("_Fwd.fastq.Tr.fastq", "").replace("_Rev.fastq.Tr.fastq", ""), it)}
+        | groupTuple
+        | view
+        | set { trimmed_rbps_group }
+    fastqc_post_trim(
+        trimmed_rbps_group
     )
 } 
 
