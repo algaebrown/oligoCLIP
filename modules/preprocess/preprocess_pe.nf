@@ -11,12 +11,13 @@ params.outDir = '/projects/ps-yeolab3/bay001/codebase/oligoCLIP/nextflow_outputs
 params.greeting = 'Preprocessing eCLIP data!' 
 params.barcode_csv = '/home/bay001/projects/codebase/oligoCLIP/test_files/iter7.csv'
 params.reads = "/home/bay001/projects/codebase/oligoCLIP/test_files/GN_1020_SMALL.R{1,2}.fastq.gz"
+params.star_sjdb = "/projects/ps-yeolab3/bay001/annotations/GRCh38/star_2_7_gencode40_sjdb/"
 reads_ch = Channel.fromFilePairs(params.reads) 
 
 greeting_ch = Channel.of(params.greeting) 
 
 process tile_adapter {
-    publishDir "${params.outDir}"
+    publishDir "${params.outDir}", mode: 'copy', overwrite: false
     input:
         val adapter_fwd
         val adapter_rev
@@ -30,7 +31,7 @@ process tile_adapter {
         """
 }
 process trim_adapter {
-    publishDir "${params.outDir}"
+    publishDir "${params.outDir}", mode: 'copy', overwrite: false
     input:
         val libName
         val adapter_fwd_txt
@@ -60,7 +61,7 @@ process trim_adapter {
         """
 }
 process extract_umi_and_trim_polyG {
-    publishDir "${params.outDir}"
+    publishDir "${params.outDir}", mode: 'copy', overwrite: false
     input:
         val libName
         path "${libName}.Tr.R1.fastq.gz"
@@ -89,7 +90,7 @@ process extract_umi_and_trim_polyG {
     """
 }
 process trim_umi_from_read2 {
-    publishDir "${params.outDir}"
+    publishDir "${params.outDir}", mode: 'copy', overwrite: false
     input:
         val libName
         path "${libName}.Tr.umi.R1.fastq.gz"
@@ -105,7 +106,7 @@ process trim_umi_from_read2 {
     """
 }
 process demultiplex {
-    publishDir "${params.outDir}"
+    publishDir "${params.outDir}", mode: 'copy', overwrite: false
     input:
         val libName
         path("${libName}.Tr.umi.R1.fastq.gz")
@@ -125,13 +126,13 @@ process demultiplex {
     """
 }
 process trim_barcode_r1 {
-    publishDir "${params.outDir}"
+    publishDir "${params.outDir}", mode: 'copy', overwrite: false
     input:
         val libName
         tuple val(rbp_label), val(rbp)
     output:
         path("ultraplex_demux_${rbp_label}_{Fwd,Rev}.fastq.Tr.fastq.gz"), optional: true, emit: trimmed_reads
-        /* path("${rbp_label}_trim_barcode_r1.metrics") */
+        path("${rbp_label}_trim_barcode_r1.metrics")
     shell:
     """
     # rbptrimmed=\$(echo -n ${rbp_label} | tail -c +2 | head -c -1)
@@ -149,7 +150,7 @@ process trim_barcode_r1 {
     """
 }
 process fastqc_post_trim {
-    publishDir "${params.outDir}"
+    publishDir "${params.outDir}", mode: 'copy', overwrite: false
     input:
         tuple val(rbp_label), path(rbp_path)
     output:
@@ -161,7 +162,59 @@ process fastqc_post_trim {
     fastqc ultraplex_demux_${rbp_label}_Rev.fastq.Tr.fastq.gz -t ${task.cpus}
     """
 }
-
+process align_reads {
+    cpus 8
+    publishDir "${params.outDir}", mode: 'copy', overwrite: false
+    input:
+        tuple val(rbp_label), path(rbp_path)
+    output:
+        path("${rbp_label}.Aligned.sortedByCoord.out.bam"), emit: bam
+    shell:
+    """
+    STAR \
+        --alignEndsType EndToEnd \
+        --genomeDir ${params.star_sjdb} \
+        --genomeLoad NoSharedMemory \
+        --outBAMcompression 10 \
+        --outFileNamePrefix ${rbp_label}. \
+        --winAnchorMultimapNmax 100 \
+        --outFilterMultimapNmax 100 \
+        --outFilterMultimapScoreRange 1 \
+        --outSAMmultNmax 1 \
+        --outMultimapperOrder Random \
+        --outFilterScoreMin 10 \
+        --outFilterType BySJout \
+        --limitOutSJcollapsed 5000000 \
+        --outReadsUnmapped Fastx \
+        --outSAMattrRGline ID:${rbp_label} \
+        --outSAMattributes All \
+        --outSAMmode Full \
+        --outSAMtype BAM SortedByCoordinate \
+        --outSAMunmapped Within \
+        --outStd Log \
+        --readFilesIn ${rbp_path[0]} ${rbp_path[1]} \
+        --readFilesCommand zcat \
+        --runMode alignReads \
+        --runThreadN ${task.cpus}
+    """
+}
+process umi_dedup {
+    tag "$rbp_label"
+    cpus 8
+    publishDir "${params.outDir}", mode: 'copy', overwrite: false
+    input:
+        path(bam)
+    output:
+        path("*.Aligned.sortedByCoord.out.bam.bai")
+        path("*.Aligned.sortedByCoord.out.rmDup.bam")
+        path("*.Aligned.sortedByCoord.out.rmDup.bam.bai")
+    shell:
+    """
+    samtools index ${bam};
+    umicollapse bam -i ${bam} -o ${bam.baseName}.rmDup.bam --umi-sep : --two-pass --paired;
+    samtools index ${bam.baseName}.rmDup.bam;
+    """
+}
 workflow { 
     Channel
         .fromFilePairs(params.reads, checkIfExists: true)
@@ -195,20 +248,23 @@ workflow {
         | flatten
         | map {tuple(it.baseName.replace("ultraplex_demux_", "").replace("_Fwd.fastq", "").replace("_Rev.fastq", ""), it) }
         | groupTuple
-        | view
         | set { rbps_group }
-        
     trim_barcode_r1(
         params.libName,
         rbps_group
-    )
+    ).trimmed_reads
         | flatten
         | map {tuple(it.baseName.replace("ultraplex_demux_", "").replace("_Fwd.fastq.Tr.fastq", "").replace("_Rev.fastq.Tr.fastq", ""), it)}
         | groupTuple
-        | view
         | set { trimmed_rbps_group }
     fastqc_post_trim(
         trimmed_rbps_group
+    )
+    align_reads(
+        trimmed_rbps_group
+    )
+    umi_dedup(
+        align_reads.out.bam
     )
 } 
 
