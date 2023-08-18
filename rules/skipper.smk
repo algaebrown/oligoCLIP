@@ -32,10 +32,11 @@ rule partition_bam_reads:
         cores = "1",
         memory = "10000",
         job_name = "partition_bam_reads",
-        replicate_label = "{libname}.{sample_label}"
+        replicate_label = "{libname}.{sample_label}",
+        uninformative_read = UNINFORMATIVE_READ
     benchmark: "benchmarks/counts/unassigned_experiment.{libname}.{sample_label}.partition_bam_reads.txt"
     shell:
-        "bedtools bamtobed -i {input.bam} | awk '($1 != \"chrEBV\") && ($4 !~ \"/{UNINFORMATIVE_READ}$\")' | bedtools flank -s -l 1 -r 0 -g {input.chrom_size} -i - | bedtools shift -p -1 -m 1 -g {input.chrom_size} -i - | bedtools coverage -counts -s -a {input.region_partition} -b - | cut -f 7 | awk 'BEGIN {{print \"{params.replicate_label}\"}} {{print}}' > {output.counts};"
+        "bedtools bamtobed -i {input.bam} | awk '($1 != \"chrEBV\") && ($4 !~ \"/{params.uninformative_read}$\")' | bedtools flank -s -l 1 -r 0 -g {input.chrom_size} -i - | bedtools shift -p -1 -m 1 -g {input.chrom_size} -i - | bedtools coverage -counts -s -a {input.region_partition} -b - | cut -f 7 | awk 'BEGIN {{print \"{params.replicate_label}\"}} {{print}}' > {output.counts};"
 
 # concat all reps of the same experiment into 1 table with annotation
 # outputs columns: [annotation] [repcounts]
@@ -125,29 +126,29 @@ rule call_enriched_windows:
         table = lambda wildcards: f"counts/genome/bgtables/{wildcards.bg_sample_label}/"+libname_to_experiment(wildcards.libname)+f".{wildcards.clip_sample_label}.tsv.gz",
         parameters = lambda wildcards: "skipper/clip_model_coef/{libname}.{bg_sample_label}.tsv",
     output:
-        "skipper/threshold_scan/{libname}.{clip_sample_label}.{bg_sample_label}.threshold_data.tsv",
-        "skipper/tested_windows/{libname}.{clip_sample_label}.{bg_sample_label}.tested_windows.tsv.gz",
-        "skipper/enriched_windows/{libname}.{clip_sample_label}.{bg_sample_label}.enriched_windows.tsv.gz",
-        "skipper/enrichment_summaries/{libname}.{clip_sample_label}.{bg_sample_label}.enriched_window_feature_data.tsv",
-        "skipper/enrichment_summaries/{libname}.{clip_sample_label}.{bg_sample_label}.enriched_window_transcript_data.tsv",
-        "skipper/enrichment_summaries/{libname}.{clip_sample_label}.{bg_sample_label}.enriched_window_gene_data.tsv",
-        "skipper/all_reads/{libname}.{clip_sample_label}.{bg_sample_label}.all_reads_fractions_feature_data.tsv",
-        "skipper/all_reads/{libname}.{clip_sample_label}.{bg_sample_label}.all_reads_odds_feature_data.tsv",
-        "skipper/all_reads/{libname}.{clip_sample_label}.{bg_sample_label}.all_reads_odds_transcript_data.tsv",
-        "skipper/all_reads/{libname}.{clip_sample_label}.{bg_sample_label}.all_reads_odds_feature_gc_data.tsv",
-        "skipper/figures/threshold_scan/{libname}.{clip_sample_label}.{bg_sample_label}.threshold_scan.pdf",
-        "skipper/figures/enriched_windows/{libname}.{clip_sample_label}.{bg_sample_label}.enriched_window_coverage.pdf",
-        "skipper/figures/enriched_windows/{libname}.{clip_sample_label}.{bg_sample_label}.enriched_window_rates.pdf",
-        "skipper/figures/enriched_windows/{libname}.{clip_sample_label}.{bg_sample_label}.enriched_window_counts.linear.pdf",
-        "skipper/figures/enriched_windows/{libname}.{clip_sample_label}.{bg_sample_label}.enriched_window_counts.log10.pdf",
-        "skipper/figures/enriched_windows/{libname}.{clip_sample_label}.{bg_sample_label}.enriched_window_odds.feature.pdf",
-        "skipper/figures/enriched_windows/{libname}.{clip_sample_label}.{bg_sample_label}.enriched_window_odds.all_transcript_types.pdf",
-        "skipper/figures/enriched_windows/{libname}.{clip_sample_label}.{bg_sample_label}.enriched_window_odds.select_transcript_types.pdf",
-        "skipper/figures/enriched_windows/{libname}.{clip_sample_label}.{bg_sample_label}.enriched_window_counts.per_gene_feature.pdf",
-        "skipper/figures/all_reads/{libname}.{clip_sample_label}.{bg_sample_label}.all_reads_fractions.feature.pdf",
-        "skipper/figures/all_reads/{libname}.{clip_sample_label}.{bg_sample_label}.all_reads_odds.feature.pdf",
-        "skipper/figures/all_reads/{libname}.{clip_sample_label}.{bg_sample_label}.all_reads_odds.all_transcript_types.pdf",
-        "skipper/figures/all_reads/{libname}.{clip_sample_label}.{bg_sample_label}.all_reads_odds.feature_gc.pdf"
+        "skipper/{bg_sample_label}/threshold_scan/{libname}.{clip_sample_label}.threshold_data.tsv",
+        "skipper/{bg_sample_label}/tested_windows/{libname}.{clip_sample_label}.tested_windows.tsv.gz",
+        "skipper/{bg_sample_label}/enriched_windows/{libname}.{clip_sample_label}.enriched_windows.tsv.gz",
+        "skipper/{bg_sample_label}/enrichment_summaries/{libname}.{clip_sample_label}.enriched_window_feature_data.tsv",
+        "skipper/{bg_sample_label}/enrichment_summaries/{libname}.{clip_sample_label}.enriched_window_transcript_data.tsv",
+        "skipper/{bg_sample_label}/enrichment_summaries/{libname}.{clip_sample_label}.enriched_window_gene_data.tsv",
+        "skipper/{bg_sample_label}/all_reads/{libname}.{clip_sample_label}.all_reads_fractions_feature_data.tsv",
+        "skipper/{bg_sample_label}/all_reads/{libname}.{clip_sample_label}.all_reads_odds_feature_data.tsv",
+        "skipper/{bg_sample_label}/all_reads/{libname}.{clip_sample_label}.all_reads_odds_transcript_data.tsv",
+        "skipper/{bg_sample_label}/all_reads/{libname}.{clip_sample_label}.all_reads_odds_feature_gc_data.tsv",
+        "skipper/{bg_sample_label}/figures/threshold_scan/{libname}.{clip_sample_label}.threshold_scan.pdf",
+        "skipper/{bg_sample_label}/figures/enriched_windows/{libname}.{clip_sample_label}.enriched_window_coverage.pdf",
+        "skipper/{bg_sample_label}/figures/enriched_windows/{libname}.{clip_sample_label}.enriched_window_rates.pdf",
+        "skipper/{bg_sample_label}/figures/enriched_windows/{libname}.{clip_sample_label}.enriched_window_counts.linear.pdf",
+        "skipper/{bg_sample_label}/figures/enriched_windows/{libname}.{clip_sample_label}.enriched_window_counts.log10.pdf",
+        "skipper/{bg_sample_label}/figures/enriched_windows/{libname}.{clip_sample_label}.enriched_window_odds.feature.pdf",
+        "skipper/{bg_sample_label}/figures/enriched_windows/{libname}.{clip_sample_label}.enriched_window_odds.all_transcript_types.pdf",
+        "skipper/{bg_sample_label}/figures/enriched_windows/{libname}.{clip_sample_label}.enriched_window_odds.select_transcript_types.pdf",
+        "skipper/{bg_sample_label}/figures/enriched_windows/{libname}.{clip_sample_label}.enriched_window_counts.per_gene_feature.pdf",
+        "skipper/{bg_sample_label}/figures/all_reads/{libname}.{clip_sample_label}.all_reads_fractions.feature.pdf",
+        "skipper/{bg_sample_label}/figures/all_reads/{libname}.{clip_sample_label}.all_reads_odds.feature.pdf",
+        "skipper/{bg_sample_label}/figures/all_reads/{libname}.{clip_sample_label}.all_reads_odds.all_transcript_types.pdf",
+        "skipper/{bg_sample_label}/figures/all_reads/{libname}.{clip_sample_label}.all_reads_odds.feature_gc.pdf"
     params:
         error_out_file = "error_files/call_enriched_window.bg.{libname}.{clip_sample_label}.{bg_sample_label}.err",
         out_file = "stdout/call_enriched_window.bg.{libname}.{clip_sample_label}.{bg_sample_label}.out",
@@ -155,7 +156,7 @@ rule call_enriched_windows:
         memory = "1000",
         job_name = "call_enriched_windows",
         cores = "1",
-        root_folder = 'skipper'
+        root_folder = lambda wildcards, output: str(output[0]).split('threshold_scan')[0]
     benchmark: "benchmarks/call_enriched_windows/{libname}.{clip_sample_label}.{bg_sample_label}.call_enriched_windows.txt"
     # container:
     #     "docker://algaebrown/beta-binom" # TODO: THIS FUCKING SHIT WORKS WITH COPY AND PASTE BUT NOT SNAKEMAKE. no error msg
@@ -178,7 +179,7 @@ rule sum_all_other_background_as_CC:
     input:
         lambda wildcards: expand("counts/genome/vectors/{libname}.{sample_label}.counts",
         libname = ["{libname}"],
-        sample_label = list(set(rbps)-set([wildcards.clip_sample_label])-set([config['AS_INPUT']]))
+        sample_label = list(set(rbps)-set([wildcards.clip_sample_label])-set(config['AS_INPUT']))
         )
     output:
         counts= "counts_CC/genome/vectors/{libname}.{clip_sample_label}.counts",
@@ -277,7 +278,7 @@ rule call_enriched_windows_CC:
 use rule partition_bam_reads as partition_external_bams with:
     input:
         chrom_size = config['CHROM_SIZES'],
-        bam = lambda wildcards: config['external_bam'][wildcards.external_label],   
+        bam = lambda wildcards: config['external_bam'][wildcards.external_label]['file'],   
         region_partition = config['PARTITION'],
     output:
         counts= "counts/genome/vectors/external.{external_label}.counts",
@@ -288,7 +289,8 @@ use rule partition_bam_reads as partition_external_bams with:
         cores = "1",
         memory = "10000",
         job_name = "partition_bam_reads",
-        replicate_label = "external.{external_label}"
+        replicate_label = "external.{external_label}",
+        uninformative_read = lambda wildcards: 3-config['external_bam'][wildcards.external_label]['INFORMATIVE_READ']
     benchmark: "benchmarks/counts/unassigned_experiment.external.{external_label}.partition_bam_reads.txt"
 
 use rule combine_ip_to_CC as combine_ip_to_external with:

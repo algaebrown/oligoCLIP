@@ -9,9 +9,9 @@ N_READ_TO_SAMPLE=5*10**3
 
 rule gather_trimming_stat:
     input:
-        tr1=expand("fastqs/umi/{sample_label}.umi.r1.fqTr.metrics", sample_label = sample_labels)
+        tr1=expand("QC/{libname}.Tr.metrics", libname = libnames)
     output:
-        tr1='QC/cutadapt_log1.csv',
+        tr1="QC/cutadapt_stat.csv",
     params:
         run_time = "00:10:00",
         cores="1",
@@ -48,10 +48,9 @@ rule gather_fastqc_report:
 
 rule gather_mapstat:
     input:
-        #find_all_files("{libname}/bams/repeat/{sample_label}.Log.final.out", libs)
-        expand("bams/dros/{sample_label}.Log.final.out", sample_label = sample_labels)
+        expand("{libname}/bams/{sample_label}.Log.final.out", libname = libnames, sample_label = rbps),
     output:
-        "QC/dros_mapping_stats.csv"
+        "QC/mapping_stats.csv"
     conda:
         "envs/metadensity.yaml"
     params:
@@ -69,7 +68,7 @@ rule gather_mapstat:
 
 rule duplication_rate:
     input:
-        dup=expand("{libname}/bams/{sample_label}.Log.final.out", libname = libnames, sample_label = rbps),
+        dup=expand("{libname}/bams/{sample_label}.Aligned.sortedByCoord.out.bam", libname = libnames, sample_label = rbps),
         rmdup=expand("{libname}/bams/{sample_label}.rmDup.Aligned.sortedByCoord.out.bam",libname = libnames, sample_label = rbps),
         rmdup_bai=expand("{libname}/bams/{sample_label}.rmDup.Aligned.sortedByCoord.out.bam.bai",libname = libnames, sample_label = rbps)
     output:
@@ -110,6 +109,51 @@ rule count_demultiplex_ultraplex:
         done
         """
 
+
+rule make_read_count_summary:
+    input:
+        feature_annotations = config['FEATURE_ANNOTATIONS'],
+        counts = "counts/genome/megatables/{libname}.tsv.gz",
+    output:
+        region_summary =  "QC/read_count/{libname}.region.csv",
+        type_summary =  "QC/read_count/{libname}.genetype.csv",
+        name_summary =  "QC/read_count/{libname}.genename.csv",
+        dist = "QC/read_count/{libname}.cosine_similarity.csv"
+    params:
+        error_out_file = "error_files/{libname}.read_count_summary.err",
+        out_file = "stdout/{libname}.read_count_summary.out",
+        run_time = "1:20:00",
+        cores = 1
+    run:
+        import os
+        print(output.region_summary)
+        try:
+            os.mkdir('QC/read_count')
+        except Exception as e:
+            print(e)
+        import pandas as pd
+        cnt = pd.read_csv(input.counts, sep = '\t')
+        feature_annotations = pd.read_csv(input.feature_annotations, sep = '\t')
+
+        df = pd.concat([feature_annotations, cnt], axis = 1)
+
+        by_type = df.groupby(by = 'feature_type_top')[cnt.columns].sum()
+        by_gene = df.groupby(by = 'gene_type_top')[cnt.columns].sum()
+        by_name = df.groupby(by = 'gene_name')[cnt.columns].sum()
+
+        by_type.to_csv(output.region_summary)
+        by_gene.to_csv(output.type_summary)
+        by_name.to_csv(output.name_summary)
+
+        # distance
+        from scipy.spatial.distance import pdist, squareform
+        cov_filter = 10
+        dist = squareform(pdist(cnt.loc[cnt.sum(axis = 1)>cov_filter].T, 'cosine'))
+
+        dist_df = pd.DataFrame(1-dist, columns = cnt.columns, index = cnt.columns)
+        dist_df.to_csv(output.dist)
+
+##### debugging ######
 rule what_is_read_wo_barcode:
     input:
         target=HUMAN_RNA_NUCLEOTIDE,
@@ -182,45 +226,161 @@ rule blast_unmapped_reads_too_short:
         module load blast
         blastn -db {input.target} -query {output.fasta} -out {output.blast_result} -outfmt 6 -max_target_seqs 1 
         """
-rule make_read_count_summary:
+
+rule summary_QC_statistics:
+    ''' Gigantic summary table on where we lose our reads '''
     input:
-        feature_annotations = config['FEATURE_ANNOTATIONS'],
-        counts = "counts/genome/megatables/{libname}.tsv.gz",
+        cutadapt_stat = 'QC/cutadapt_stat.csv',
+        mapping_stat = 'QC/mapping_stats.csv',
+        dup_stat = 'QC/dup_level.csv',
+        repeat_cnts = expand("counts/repeats/megatables/class/{libname}.tsv.gz", libname = libnames),
+        genome_cnts = expand('QC/read_count/{libname}.region.csv', libname = libnames)
     output:
-        region_summary =  "QC/read_count/{libname}.region.csv",
-        type_summary =  "QC/read_count/{libname}.genetype.csv",
-        name_summary =  "QC/read_count/{libname}.genename.csv",
-        dist = "QC/read_count/{libname}.cosine_similarity.csv"
+        "QC/summary.csv"
     params:
-        error_out_file = "error_files/{libname}.read_count_summary.err",
-        out_file = "stdout/{libname}.read_count_summary.out",
-        run_time = "1:20:00",
+        error_out_file = "error_files/QC_summary",
+        out_file = "stdout/QC_summary",
+        run_time = "00:20:00",
         cores = 1
     run:
-        import os
-        print(output.region_summary)
-        try:
-            os.mkdir('QC/read_count')
-        except Exception as e:
-            print(e)
         import pandas as pd
-        cnt = pd.read_csv(input.counts, sep = '\t')
-        feature_annotations = pd.read_csv(input.feature_annotations, sep = '\t')
+        import re
+        from pathlib import Path
+        import json
 
-        df = pd.concat([feature_annotations, cnt], axis = 1)
+        #### functions for ultraplex statistics extraction ####
+        def extract_nread_with_barcode(s):
+            ''' extract nread with barcode from ultraplex.log'''
+            pattern = r"(\d+)\s+\((\d+\.\d+)%\)\s+reads\s+correctly\s+assigned"
+            match = re.search(pattern, s)
+            if match:
+                num_reads = match.group(1)
+                percentage = match.group(2)
+            return num_reads, percentage
+        def extract_input_reads(s):
+            '''Demultiplexing complete! 21532666 reads processed in 1095.0 seconds'''
+            pattern = r'(?<=Demultiplexing complete! )\d+(?= reads processed)'
+            
+            matches = re.findall(pattern, s)
 
-        by_type = df.groupby(by = 'feature_type_top')[cnt.columns].sum()
-        by_gene = df.groupby(by = 'gene_type_top')[cnt.columns].sum()
-        by_name = df.groupby(by = 'gene_name')[cnt.columns].sum()
+            if matches:
+                num_reads = int(matches[0])
+                
+            return num_reads
 
-        by_type.to_csv(output.region_summary)
-        by_gene.to_csv(output.type_summary)
-        by_name.to_csv(output.name_summary)
+        def extract_quality_trimmed(s):
+            pattern = r"(\d+)\s+\((\d+\.\d+)%\)\s+reads\s+quality\s+trimmed"
+            match = re.search(pattern, s)
+            if match:
+                num_reads = match.group(1)
+                percentage = match.group(2)
+            return num_reads, percentage
 
-        # distance
-        from scipy.spatial.distance import pdist, squareform
-        cov_filter = 10
-        dist = squareform(pdist(cnt.loc[cnt.sum(axis = 1)>cov_filter].T, 'cosine'))
+        def get_ultraplex_stat(basedir):
+            ultraplex_stat = []
+            for file in basedir.glob('*/fastqs/ultraplex*.log'):
+                libname = file.parent.parent.name
+                with open(file) as f:
+                    lines = f.readlines()
+                    barcode_nread, barcode_perc = extract_nread_with_barcode(lines[-1])
+                    ultraplex_input_nread = extract_input_reads([l for l in lines if 'Demultiplex' in l][0])
+                ultraplex_stat.append([libname, barcode_nread, barcode_perc, ultraplex_input_nread])
+            ultraplex_stat = pd.DataFrame(ultraplex_stat, columns = ['libname', 'nread_w_barcode', '%barcode', 'input_to_ultraplex']
+                                ).drop_duplicates('libname').set_index('libname')
+            return ultraplex_stat
+        
+        def get_fastp_stat(basedir):
+            ''' extracts fastp statistics '''
+            fastp_stats = []
+            for fastp_stat_file in basedir.glob('QC/*umi.json'):
+                fastp_stat = json.load(open(fastp_stat_file))
+                fastp_stats.append([fastp_stat_file.name.split('.')[0],
+                                fastp_stat['summary']['before_filtering']['total_reads'],
+                                fastp_stat['summary']['after_filtering']['total_reads']]
+                                )
+            fastp_stats = pd.DataFrame(fastp_stats, columns = ['libname', 'before_umi_polyG', 'after_umi_polyG']).set_index('libname')
+            fastp_stats['%polyG or too short']=100*(fastp_stats['before_umi_polyG']-fastp_stats['after_umi_polyG'])/fastp_stats['before_umi_polyG']
+            return fastp_stats
 
-        dist_df = pd.DataFrame(1-dist, columns = cnt.columns, index = cnt.columns)
-        dist_df.to_csv(output.dist)
+        # read inputs:
+        cutadapt = pd.read_csv('QC/cutadapt_stat.csv', index_col = 0)
+        genome_stat = pd.read_csv('QC/mapping_stats.csv', index_col = 0)
+        dup_df = pd.read_csv('QC/dup_level.csv', index_col = 0)
+        ultraplex_stat = get_ultraplex_stat(Path('.'))
+        fastp_stats = get_fastp_stat(Path('.'))
+
+        # generate mapping summary
+        genome_stat['libname']=genome_stat['STAR Log filename'].str.split('/', expand = True)[0]
+        mapping_summary = pd.concat([genome_stat.groupby(by = 'libname')['Uniquely mapped reads number'].sum(),
+                genome_stat.groupby(by = 'libname')['Number of reads mapped to multiple loci'].sum(),
+                                    genome_stat.groupby(by = 'libname')['Number of input reads'].sum(),
+                ], axis = 1
+                )
+        mapping_summary['total_mapped']=mapping_summary[['Uniquely mapped reads number', 'Number of reads mapped to multiple loci']].sum(axis = 1)
+        mapping_summary['%Unique map']=100*mapping_summary['Uniquely mapped reads number']/mapping_summary['Number of input reads']
+        mapping_summary['%Multi map']=100*mapping_summary['Number of reads mapped to multiple loci']/mapping_summary['Number of input reads']
+        mapping_summary['% mapped']=100*mapping_summary['total_mapped']/mapping_summary['Number of input reads']
+
+        # generate dedup summary: is the sum of read 1 and read2
+        dup_df['libname']=dup_df['dup_bam'].str.split('/', expand = True)[0]
+        dup_summary_df=dup_df.groupby(by = ['libname'])['before_dedup', 'after_dedup'].sum()
+        dup_summary_df['% Unique frag']=100*dup_summary_df['after_dedup']/dup_summary_df['before_dedup']
+
+        # generate repeat counts summary
+        repeat_cnt_stat = []
+        for repeat_cnt_file in list(Path('counts/repeats/megatables/class').glob('*tsv.gz')):
+            repeat_cnt = pd.read_csv(repeat_cnt_file, sep = '\t', index_col = 0)
+            n_read_in_repeat = repeat_cnt.sum().sum()
+            n_read_in_rRNA = repeat_cnt.loc['rRNA'].sum()
+            
+            repeat_cnt_stat.append([repeat_cnt_file.name.split('.')[0],
+                                    n_read_in_repeat,
+                                    n_read_in_rRNA]
+                                )
+        repeat_cnt_stat = pd.DataFrame(repeat_cnt_stat, columns = ['libname', 'n_read_in_repeat', 'n_read_in_rRNA']).set_index('libname')
+
+        # generate genome counts summary
+        reads_in_window = []
+        for region_cnt in list(Path('QC/read_count').glob('*region.csv')):
+            region_read_count = pd.read_csv(region_cnt, index_col = 0)
+            reads_in_window.append([region_cnt.name.split('.')[0], region_read_count.sum().sum()])
+        reads_in_window = pd.DataFrame(reads_in_window, columns = ['libname', 'nread_in_genome_window']).set_index('libname')
+
+        # make summary
+        cutadapt.index = [i.split('.')[0] for i in cutadapt.index]
+        try:
+            summary = pd.concat([cutadapt[['Total reads processed', '% Reads that were too short']],
+                    fastp_stats,
+                    ultraplex_stat,
+
+                    mapping_summary,
+                    dup_summary_df,
+
+                    reads_in_window,
+                                repeat_cnt_stat],
+                    axis = 1)
+            is_paired = False
+        except:
+            summary = pd.concat([cutadapt[['Total read pairs processed', '% Pairs that were too short']],
+                    fastp_stats,
+                    ultraplex_stat,
+
+                    mapping_summary,
+                    dup_summary_df,
+
+                    reads_in_window,
+                                repeat_cnt_stat],
+                    axis = 1)
+            is_paired = True
+
+        if not is_paired:
+            summary['%_in_genome_window']=100*summary['nread_in_genome_window']/summary['after_dedup']
+            summary['%_in_repeat']=100*summary['n_read_in_repeat']/summary['after_dedup']
+            summary['%_in_rRNA']=100*summary['n_read_in_rRNA']/summary['after_dedup']
+        else:
+            # counting is only counting 1 read, but samtools counts both
+            summary['%_in_genome_window']=100*2*summary['nread_in_genome_window']/summary['after_dedup']
+            summary['%_in_repeat']=100*2*summary['n_read_in_repeat']/summary['after_dedup']
+            summary['%_in_rRNA']=100*2*summary['n_read_in_rRNA']/summary['after_dedup']
+
+        summary.T.to_csv(output[0])

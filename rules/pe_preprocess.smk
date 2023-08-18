@@ -148,7 +148,7 @@ rule demultiplex: ################ never used the trimmed fastq file
         cd {params.prefix}
         # in case there is no not matched ones
         
-        ultraplex -i all.Tr.umi.fq2.gz -i2 all.Tr.umi.fq2.trim.gz -b {input.barcode_csv}  \
+        ultraplex -i all.Tr.umi.fq2.trim.gz -i2 all.Tr.umi.fq1.gz -b {input.barcode_csv}  \
             -m5 1 -m3 0 -t {params.cores} -a XX -a2 XX --ultra
         if [ ! -f ultraplex_demux_5bc_no_match_Rev.fastq.gz ]
         then

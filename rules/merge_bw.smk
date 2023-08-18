@@ -2,7 +2,7 @@ rule merge_other_bw_as_bg:
     input:
         bws=lambda wildcards: expand("{libname}/bw/{signal_type}/{sample_label}.{strand}.bw",
             libname = [wildcards.libname],
-            sample_label = list(set(config['rbps'])-set([wildcards.sample_label])-set([config['AS_INPUT']])),
+            sample_label = list(set(config['rbps'])-set([wildcards.sample_label])-set(config['AS_INPUT'])),
             signal_type = [wildcards.signal_type],
             strand = [wildcards.strand]
         )

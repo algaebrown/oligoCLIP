@@ -8,8 +8,8 @@ model_data = read_tsv(args[3])
 input_replicate_label = args[4]
 clip_replicate_label = args[5]
 output_stem = args[6]
+root_folder = args[7] # internal_output
 
-root_folder = dirname(dirname(dirname(dirname(dirname(args[1]))))) # internal_output
 scatter_re_path = file.path(root_folder, "figures", "clip_scatter_re")
 dir.create(scatter_re_path, showWarnings = FALSE, recursive = TRUE)
 enrich_dir = file.path(root_folder, "enriched_re/")

@@ -1,17 +1,17 @@
 import pandas as pd
+import os
 rbps = config['rbps']
 experiments = config['experiments']
 libnames = config['libnames']
 SCRIPT_PATH=config['SCRIPT_PATH']
 manifest = pd.read_table(config['MANIFEST'], index_col = False, sep = ',')
 
-GFF_file='/home/hsher/gencode_coords/gencode.v38.primary_assembly.annotation.gff3'
-DB_FILE='/home/hsher/scratch/gencode.v38.k562.ominclip.db'
-GENOME_dir='/home/hsher/scratch/GRCh38.primary/'
-GENOMEFA = config['GENOMEFA']
-print(DB_FILE)
 
-import os
+DB_FILE=config['DB_FILE']
+GENOME_dir=config['GENOME_dir']
+GENOMEFA = config['GENOMEFA']
+
+
 
 def libname_to_experiment(libname):
     return manifest.loc[manifest['libname']==libname, 'experiment'].iloc[0]
@@ -136,7 +136,7 @@ rule omniclip_call:
         run_time = "16:10:00",
         memory = "10000",
         job_name = "omniclip_call",
-        cores = 1,
+        cores = 12,
     conda:
         "envs/omniclip.yaml"
     benchmark: "benchmarks/omniclip/call.{libname}.{sample_label}.txt"
@@ -145,6 +145,4 @@ rule omniclip_call:
         omniCLIP run_omniCLIP \
             --db-file {DB_FILE} --bg-dat {input.cc_data} --clip-dat {input.ip_data} \
             --out-dir {output.outdir} > {output.done}
-        
-
         """
