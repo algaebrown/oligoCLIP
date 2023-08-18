@@ -22,7 +22,6 @@ external_bam:
   K562_totalRNAseq: /home/hsher/seqdata/20230401_charl_encode_totalrnaseq/output/bams/ENCODE_K562_totalRNAseq.Aligned.sortedByCoord.out.bam
 
 # dependency
-QC_TOOLS_PATH: /home/hsher/projects/QC_tools
 SCRIPT_PATH: /home/hsher/projects/oligoCLIP/scripts/
 MAKE_TRACK: /home/hsher/projects/make_tracks/Snake_CLIP_track.py
 

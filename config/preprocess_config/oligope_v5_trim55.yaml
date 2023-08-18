@@ -13,7 +13,6 @@ external_bam:
   Trim55_IN1: /home/mgosztyl/yeolab3/zf_eclips/updated_skipper_analysis_all/output/bams/dedup/genome/TRIM55_IN_1.genome.Aligned.sort.dedup.bam
   
 # dependency
-QC_TOOLS_PATH: /home/hsher/projects/QC_tools
 SCRIPT_PATH: /home/hsher/projects/oligoCLIP/scripts/
 MAKE_TRACK: /home/hsher/projects/make_tracks/Snake_CLIP_track.py
 

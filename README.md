@@ -10,7 +10,6 @@
     - `git branch` to double check you are on the right branch.
 - Download depending repository and modify config variables as follow: # TODO: containerize or make to snakemake hub
     - Yeolab internal users don't need to.
-    - [QC_TOOLS_PATH](https://github.com/algaebrown/QC_tools): scripts to gather QC statistics. 
     - [MAKE_TRACK](https://github.com/algaebrown/make_track): scripts to compute bigwig tracks for CITS, CIMs and coverage.
 - Install skipper dependecies and modify the following config variables:`JAVA_PATH`,`UMICOLLAPSE_PATH`, `R_EXE`. # TODO: containerize
     - follow [skipper instructions](https://github.com/YeoLab/skipper#prerequisites)
@@ -65,7 +64,6 @@ snakemake -s snakeOligoCLIP_PE.py \
 
 
 ## Dependencies:
-- [QC_TOOLS_PATH](https://github.com/algaebrown/QC_tools): scripts to gather QC statistics. 
 - [MAKE_TRACK](https://github.com/algaebrown/make_track): scripts to compute bigwig tracks for CITS, CIMs and coverage.
 - `SCRIPT_PATH`: Absolute path to `scripts` folder.
 - `JAVA_PATH`,`UMICOLLAPSE_PATH`, `R_EXE`: skipper dependencies. See `Installation`.

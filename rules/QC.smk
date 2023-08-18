@@ -1,4 +1,4 @@
-QC_PATH = config['QC_TOOLS_PATH']
+SCRIPT_PATH=config['SCRIPT_PATH']
 
 sample_labels = config['rbps']
 libnames = config['libnames']
@@ -15,14 +15,13 @@ rule gather_trimming_stat:
     params:
         run_time = "00:10:00",
         cores="1",
-        QC_PATH = QC_PATH,
         error_out_file = "error_files/qctrim.txt",
         out_file = "stdout/qctrim",
     conda:
         "envs/metadensity.yaml"
     shell:
         """
-        python {params.QC_PATH}/trimming_stat.py "{input.tr1:q}" {output.tr1}
+        python {SCRIPT_PATH}/trimming_stat.py "{input.tr1:q}" {output.tr1}
         """
 
 rule gather_fastqc_report:
@@ -36,14 +35,13 @@ rule gather_fastqc_report:
         cores = "1",
         memory = "10000",
         job_name = "gather_stat",
-        QC_PATH = QC_PATH,
         error_out_file = "error_files/fastqc_stat.txt",
         out_file = "stdout/fastqc",
     conda:
         "envs/metadensity.yaml"
     shell:
         """
-        python {params.QC_PATH}/fastqc_io.py -i "{input}" -p {output.passfail} -b {output.basic}
+        python {SCRIPT_PATH}/fastqc_io.py -i "{input}" -p {output.passfail} -b {output.basic}
         """
 
 rule gather_mapstat:
@@ -59,11 +57,10 @@ rule gather_mapstat:
         cores = "1",
         memory = "10000",
         job_name = "gather_stat",
-        QC_PATH = QC_PATH,
         out_file = "stdout/mapstat",
     shell:
         """
-        python {params.QC_PATH}/star_mapping_stat_io.py -i "{input}" -o {output}
+        python {SCRIPT_PATH}/star_mapping_stat_io.py -i "{input}" -o {output}
         """
 
 rule duplication_rate:
@@ -80,12 +77,11 @@ rule duplication_rate:
         cores = "1",
         memory = "10000",
         job_name = "gather_stat",
-        QC_PATH = QC_PATH,
     conda:
         "envs/metadensity.yaml"
     shell:
         """
-        python {params.QC_PATH}/dup_level.py "{input.dup}" "{input.rmdup}" {output}
+        python {SCRIPT_PATH}/dup_level.py "{input.dup}" "{input.rmdup}" {output}
         """
 
 #echo haha $(echo $(zcat multiplex_HEK293_3/fastqs/ultraplex_demux_QKI_Rev.fastq.gz | wc -l)/4 | bc)
@@ -100,7 +96,6 @@ rule count_demultiplex_ultraplex:
         run_time = "00:40:00",
         cores = "1",
         memory = "10000",
-        QC_PATH = QC_PATH,
     shell:
         """
         touch {output}

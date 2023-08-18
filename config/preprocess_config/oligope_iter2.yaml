@@ -17,8 +17,6 @@ barcode_csv: /home/hsher/projects/oligoCLIP/config/barcode_csv/katie_pe.csv # re
 
 STAR_DIR: /projects/ps-yeolab3/bay001/annotations/GRCh38/star_2_7_gencode40_sjdb
 
-QC_TOOLS_PATH: /home/hsher/projects/QC_tools
-
 JAVA_PATH: /projects/ps-yeolab3/eboyle/software/jdk-18.0.1.1/bin/java
 UMICOLLAPSE_PATH: /projects/ps-yeolab3/eboyle/software/UMICollapse/umicollapse.jar
 

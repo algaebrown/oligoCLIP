@@ -47,8 +47,6 @@ umi_pattern: XXXXXNNNNN
 
 # Resources
 STAR_DIR: /projects/ps-yeolab5/hsher/Tao_circSTAMP/star_2_7_gencode35
-
-QC_TOOLS_PATH: /home/hsher/projects/QC_tools
 SCRIPT_PATH: /home/hsher/projects/oligoCLIP/scripts/
 
 # UMI colla[se]

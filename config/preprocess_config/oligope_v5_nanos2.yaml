@@ -16,7 +16,6 @@ external_bam:
   NANO_V5_IP2: /home/mgosztyl/yeolab3/zf_eclips/updated_skipper_analysis_all/output/bams/dedup/genome/V5_25_to_100_IP_2.genome.Aligned.sort.dedup.bam
 
 # dependency
-QC_TOOLS_PATH: /home/hsher/projects/QC_tools
 SCRIPT_PATH: /home/hsher/projects/oligoCLIP/scripts/
 MAKE_TRACK: /home/hsher/projects/make_tracks/Snake_CLIP_track.py
 
