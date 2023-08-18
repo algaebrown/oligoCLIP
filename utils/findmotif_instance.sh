@@ -12,5 +12,5 @@ rbfox2_motif=/home/hsher/scratch/ABC_2rep/beta-mixture_CC/homer/finemapped_resul
 rbfox2_motif_dir=/home/hsher/scratch/ABC_2rep/beta-mixture_CC/homer/finemapped_results/COV/
 
 
-findMotifsGenome.pl $window_peak_format hg38 $pum2_motif_dir -find $pum2_motif > /home/hsher/scratch/k562_window_pum2.homer.motif
-findMotifsGenome.pl $window_peak_format hg38 $rbfox2_motif_dir -find $rbfox2_motif > /home/hsher/scratch/k562_window_rbfox2.homer.motif
+findMotifsGenome.pl $window_peak_format hg38 $pum2_motif_dir -find $pum2_motif -size given > /home/hsher/scratch/k562_window_pum2.homer.motif
+findMotifsGenome.pl $window_peak_format hg38 $rbfox2_motif_dir -find $rbfox2_motif -size given > /home/hsher/scratch/k562_window_rbfox2.homer.motif
