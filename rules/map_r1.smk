@@ -7,7 +7,7 @@ module QC_1:
 
 module make_track_1:
     snakefile:
-        config['MAKE_TRACK']
+        "rules/make_track.smk"
     config:
         config
 

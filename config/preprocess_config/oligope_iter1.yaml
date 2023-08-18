@@ -40,7 +40,6 @@ SCRIPT_PATH: /home/hsher/projects/oligoCLIP/scripts/
 REPEAT_TABLE: /projects/ps-yeolab3/eboyle/encode/pipeline/05_20220720/repeatmasker.grch38.tsv.gz
 
 # 
-MAKE_TRACK: /home/hsher/projects/make_tracks/Snake_CLIP_track.py
 trackhub_genome: GRCh38
 
 # Single-end: enter 1. Paired-end: enter read (1 or 2) corresponding to crosslink site

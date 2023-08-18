@@ -13,8 +13,6 @@ barcode_csv: /home/hsher/projects/oligoCLIP/config/barcode_csv/sara_CN.csv # rev
 STAR_REP: /projects/ps-yeolab4/software/eclip/0.7.0/examples/inputs/star_2_7_homo_sapiens_repbase_fixed_v2
 STAR_DIR: /projects/ps-yeolab5/hsher/Tao_circSTAMP/star_2_7_gencode35
 
-QC_TOOLS_PATH: /home/hsher/projects/QC_tools
-
 JAVA_PATH: /projects/ps-yeolab3/eboyle/software/jdk-18.0.1.1/bin/java
 UMICOLLAPSE_PATH: /projects/ps-yeolab3/eboyle/software/UMICollapse/umicollapse.jar
 
@@ -30,5 +28,4 @@ R_EXE: /projects/ps-yeolab4/software/R-4.1.2/bin/Rscript
 SCRIPT_PATH: /home/hsher/projects/oligoCLIP/scripts/
 
 # 
-MAKE_TRACK: /home/hsher/projects/make_tracks/Snake_CLIP_track.py
 trackhub_genome: GRCh38

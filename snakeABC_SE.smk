@@ -106,7 +106,7 @@ module repeat_dmn:
 
 module make_track:
     snakefile:
-        config['MAKE_TRACK']
+        "rules/make_track.smk"
     config:
         config
 
@@ -172,7 +172,7 @@ use rule * from repeat_dmn as redmn_*
 use rule * from clipper as clipper_*
 
 ############## BIGWIGS #################
-use rule CITS_bam_to_bedgrah from make_track as CITS_bedgraph with:
+use rule CITS_bam_to_bedgraph from make_track as CITS_bedgraph with:
     input:
         bam="{libname}/bams/{sample_label}.rmDup.Aligned.sortedByCoord.out.bam"
     output:
@@ -185,7 +185,7 @@ use rule COV_bam_to_bedgraph from make_track as COV_bedgraph with:
         pos="{libname}/bw/COV/{sample_label}.pos.bedgraph",
         neg="{libname}/bw/COV/{sample_label}.neg.bedgraph"
 
-use rule CITS_bam_to_bedgrah from make_track as CITS_bedgraph_external with:
+use rule CITS_bam_to_bedgraph from make_track as CITS_bedgraph_external with:
     input:
         bam=lambda wildcards: config['external_bam'][wildcards.external_label]['file']
     output:

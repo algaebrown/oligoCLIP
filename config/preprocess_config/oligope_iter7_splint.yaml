@@ -16,7 +16,6 @@ external_bam:
 
 # dependency
 SCRIPT_PATH: /home/hsher/projects/oligoCLIP/scripts/
-MAKE_TRACK: /home/hsher/projects/make_tracks/Snake_CLIP_track.py
 
 # Skipper dependencies
 JAVA_PATH: /projects/ps-yeolab3/eboyle/software/jdk-18.0.1.1/bin/java

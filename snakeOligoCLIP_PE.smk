@@ -73,11 +73,6 @@ module preprocess:
         "rules/pe_preprocess.smk"
     config: config
 
-module mapr1:
-    snakefile:
-        "rules/map_r1.smk"
-    config: config
-
 module QC:
     snakefile:
         "rules/QC.smk"
@@ -104,7 +99,7 @@ module repeat:
 
 module make_track:
     snakefile:
-        config['MAKE_TRACK']
+        "rules/make_track.smk"
     config:
         config
 
@@ -188,14 +183,7 @@ use rule extract_read_two from make_track as extract_r1 with: # oligoPE truncati
         read2="{libname}/bw/{sample_label}.r2.bam",
         read1="{libname}/bw/{sample_label}.r1.bam"
 
-use rule strand_specific_bam from make_track as strand_specific_bam with:
-    input:
-        bam = "{libname}/bw/{sample_label}.r1.bam"
-    output:
-        pos_bam = "{libname}/bw/{sample_label}.pos.bam",
-        neg_bam = "{libname}/bw/{sample_label}.neg.bam"
-
-use rule CITS_bam_to_bedgrah from make_track as CITS_bedgraph with:
+use rule CITS_bam_to_bedgraph from make_track as CITS_bedgraph with:
     input:
         bam="{libname}/bw/{sample_label}.r1.bam"
     output:

@@ -10,7 +10,6 @@
     - `git branch` to double check you are on the right branch.
 - Download depending repository and modify config variables as follow: # TODO: containerize or make to snakemake hub
     - Yeolab internal users don't need to.
-    - [MAKE_TRACK](https://github.com/algaebrown/make_track): scripts to compute bigwig tracks for CITS, CIMs and coverage.
 - Install skipper dependecies and modify the following config variables:`JAVA_PATH`,`UMICOLLAPSE_PATH`, `R_EXE`. # TODO: containerize
     - follow [skipper instructions](https://github.com/YeoLab/skipper#prerequisites)
 - Most dependencies are already specified in `rules/envs`. When running snakemake, using `--use-conda` should automatically install everything for you.
@@ -64,7 +63,6 @@ snakemake -s snakeOligoCLIP_PE.py \
 
 
 ## Dependencies:
-- [MAKE_TRACK](https://github.com/algaebrown/make_track): scripts to compute bigwig tracks for CITS, CIMs and coverage.
 - `SCRIPT_PATH`: Absolute path to `scripts` folder.
 - `JAVA_PATH`,`UMICOLLAPSE_PATH`, `R_EXE`: skipper dependencies. See `Installation`.
 
@@ -172,7 +170,7 @@ The meat of the pipeline is in `rules/`:
 - `normalization_DMN` contains Mudskipper code, which does mixture model/generative clustering.
 - `clipper.smk` runs CLIPper and the chi-square things. Stolen from ENCODE pipeline.
 - `analysis.smk` and `finemap.smk`: runs finemapping, motif detection from Skipper and MudSkipper
-- rules for bigwig generation is in `MAKE_TRACK` repository.
+- rules for bigwig generation is in `make_track.smk`
 - `merge_bw.smk` sums up bigwigs to make complementary control.
 
 
