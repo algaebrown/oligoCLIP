@@ -11,16 +11,18 @@
 - Download depending repository and modify config variables as follow: # TODO: containerize or make to snakemake hub
     - Yeolab internal users don't need to.
 - Install skipper dependecies and modify the following config variables:`JAVA_PATH`,`UMICOLLAPSE_PATH`, `R_EXE`. # TODO: containerize
-    - follow [skipper instructions](https://github.com/YeoLab/skipper#prerequisites)
+    - follow [skipper instructions](https://github.com/YeoLab/skipper#prerequisites) to set up
 - Most dependencies are already specified in `rules/envs`. When running snakemake, using `--use-conda` should automatically install everything for you.
 
 
 # How to run.
+1. prepare `PATH_TO_YOUR_CONFIG`. See below and `config/preprocess_config/oligope_iter5.yaml`
+2. Run snakemake
 ```
 snakemake -s snakeOligoCLIP_PE.py \ 
     -j 12 \
     --cluster "qsub -l walltime={params.run_time} -l nodes=1:ppn={params.cores} -q home-yeo -e {params.error_out_file} -o {params.out_file}" \
-    --configfile config/preprocess_config/oligope_iter4.yaml \
+    --configfile PATH_TO_YOUR_CONFIG \
     --use-conda \
     --conda-prefix /home/hsher/snakeconda -npk
 ```
@@ -56,10 +58,28 @@ snakemake -s snakeOligoCLIP_PE.py \
         - ABC: read starts with this sequence.
     - 2nd column: Antibody/RBP name, Should not contain space, special characters such as #,%,*.
 
-### OTHER
-- `WORKDIR`: where outputs will be written
-- `AS_INPUT`: if you have a IgG antibody that everything will normalize against, type its name here. Must be one of the rows in `barcode_csv`.
+### Outputs
+- `WORKDIR`: output directory
 - `RBP_TO_RUN_MOTIF`: list of RBP names to run motif analysis. Must be one of the rows in `barcode_csv`.
+- `run_clipper`: True if you want CLIPper outputs (works, but slow)
+- `run_skipper`: True if you want to run Skipper. (usually doesn't work in ABC)
+- `run_comparison`: True if you want to run Piranha
+- debug: True if you want to debug. This tries to blast the unmapped reads.
+
+### Choosing backgrounds
+By default if the below are left blank, we run Dirichlet Multinomial Mixture(DMM) for multiplex datasets, where RBPs are explicitly compared with each other. DMM is the best model for multiplex dataset. 
+
+Unfortunately, DMM doesn't work for singleplex. Calling singleplex binding sites require "external control" (see below). Otherwise it will just stop at the read counting stage.
+
+But if you want to add an background library, here is how to do:
+#### "Internal control": a barcode that measures the background. They are in the same `fastq.gz`
+- `AS_INPUT`: if you have a IgG antibody that everything will normalize against, type its name here. Must be one of the rows in `barcode_csv`. This can the background for skipper, CLIPper, and beta-binomial mixture model
+#### "External control": a library that is NOT in the same fastq as your oligoCLIP/ABC
+- specify them in `external_bam`
+- This can be an eCLIP SMInput, total RNA-seq, IgG pull down from another experiment, bead control, spike-ins
+- these will also be used as a background in skipper, CLIPper and beta-binomial mixture model
+- the bams must be processed with the exact same STAR index as `STAR_DIR`, and is recommended to be processed with the same/similar mapping parameters as this repo or skipper.
+
 
 
 ## Dependencies:
@@ -94,7 +114,7 @@ These are in the `EXPERIMENT_NAME` folders. For example, in your manifest.csv, t
 4. `bw_bg` contains bigwigs of "complementary control(CC)", namely, summing all the other RBPs together.
 
 ## QC: Quality control files. 
-These contain numbers that will help you debug your protocol. To look at them swiftly, I personally like to install VS code, and install some csv editing extension so the file can appear like a table.
+These contain numbers that will help you debug your protocol. To look at them swiftly, I personally like to install VS code, and install some csv editing extension so the file can appear like a table. Everything is compiled into `QC/summary.csv`.
 1. `cutadapt_stat.csv` contains how many times reads contain adapter, and how many reads are too short after adapter trimming.
     - One of my favorite column is "Reads/Pairs that were too short". When reads are too short after trimming, it means they are probably adapter dimer, or you fragment it too much.
 2. `fastQC*` are the summary from fastqs that has been trimmed. 
@@ -166,12 +186,16 @@ This pipeline tries to integrate multiple peak callers/binding site finders and 
 The meat of the pipeline is in `rules/`:
 - `se_preprocess` and `pe_preprocess` takes fastq --> trim -> demultiplex -> deduplicate -> bams
 - `QC` contains rules to assemble quality control statistics, and some additional debugging rules such as investigating unmapped reads and those without barcode.
-- `skipper.smk` is entirely stolen from skipper
-- `normalization_DMN` contains Mudskipper code, which does mixture model/generative clustering.
-- `clipper.smk` runs CLIPper and the chi-square things. Stolen from ENCODE pipeline.
-- `analysis.smk` and `finemap.smk`: runs finemapping, motif detection from Skipper and MudSkipper
 - rules for bigwig generation is in `make_track.smk`
 - `merge_bw.smk` sums up bigwigs to make complementary control.
+- `normalization_DMN`, `repeat_DMN` contains Mudskipper code, which does mixture model/generative clustering in genomic windows and repeat windows.
+- `skipper.smk`, `repeat.smk` is entirely stolen from skipper
+- `clipper.smk` runs CLIPper and the chi-square things. Stolen from ENCODE pipeline.
+- `analysis.smk` and `finemap.smk`: runs finemapping, motif detection from Skipper and MudSkipper
+
+Some rules to help you debug
+- `map_r1.smk` and `multimap.smk`
+
 
 
 
