@@ -11,8 +11,10 @@ RBP_TO_RUN_MOTIF:
 - PRPF8
 - QKI
 
-run_clipper: True
+run_clipper: False
 run_skipper: True
+run_comparison: False
+debug: True
 
 external_bam:
   K562_totalRNAseq: /home/hsher/seqdata/20230401_charl_encode_totalrnaseq/output/bams/ENCODE_K562_totalRNAseq.Aligned.sortedByCoord.out.bam
@@ -34,7 +36,7 @@ tile_length: 10
 QUALITY_CUTOFF: 15
 error_rate: 0.2
 umi_length: 10
-STAR_DIR: /projects/ps-yeolab5/hsher/Tao_circSTAMP/star_2_7_gencode35
+STAR_DIR: /projects/ps-yeolab3/bay001/annotations/GRCh38/star_2_7_gencode40_sjdb
 
 # skipper annotations
 PARTITION: /projects/ps-yeolab4/software/skipper/1.0.0/bin/skipper/annotations/gencode.v38.annotation.k562_totalrna.gt1.tiled_partition.bed.gz
@@ -44,8 +46,8 @@ REPEAT_TABLE: /projects/ps-yeolab3/eboyle/encode/pipeline/05_20220720/repeatmask
 
 
 # other annotations
-CHROM_SIZES: /home/hsher/gencode_coords/GRCh38.primary_assembly.chrom.sizes
-GENOMEFA: /home/hsher/gencode_coords/GRCh38.primary_assembly.genome.fa
+CHROM_SIZES: /projects/ps-yeolab3/bay001/annotations/GRCh38/GRCh38_no_alt_analysis_set_GCA_000001405.15.chrom.sizes
+GENOMEFA: /projects/ps-yeolab3/bay001/annotations/GRCh38/GRCh38_no_alt_analysis_set_GCA_000001405.15.fasta
 
 
 # Single-end: enter 1. Paired-end: enter read (1 or 2) corresponding to crosslink site
@@ -56,3 +58,9 @@ SPECIES: GRCh38v35noalt
 DATADIR: /home/hsher/scratch/clipper/clipper/data
 GTF: /home/hsher/gencode_coords/gencode.v35.gtf.db
 ANNOTATOR_SPECIES: GRCh38
+
+#OmniCLIP
+GFF_file: /home/hsher/gencode_coords/gencode.v38.primary_assembly.annotation.gff3
+DB_FILE: /home/hsher/scratch/gencode.v38.k562.ominclip.db
+GENOME_dir: /home/hsher/scratch/GRCh38.primary/
+

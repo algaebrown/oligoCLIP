@@ -3,9 +3,40 @@ barcode_csv: /home/hsher/projects/oligoCLIP/config/barcode_csv/ABC_barcode_slbp_
 WORKDIR: /home/hsher/scratch/ABC_singleplex_SLBP
 
 run_clipper: False
-run_skipper: False
+run_skipper: True
 run_comparison: False
+debug: False
 
+
+external_bam:
+  K562_totalRNAseq: 
+    file: /home/hsher/seqdata/20230401_charl_encode_totalrnaseq/output/bams/ENCODE_K562_totalRNAseq.Aligned.sortedByCoord.out.bam
+    INFORMATIVE_READ: 1
+  eCLIP_SLBP_SMInput: 
+    file: /home/hsher/scratch/ENCODE_k562/output/bams/dedup/genome_R2/SLBP_IN_1.genome.Aligned.sort.dedup.R2.bam
+    INFORMATIVE_READ: 2
+  ABC_K562_summed: 
+    file: /home/hsher/scratch/ABC_2rep_K562_rep6.sorted.bam
+    INFORMATIVE_READ: 1
+  oligoCLIP_IgG_rep1:
+    file: /home/hsher/scratch/oligo_PE_iter4/Rep1/bams/IgG_Rabbit.rmDup.Aligned.sortedByCoord.out.bam
+    INFORMATIVE_READ: 1
+  oligoCLIP_IgG_rep2:
+    file: /home/hsher/scratch/oligo_PE_iter4/Rep2/bams/IgG_Rabbit.rmDup.Aligned.sortedByCoord.out.bam
+    INFORMATIVE_READ: 1
+  oligoCLIP_ctrlSpike_rep1:
+    file: /home/hsher/scratch/oligo_PE_iter7/1022-Rep1/bams/ctrlSpike.rmDup.Aligned.sortedByCoord.out.bam
+    INFORMATIVE_READ: 1
+  oligoCLIP_ctrlSpike_rep2:
+    file: /home/hsher/scratch/oligo_PE_iter7/1022-Rep2/bams/ctrlSpike.rmDup.Aligned.sortedByCoord.out.bam
+    INFORMATIVE_READ: 1
+  oligoCLIP_ctrlBead_rep1:
+    file: /home/hsher/scratch/oligo_PE_iter7/1022-Rep1/bams/ctrlBead.rmDup.Aligned.sortedByCoord.out.bam
+    INFORMATIVE_READ: 1
+  oligoCLIP_ctrlBead_rep2:
+    file: /home/hsher/scratch/oligo_PE_iter7/1022-Rep2/bams/ctrlBead.rmDup.Aligned.sortedByCoord.out.bam
+    INFORMATIVE_READ: 1
+  
 # ADAPTOR_PATH: /projects/ps-yeolab4/software/eclip/0.7.0/examples/inputs
 # adaptor: InvRiL19
 adaptor_fwd: AGATCGGAAGAGCACACGTC
@@ -50,3 +81,8 @@ RBP_TO_RUN_MOTIF:
 # CLIPper
 SPECIES: GRCh38v35noalt
 DATADIR: /home/hsher/scratch/clipper/clipper/data
+
+# omniclip stuffs
+GFF_file: /home/hsher/gencode_coords/gencode.v38.primary_assembly.annotation.gff3'
+DB_FILE: /home/hsher/scratch/gencode.v38.k562.ominclip.db'
+GENOME_dir: /home/hsher/scratch/GRCh38.primary/'

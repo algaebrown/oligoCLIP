@@ -1,18 +1,14 @@
 # Basic settings
-MANIFEST: /home/hsher/projects/oligoCLIP/config/fastq_csv/katie_pe_iteration5.csv
-barcode_csv: /home/hsher/projects/oligoCLIP/config/barcode_csv/iter5.csv # reverse complemented sequence.
-WORKDIR: /home/hsher/scratch/oligo_PE_iter5
+COMMENT: This is barcode conjugated to beads instead of antibody, splint ligation suggested by Noor
+MANIFEST: /home/hsher/projects/oligoCLIP/config/fastq_csv/katie_pe_iteration7_splint.csv
+barcode_csv: /home/hsher/projects/oligoCLIP/config/barcode_csv/iter7-splint.csv # reverse complemented sequence.
+WORKDIR: /home/hsher/scratch/oligo_PE_iter7_splint
 AS_INPUT:  # this must be one of the rows in barcode_csv
 RBP_TO_RUN_MOTIF:
 - RBFOX2
-- PUM2
-- TIAL1
-- PRPF8
-- QKI
 
 run_clipper: False
 run_skipper: True
-run_comparison: False
 debug: True
 
 external_bam:
@@ -35,7 +31,7 @@ tile_length: 10
 QUALITY_CUTOFF: 15
 error_rate: 0.2
 umi_length: 10
-STAR_DIR: /projects/ps-yeolab3/bay001/annotations/GRCh38/star_2_7_gencode40_sjdb
+STAR_DIR: /projects/ps-yeolab5/hsher/Tao_circSTAMP/star_2_7_gencode35
 
 # skipper annotations
 PARTITION: /projects/ps-yeolab4/software/skipper/1.0.0/bin/skipper/annotations/gencode.v38.annotation.k562_totalrna.gt1.tiled_partition.bed.gz
@@ -45,8 +41,8 @@ REPEAT_TABLE: /projects/ps-yeolab3/eboyle/encode/pipeline/05_20220720/repeatmask
 
 
 # other annotations
-CHROM_SIZES: /projects/ps-yeolab3/bay001/annotations/GRCh38/GRCh38_no_alt_analysis_set_GCA_000001405.15.chrom.sizes
-GENOMEFA: /projects/ps-yeolab3/bay001/annotations/GRCh38/GRCh38_no_alt_analysis_set_GCA_000001405.15.fasta
+CHROM_SIZES: /home/hsher/gencode_coords/GRCh38.primary_assembly.chrom.sizes
+GENOMEFA: /home/hsher/gencode_coords/GRCh38.primary_assembly.genome.fa
 
 
 # Single-end: enter 1. Paired-end: enter read (1 or 2) corresponding to crosslink site
@@ -57,8 +53,3 @@ SPECIES: GRCh38v35noalt
 DATADIR: /home/hsher/scratch/clipper/clipper/data
 GTF: /home/hsher/gencode_coords/gencode.v35.gtf.db
 ANNOTATOR_SPECIES: GRCh38
-
-#OmniCLIP
-GFF_file: /home/hsher/gencode_coords/gencode.v38.primary_assembly.annotation.gff3
-DB_FILE: /home/hsher/scratch/gencode.v38.k562.ominclip.db
-GENOME_dir: /home/hsher/scratch/GRCh38.primary/

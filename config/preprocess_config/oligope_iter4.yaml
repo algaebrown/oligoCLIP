@@ -10,10 +10,12 @@ umi_length: 10
 
 run_skipper: True
 run_clipper: False
+run_comparison: False
+debug: True
 
 barcode_csv: /home/hsher/projects/oligoCLIP/config/barcode_csv/iter4.csv # reverse complemented sequence.
 
-STAR_DIR: /projects/ps-yeolab5/hsher/Tao_circSTAMP/star_2_7_gencode35
+STAR_DIR: /projects/ps-yeolab3/bay001/annotations/GRCh38/star_2_7_gencode40_sjdb
 
 QC_TOOLS_PATH: /home/hsher/projects/QC_tools
 
@@ -24,8 +26,8 @@ UMICOLLAPSE_PATH: /projects/ps-yeolab3/eboyle/software/UMICollapse/umicollapse.j
 PARTITION: /projects/ps-yeolab4/software/skipper/1.0.0/bin/skipper/annotations/gencode.v38.annotation.k562_totalrna.gt1.tiled_partition.bed.gz
 FEATURE_ANNOTATIONS: /projects/ps-yeolab4/software/skipper/1.0.0/bin/skipper/annotations/gencode.v38.annotation.k562_totalrna.gt1.tiled_partition.features.tsv.gz
 ACCESSION_RANKINGS: /projects/ps-yeolab3/eboyle/encode/pipeline/01_20211115/input/accession_type_ranking.txt
-CHROM_SIZES: /home/hsher/gencode_coords/GRCh38.primary_assembly.chrom.sizes
-GENOMEFA: /home/hsher/gencode_coords/GRCh38.primary_assembly.genome.fa
+CHROM_SIZES: /projects/ps-yeolab3/bay001/annotations/GRCh38/GRCh38_no_alt_analysis_set_GCA_000001405.15.chrom.sizes
+GENOMEFA: /projects/ps-yeolab3/bay001/annotations/GRCh38/GRCh38_no_alt_analysis_set_GCA_000001405.15.fasta
 AS_INPUT: IgG_Rabbit # this must be one of the rows in barcode_csv
 R_EXE: /projects/ps-yeolab4/software/R-4.1.2/bin/Rscript
 
@@ -53,3 +55,8 @@ SPECIES: GRCh38v35noalt
 DATADIR: /home/hsher/scratch/clipper/clipper/data
 GTF: /home/hsher/gencode_coords/gencode.v35.gtf.db
 ANNOTATOR_SPECIES: GRCh38
+
+#OmniCLIP
+GFF_file: /home/hsher/gencode_coords/gencode.v38.primary_assembly.annotation.gff3
+DB_FILE: /home/hsher/scratch/gencode.v38.k562.ominclip.db
+GENOME_dir: /home/hsher/scratch/GRCh38.primary/

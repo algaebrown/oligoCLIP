@@ -1,14 +1,17 @@
 # Basic settings
-MANIFEST: /home/hsher/projects/oligoCLIP/config/fastq_csv/katie_pe_iteration5.csv
-barcode_csv: /home/hsher/projects/oligoCLIP/config/barcode_csv/iter5.csv # reverse complemented sequence.
-WORKDIR: /home/hsher/scratch/oligo_PE_iter5
-AS_INPUT:  # this must be one of the rows in barcode_csv
+COMMENT: This is testing different controls
+MANIFEST: /home/hsher/projects/oligoCLIP/config/fastq_csv/katie_pe_iteration7.csv
+barcode_csv: /home/hsher/projects/oligoCLIP/config/barcode_csv/iter7.csv # reverse complemented sequence.
+WORKDIR: /home/hsher/scratch/oligo_PE_iter7
+AS_INPUT:  
+- ctrlBead
+- ctrlSpike
+- ctrlSpikeSLBP
+- ctrlSpikeRBFOX2
+# this must be one of the rows in barcode_csv
 RBP_TO_RUN_MOTIF:
-- RBFOX2
-- PUM2
-- TIAL1
-- PRPF8
-- QKI
+- 2plexRBFOX2
+- 1plexRBFOX2
 
 run_clipper: False
 run_skipper: True
@@ -48,7 +51,6 @@ REPEAT_TABLE: /projects/ps-yeolab3/eboyle/encode/pipeline/05_20220720/repeatmask
 CHROM_SIZES: /projects/ps-yeolab3/bay001/annotations/GRCh38/GRCh38_no_alt_analysis_set_GCA_000001405.15.chrom.sizes
 GENOMEFA: /projects/ps-yeolab3/bay001/annotations/GRCh38/GRCh38_no_alt_analysis_set_GCA_000001405.15.fasta
 
-
 # Single-end: enter 1. Paired-end: enter read (1 or 2) corresponding to crosslink site
 INFORMATIVE_READ: 1
 
@@ -62,3 +64,4 @@ ANNOTATOR_SPECIES: GRCh38
 GFF_file: /home/hsher/gencode_coords/gencode.v38.primary_assembly.annotation.gff3
 DB_FILE: /home/hsher/scratch/gencode.v38.k562.ominclip.db
 GENOME_dir: /home/hsher/scratch/GRCh38.primary/
+

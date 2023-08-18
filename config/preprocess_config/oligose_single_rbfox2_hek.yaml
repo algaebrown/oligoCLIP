@@ -8,6 +8,11 @@ adaptor_fwd: AGATCGGAAGAGCACACGTC
 tile_length: 10
 QUALITY_CUTOFF: 6
 
+external_bam:
+  K562_totalRNAseq: /home/hsher/seqdata/20230401_charl_encode_totalrnaseq/output/bams/ENCODE_K562_totalRNAseq.Aligned.sortedByCoord.out.bam
+  eCLIP_SLBP_SMInput: /projects/ps-yeolab5/rbp-portal/encode3/eclip/Skipper/1.0.0/bams/dedup/genome_R2/SLBP_IN_1.genome.Aligned.sort.dedup.R2.bam
+  eCLIP_FAM120A_SMInput: /projects/ps-yeolab5/rbp-portal/encode3/eclip/Skipper/1.0.0/bams/dedup/genome_R2/FAM120A_IN_1.genome.Aligned.sort.dedup.R2.bam
+  
 # UMI_TOOLS
 umi_pattern: XXXXXNNNNN
 
