@@ -27,7 +27,7 @@ rule extract_read_two:
             samtools view -h -f 0x0040 {input.bam} | samtools view -Sb - > {output.read1}
         fi
         """
-rule CITS_bam_to_bedgragh:
+rule CITS_bam_to_bedgraph:
     input:
         bam="processed_bam/{sample_label}.r2.bam"
     output:
