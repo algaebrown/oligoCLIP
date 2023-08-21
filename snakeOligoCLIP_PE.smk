@@ -175,6 +175,9 @@ use rule * from repeat_dmn as redmn_*
 use rule * from clipper as clipper_*
 use rule * from clipper_analysis
 
+
+use rule * from finemap
+
 ########## BIGWIGS ############
 use rule extract_read_two from make_track as extract_r1 with: # oligoPE truncation is in read1
     input:
@@ -183,23 +186,45 @@ use rule extract_read_two from make_track as extract_r1 with: # oligoPE truncati
         read2="{libname}/bw/{sample_label}.r2.bam",
         read1="{libname}/bw/{sample_label}.r1.bam"
 
-use rule CITS_bam_to_bedgraph from make_track as CITS_bedgraph with:
+use rule CITS_bam_to_bedgraph from make_track as CITS_bedgraph_r1 with:
     input:
         bam="{libname}/bw/{sample_label}.r1.bam"
     output:
         pos="{libname}/bw/CITS/{sample_label}.pos.bedgraph",
         neg="{libname}/bw/CITS/{sample_label}.neg.bedgraph"
-use rule COV_bam_to_bedgraph from make_track as COV_bedgraph with:
+
+use rule COV_bam_to_bedgraph from make_track as COV_bedgraph_r1 with:
     input:
         bam="{libname}/bw/{sample_label}.r1.bam"
     output:
         pos="{libname}/bw/COV/{sample_label}.pos.bedgraph",
         neg="{libname}/bw/COV/{sample_label}.neg.bedgraph"
 
+use rule CITS_bam_to_bedgraph from make_track as CITS_bedgraph_external with:
+    input:
+        bam=lambda wildcards: config['external_bam'][wildcards.external_label]['file']
+    output:
+        pos="external_bw/CITS/{external_label}.pos.bedgraph",
+        neg="external_bw/CITS/{external_label}.neg.bedgraph"
+    params:
+        run_time="1:00:00",
+        error_out_file = "error_files/coverage_bedgraph",
+        out_file = "stdout/CITS_bedgraph.{external_label}",
+        cores = 1,
+use rule COV_bam_to_bedgraph from make_track as COV_bedgraph_external with:
+    input:
+        bam=lambda wildcards: config['external_bam'][wildcards.external_label]['file']
+    output:
+        pos="external_bw/COV/{external_label}.pos.bedgraph",
+        neg="external_bw/COV/{external_label}.neg.bedgraph"
+    params:
+        run_time="1:00:00",
+        error_out_file = "error_files/coverage_bedgraph",
+        out_file = "stdout/CITS_bedgraph.{external_label}",
+        cores = 1,
+
 use rule bedgraph_to_bw from make_track
 ########## MERGE BW ############
 use rule * from merge_bw
 
 ########## DEBUG: FILTER MULTIMAPPED ############
-
-use rule * from finemap
