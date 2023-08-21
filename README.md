@@ -1,6 +1,6 @@
 # oligoCLIP: Antibody barcoded eCLIP(ABC) processing pipeline from fastq.gz to windows and motifs
-- [original ABC paper](https://www.nature.com/articles/s41592-022-01708-8): use `snakeABC_SE.py`
-- Yeolab paired-end protocol: use `snakeOligoCLIP_PE.py`
+- [original ABC paper](https://www.nature.com/articles/s41592-022-01708-8): use `snakeABC_SE.smk`
+- Yeolab paired-end protocol: use `snakeOligoCLIP_PE.smk`
 
 # Installation
 - You need to have Snakemake:
@@ -19,14 +19,14 @@
 1. prepare `PATH_TO_YOUR_CONFIG`. See below and `config/preprocess_config/oligope_iter5.yaml`
 2. Run snakemake
 ```
-snakemake -s snakeOligoCLIP_PE.py \ 
+snakemake -s snakeOligoCLIP_PE.smk \ 
     -j 12 \
     --cluster "qsub -l walltime={params.run_time} -l nodes=1:ppn={params.cores} -q home-yeo -e {params.error_out_file} -o {params.out_file}" \
     --configfile PATH_TO_YOUR_CONFIG \
     --use-conda \
     --conda-prefix /home/hsher/snakeconda -npk
 ```
-- `-s`: use `snakeOligoCLIP_PE.py` if you did YeoLab internal pair-end protocol. use `snakeABC_SE.py` if you did ABC
+- `-s`: use `snakeOligoCLIP_PE.smk` if you did YeoLab internal pair-end protocol. use `snakeABC_SE.smk` if you did ABC
 - `--configfile`: yaml file to specify your inputs, including where are the fastqs, what are the barcode, what reference genome...etc.
 - the rest just snakemake command line options. [see documentation](https://snakemake.readthedocs.io/en/stable/executing/cli.html)
 - `-j`: number of jobs to run at a same time
@@ -38,12 +38,25 @@ snakemake -s snakeOligoCLIP_PE.py \
 - `-p`: print out command
 
 # Config
-- Example: `config/preprocess_config/oligope_iter5.yaml` 
+
 ## Basic Inputs:
+- Multiplex Example: 
+    - Yeo lab internal pair-end protocol: `config/preprocess_config/oligope_iter5.yaml` 
+    - ABC single-end protocol: `config/preprocess_config/ABC_2rep.yaml` 
+- Singleplex Example: 
+    - ABC single-end protocol: `config/preprocess_config/oligose_single_rbfox2_hek.yaml`
+    - Yeo lab internal paired-end protocol: /home/hsher/projects/oligoCLIP/config/preprocess_config/oligope_v5_nanos2.yaml
+    - Process 1 type of singleplex per 1 manifest.
 ### `MANIFEST`: a csv specifying fastq locations, replicates
 - Example: 
-    - YeoLab internal: `config/fastq_csv/katie_pe_iteration5.csv`
-    - ABC: `config/fastq_csv/ABC_2rep.csv`
+    - Multiplex Example:
+        - Yeo lab paired-end: `config/fastq_csv/katie_pe_iteration5.csv`
+        - ABC: `config/fastq_csv/ABC_2rep.csv`
+    - Singleplex Example:
+        - Yeo labe paired-end: `config/fastq_csv/V5_NANOS2.csv`
+        - ABC: `/config/fastq_csv/ABC_SLBP_singleplex.csv`
+    - All fastqs in the same manifest should contain the same combinations of barcodes.
+        - For example, you did a 2 singleplexes, one with with barcode 1 the other with barcode 2, it should be two different config.yaml.
 - columns:
     - `fastq1`&`fastq2`: *.fastq.gz file for read1 and read 2
     - `libname`: unique names for each library. Should not contain space, special characters such as #,%,*
