@@ -16,7 +16,9 @@ run_comparison: False
 debug: True
 
 external_bam:
-  K562_totalRNAseq: /home/hsher/seqdata/20230401_charl_encode_totalrnaseq/output/bams/ENCODE_K562_totalRNAseq.Aligned.sortedByCoord.out.bam
+  K562_totalRNAseq: 
+    file: /home/hsher/seqdata/20230401_charl_encode_totalrnaseq/output/bams/ENCODE_K562_totalRNAseq.Aligned.sortedByCoord.out.bam
+    INFORMATIVE_READ: 1
 
 # dependency
 SCRIPT_PATH: /home/hsher/projects/oligoCLIP/scripts/

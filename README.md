@@ -88,7 +88,13 @@ But if you want to add an background library, here is how to do:
 #### "Internal control": a barcode that measures the background. They are in the same `fastq.gz`
 - `AS_INPUT`: if you have a IgG antibody that everything will normalize against, type its name here. Must be one of the rows in `barcode_csv`. This can the background for skipper, CLIPper, and beta-binomial mixture model
 #### "External control": a library that is NOT in the same fastq as your oligoCLIP/ABC
-- specify them in `external_bam`
+- specify them in `external_bam` with name of the library (first line, ex `oligoCLIP_ctrlBead_rep2`), followed by  `file:` and `INFORMATIVE_READ`
+```
+# For example:
+oligoCLIP_ctrlBead_rep2:
+    file: /home/hsher/scratch/oligo_PE_iter7/1022-Rep2/bams/ctrlBead.rmDup.Aligned.sortedByCoord.out.bam
+    INFORMATIVE_READ: 1
+```
 - This can be an eCLIP SMInput, total RNA-seq, IgG pull down from another experiment, bead control, spike-ins
 - these will also be used as a background in skipper, CLIPper and beta-binomial mixture model
 - the bams must be processed with the exact same STAR index as `STAR_DIR`, and is recommended to be processed with the same/similar mapping parameters as this repo or skipper.
