@@ -5,7 +5,8 @@
 # Installation
 - You need to have Snakemake:
     - snakemake instructions [here](https://snakemake.readthedocs.io/en/stable/getting_started/installation.html)
-    - Yeolab internal users: `module load snakemake`
+        - install snakemake 7.3.8 from this yaml file `rules/envs/snakemake.yaml`
+    - Yeolab internal users: `module load snakemake/7.3.8`
 - Download this repository: `https://github.com/algaebrown/oligoCLIP.git` and then checkout this branch `git checkout oligo-pe`
     - `git branch` to double check you are on the right branch.
 - Download depending repository and modify config variables as follow: # TODO: containerize or make to snakemake hub
