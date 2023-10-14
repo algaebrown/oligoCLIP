@@ -128,6 +128,13 @@ module clipper:
     config:
         config
 
+module clipper_analysis:
+    snakefile:
+        "rules/clipper_analysis.smk"
+    config:
+        config
+
+
 module compare:
     snakefile:
         "rules/compare.smk"
@@ -170,6 +177,7 @@ use rule * from repeat_dmn as redmn_*
 
 ############## DMN #################
 use rule * from clipper as clipper_*
+use rule * from clipper_analysis as clipper_analysis_*
 
 ############## BIGWIGS #################
 use rule CITS_bam_to_bedgraph from make_track as CITS_bedgraph with:
@@ -187,7 +195,7 @@ use rule COV_bam_to_bedgraph from make_track as COV_bedgraph with:
 
 use rule CITS_bam_to_bedgraph from make_track as CITS_bedgraph_external with:
     input:
-        bam=lambda wildcards: config['external_bam'][wildcards.external_label]['file']
+        bam=lambda wildcards: ancient(config['external_bam'][wildcards.external_label]['file'])
     output:
         pos="external_bw/CITS/{external_label}.pos.bedgraph",
         neg="external_bw/CITS/{external_label}.neg.bedgraph"
@@ -198,7 +206,7 @@ use rule CITS_bam_to_bedgraph from make_track as CITS_bedgraph_external with:
         cores = 1,
 use rule COV_bam_to_bedgraph from make_track as COV_bedgraph_external with:
     input:
-        bam=lambda wildcards: config['external_bam'][wildcards.external_label]['file']
+        bam=lambda wildcards: ancient(config['external_bam'][wildcards.external_label]['file'])
     output:
         pos="external_bw/COV/{external_label}.pos.bedgraph",
         neg="external_bw/COV/{external_label}.neg.bedgraph"
