@@ -161,7 +161,7 @@ def clipper_outputs():
         libname = libnames
         )
         # complementary control
-        output+=expand("CLIPper_CC/{libname}.{sample_label}.peaks.normed.compressed.annotate.bed",
+        outputs+=expand("CLIPper_CC/{libname}.{sample_label}.peaks.normed.compressed.annotate.bed",
         sample_label = list(set(rbps)-set(config['AS_INPUT'])),
         libname = libnames
         )+expand("CLIPper_CC/{libname}.{sample_label}.peaks.normed.compressed.motif.svg",
