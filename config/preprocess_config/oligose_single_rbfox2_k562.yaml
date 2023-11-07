@@ -20,27 +20,27 @@ external_bam:
   eCLIP_SLBP_SMInput: 
     file: /home/hsher/scratch/ENCODE_k562/output/bams/dedup/genome_R2/SLBP_IN_1.genome.Aligned.sort.dedup.R2.bam
     INFORMATIVE_READ: 2
-  ABC_K562_summed: 
-    file: /home/hsher/scratch/ABC_2rep_K562_rep6.sorted.bam
-    INFORMATIVE_READ: 1
-  oligoCLIP_IgG_rep1:
-    file: /home/hsher/scratch/oligo_PE_iter4/Rep1/bams/IgG_Rabbit.rmDup.Aligned.sortedByCoord.out.bam
-    INFORMATIVE_READ: 1
-  oligoCLIP_IgG_rep2:
-    file: /home/hsher/scratch/oligo_PE_iter4/Rep2/bams/IgG_Rabbit.rmDup.Aligned.sortedByCoord.out.bam
-    INFORMATIVE_READ: 1
-  oligoCLIP_ctrlSpike_rep1:
-    file: /home/hsher/scratch/oligo_PE_iter7/1022-Rep1/bams/ctrlSpike.rmDup.Aligned.sortedByCoord.out.bam
-    INFORMATIVE_READ: 1
-  oligoCLIP_ctrlSpike_rep2:
-    file: /home/hsher/scratch/oligo_PE_iter7/1022-Rep2/bams/ctrlSpike.rmDup.Aligned.sortedByCoord.out.bam
-    INFORMATIVE_READ: 1
-  oligoCLIP_ctrlBead_rep1:
-    file: /home/hsher/scratch/oligo_PE_iter7/1022-Rep1/bams/ctrlBead.rmDup.Aligned.sortedByCoord.out.bam
-    INFORMATIVE_READ: 1
-  oligoCLIP_ctrlBead_rep2:
-    file: /home/hsher/scratch/oligo_PE_iter7/1022-Rep2/bams/ctrlBead.rmDup.Aligned.sortedByCoord.out.bam
-    INFORMATIVE_READ: 1
+  # ABC_K562_summed: 
+  #   file: /home/hsher/scratch/ABC_2rep_K562_rep6.sorted.bam
+  #   INFORMATIVE_READ: 1
+  # oligoCLIP_IgG_rep1:
+  #   file: /home/hsher/scratch/oligo_PE_iter4/Rep1/bams/IgG_Rabbit.rmDup.Aligned.sortedByCoord.out.bam
+  #   INFORMATIVE_READ: 1
+  # oligoCLIP_IgG_rep2:
+  #   file: /home/hsher/scratch/oligo_PE_iter4/Rep2/bams/IgG_Rabbit.rmDup.Aligned.sortedByCoord.out.bam
+  #   INFORMATIVE_READ: 1
+  # oligoCLIP_ctrlSpike_rep1:
+  #   file: /home/hsher/scratch/oligo_PE_iter7/1022-Rep1/bams/ctrlSpike.rmDup.Aligned.sortedByCoord.out.bam
+  #   INFORMATIVE_READ: 1
+  # oligoCLIP_ctrlSpike_rep2:
+  #   file: /home/hsher/scratch/oligo_PE_iter7/1022-Rep2/bams/ctrlSpike.rmDup.Aligned.sortedByCoord.out.bam
+  #   INFORMATIVE_READ: 1
+  # oligoCLIP_ctrlBead_rep1:
+  #   file: /home/hsher/scratch/oligo_PE_iter7/1022-Rep1/bams/ctrlBead.rmDup.Aligned.sortedByCoord.out.bam
+  #   INFORMATIVE_READ: 1
+  # oligoCLIP_ctrlBead_rep2:
+  #   file: /home/hsher/scratch/oligo_PE_iter7/1022-Rep2/bams/ctrlBead.rmDup.Aligned.sortedByCoord.out.bam
+  #   INFORMATIVE_READ: 1
 
 # UMI_TOOLS
 umi_pattern: XXXXXNNNNN
@@ -77,6 +77,13 @@ RBP_TO_RUN_MOTIF:
 # CLIPper
 SPECIES: GRCh38v35noalt
 DATADIR: /home/hsher/scratch/clipper/clipper/data
+GTF: /home/hsher/gencode_coords/gencode.v35.gtf.db
+ANNOTATOR_SPECIES: GRCh38
+
+#OmniCLIP
+GFF_file: /home/hsher/gencode_coords/gencode.v38.primary_assembly.annotation.gff3
+DB_FILE: /home/hsher/scratch/gencode.v38.k562.ominclip.db
+GENOME_dir: /home/hsher/scratch/GRCh38.primary/
 
 # omniclip stuffs
 GFF_file: /home/hsher/gencode_coords/gencode.v38.primary_assembly.annotation.gff3'

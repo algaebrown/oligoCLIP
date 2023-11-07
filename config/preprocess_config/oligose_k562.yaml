@@ -2,7 +2,7 @@ MANIFEST: /home/hsher/projects/oligoCLIP/config/fastq_csv/ABC_2rep.csv
 barcode_csv: /home/hsher/projects/oligoCLIP/config/barcode_csv/ABC_barcode.csv
 WORKDIR: /home/hsher/scratch/ABC_2rep
 
-run_clipper: False
+run_clipper: True
 run_skipper: True
 run_comparison: True
 debug: True
@@ -78,6 +78,8 @@ RBP_TO_RUN_MOTIF:
 # CLIPper
 SPECIES: GRCh38v35noalt
 DATADIR: /home/hsher/scratch/clipper/clipper/data
+GTF: /home/hsher/gencode_coords/gencode.v35.gtf.db
+ANNOTATOR_SPECIES: GRCh38
 
 # omniclip stuffs
 GFF_file: /home/hsher/gencode_coords/gencode.v38.primary_assembly.annotation.gff3'
