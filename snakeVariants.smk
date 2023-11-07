@@ -24,7 +24,7 @@ rule all:
         expand("variants/{signal_type}/{libname}.{sample_label}.csv",
         signal_type = ['CITS'], 
         libname = ['K562_rep6'],
-        sample_label = ['RBFOX2', 'SF3B4', 'PRPF8'],
+        sample_label = rbps,
         )
 rule fetch_SNP:
     input:
@@ -34,7 +34,7 @@ rule fetch_SNP:
     params:
         error_out_file = "error_files/fetch_snp.{signal_type}.{libname}.{sample_label}.{chr}",
         out_file = "stdout/fetch_snp.{signal_type}.{libname}.{sample_label}.{chr}",
-        run_time = "1:20:00",
+        run_time = "3:20:00",
         cores = 1,
     shell:
         """
@@ -53,7 +53,7 @@ rule fetch_sequence:
     params:
         error_out_file = "error_files/fetch_sequence.{signal_type}.{libname}.{sample_label}.{chr}",
         out_file = "stdout/fetch_sequence.{signal_type}.{libname}.{sample_label}.{chr}",
-        run_time = "01:20:00",
+        run_time = "03:20:00",
         cores = 1
     conda:
         "/home/hsher/projects/oligoCLIP/rules/envs/metadensity.yaml"
@@ -74,7 +74,7 @@ rule combine_csv:
     params:
         error_out_file = "error_files/combine.{signal_type}.{libname}.{sample_label}",
         out_file = "stdout/combine.{signal_type}.{libname}.{sample_label}",
-        run_time = "01:20:00",
+        run_time = "03:20:00",
         cores = 1
     shell:
         """
