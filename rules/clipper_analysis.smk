@@ -12,8 +12,11 @@ rule annotate:
         sps = config['ANNOTATOR_SPECIES']
     shell:
         """
-        module load annotator
-        annotator --input {input.peak} --output {output} --gtfdb {params.gtf_db} --species {params.sps}
+        module load annotator/0.0.15
+        annotator --input {input.peak} \
+        --output {output} \
+        --gtfdb {params.gtf_db} \
+        --species {params.sps}
         """
         
 rule motif_analysis:

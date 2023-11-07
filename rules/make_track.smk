@@ -81,8 +81,8 @@ rule bedgraph_to_bw:
     params:
         run_time="6:00:00",
         chr_size=config['CHROM_SIZES'],
-        error_out_file = "error_files/{something}.bedgraph_to_bw",
-        out_file = "stdout/{something}.bedgraph_to_bw",
+        error_out_file = "error_files/{something}.bedgraph_to_bw".replace('/', '.'),
+        out_file = "stdout/{something}.bedgraph_to_bw".replace('/', '.'),
         cores = 1,
     shell:
         """

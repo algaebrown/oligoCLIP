@@ -251,7 +251,10 @@ rule summary_QC_statistics:
             if match:
                 num_reads = match.group(1)
                 percentage = match.group(2)
-            return num_reads, percentage
+                return num_reads, percentage
+            else:
+                print(s)
+                return None, None
         def extract_input_reads(s):
             '''Demultiplexing complete! 21532666 reads processed in 1095.0 seconds'''
             pattern = r'(?<=Demultiplexing complete! )\d+(?= reads processed)'
@@ -261,7 +264,10 @@ rule summary_QC_statistics:
             if matches:
                 num_reads = int(matches[0])
                 
-            return num_reads
+                return num_reads
+            else:
+                print(s)
+                return None
 
         def extract_quality_trimmed(s):
             pattern = r"(\d+)\s+\((\d+\.\d+)%\)\s+reads\s+quality\s+trimmed"
@@ -269,7 +275,10 @@ rule summary_QC_statistics:
             if match:
                 num_reads = match.group(1)
                 percentage = match.group(2)
-            return num_reads, percentage
+                return num_reads, percentage
+            else:
+                print(s)
+                return None, None
 
         def get_ultraplex_stat(basedir):
             ultraplex_stat = []

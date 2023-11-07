@@ -2,8 +2,8 @@
 from importlib.resources import path
 import pandas as pd
 import os
-#snakemake -s snakeOligoCLIP_PE.smk -j 12 --cluster "qsub -l walltime={params.run_time} -l nodes=1:ppn={params.cores} -q home-yeo -e {params.error_out_file} -o {params.out_file}" --configfile config/preprocess_config/oligope_iter7_splint.yaml --use-conda --conda-prefix /home/hsher/snakeconda -n
-#snakemake -s snakeOligoCLIP_PE.smk -j 12 --cluster "qsub -l walltime={params.run_time} -l nodes=1:ppn={params.cores} -q home-yeo -e {params.error_out_file} -o {params.out_file}" --configfile config/preprocess_config/oligope_iter4.yaml --use-conda --conda-prefix /home/hsher/snakeconda -n
+#snakemake -s snakeOligoCLIP_PE.smk -j 12 --cluster "qsub -l walltime={params.run_time} -l nodes=1:ppn={params.cores} -q home-yeo -e {params.error_out_file} -o {params.out_file}" --configfile /home/hsher/scratch/katie_manifest.yaml --use-conda --conda-prefix /home/hsher/snakeconda -n
+#snakemake -s snakeOligoCLIP_PE.smk -j 12 --cluster "qsub -l walltime={params.run_time} -l nodes=1:ppn={params.cores} -q home-yeo -e {params.error_out_file} -o {params.out_file}" --configfile config/preprocess_config/oligope_iter9.yaml --use-conda --conda-prefix -n
 #snakemake -s snakeOligoCLIP_PE.smk -j 30 --cluster "qsub -l walltime={params.run_time} -l nodes=1:ppn={params.cores} -q home-yeo -e {params.error_out_file} -o {params.out_file}" --configfile config/preprocess_config/oligope_iter6_reseq.yaml --use-conda --conda-prefix /home/hsher/snakeconda  QC/summary.csv -n
 
 workdir: config['WORKDIR']
@@ -15,6 +15,7 @@ R_EXE = config['R_EXE']
 DB_FILE=config['DB_FILE']
 GENOME_dir=config['GENOME_dir']
 GENOMEFA=config['GENOMEFA']
+
 
 manifest = pd.read_table(MANIFEST, index_col = False, sep = ',')
 print(manifest)
@@ -202,7 +203,7 @@ use rule COV_bam_to_bedgraph from make_track as COV_bedgraph_r1 with:
 
 use rule CITS_bam_to_bedgraph from make_track as CITS_bedgraph_external with:
     input:
-        bam=lambda wildcards: config['external_bam'][wildcards.external_label]['file']
+        bam=lambda wildcards: ancient(config['external_bam'][wildcards.external_label]['file'])
     output:
         pos="external_bw/CITS/{external_label}.pos.bedgraph",
         neg="external_bw/CITS/{external_label}.neg.bedgraph"
@@ -213,7 +214,7 @@ use rule CITS_bam_to_bedgraph from make_track as CITS_bedgraph_external with:
         cores = 1,
 use rule COV_bam_to_bedgraph from make_track as COV_bedgraph_external with:
     input:
-        bam=lambda wildcards: config['external_bam'][wildcards.external_label]['file']
+        bam=lambda wildcards: ancient(config['external_bam'][wildcards.external_label]['file'])
     output:
         pos="external_bw/COV/{external_label}.pos.bedgraph",
         neg="external_bw/COV/{external_label}.neg.bedgraph"

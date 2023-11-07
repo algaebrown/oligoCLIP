@@ -278,7 +278,7 @@ rule call_enriched_windows_CC:
 use rule partition_bam_reads as partition_external_bams with:
     input:
         chrom_size = config['CHROM_SIZES'],
-        bam = lambda wildcards: config['external_bam'][wildcards.external_label]['file'],   
+        bam = lambda wildcards: ancient(config['external_bam'][wildcards.external_label]['file']),   
         region_partition = config['PARTITION'],
     output:
         counts= "counts/genome/vectors/external.{external_label}.counts",
@@ -296,7 +296,7 @@ use rule partition_bam_reads as partition_external_bams with:
 use rule combine_ip_to_CC as combine_ip_to_external with:
     input:
         count_table = "counts/genome/tables/{experiment}.{clip_sample_label}.tsv.gz",
-        bg_counts = "counts/genome/vectors/external.{external_label}.counts"
+        bg_counts = rules.partition_external_bams.output.counts
     output:
         combined_count_table = "counts_external/genome/{external_label}/{experiment}.{clip_sample_label}.tsv.gz"
     params:

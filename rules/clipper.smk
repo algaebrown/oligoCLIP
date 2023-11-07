@@ -1,4 +1,24 @@
 SCRIPT_PATH=config['SCRIPT_PATH']
+rule make_clipper_annotation:
+    input:
+        config['GTF'] # gtf.db
+    output:
+
+    params:
+
+    shell:
+        """
+        module load annotator/0.99.0
+        create_region_bedfiles \
+            --db_file {input} \  # database file downloaded from above
+            --species mm10 \  # sets the gff/gtf nomenclature (essentially whether it's gencode or wormbase gtf format)
+            --cds_out outputs/mm10_vM10_cds.bed \  # output cds region
+            --proxintron_out outputs/mm10_vM10_proxintrons.bed \  # output proximal intron regions (500nt from exons)
+            --distintron_out outputs/mm10_vM10_distintrons.bed \  # output distal intron regions (> 500nt from exons)
+            --utr5_out outputs/mm10_vM10_five_prime_utrs.bed \  # output 5'UTR regions
+            --utr3_out outputs/mm10_vM10_three_prime_utrs.bed  # output 3' UTR regions
+        """
+
 rule clipper:
     input:
         bam="{libname}/bams/{sample_label}.rmDup.Aligned.sortedByCoord.out.bam",
@@ -105,7 +125,7 @@ use rule norm_peaks_to_another_library_inside as norm_peaks_to_cc with:
 ############ external normalization ##################
 use rule count_mapped_reads as count_mapped_reads_external with:
     input:
-        lambda wildcards: config['external_bam'][wildcards.external_label]
+        lambda wildcards: config['external_bam'][wildcards.external_label]['file']
     output:
         "CLIPper/external_readnum/{external_label}.readnum.txt"
     params:
@@ -120,7 +140,7 @@ use rule count_mapped_reads as count_mapped_reads_external with:
 use rule norm_peaks_to_another_library_inside as norm_peaks_to_external with:
     input:
         subsample_bam_ip="{libname}/bams/{sample_label}.rmDup.Aligned.sortedByCoord.out.bam",
-        subsample_bam_in=lambda wildcards: config['external_bam'][wildcards.external_label],
+        subsample_bam_in=lambda wildcards: ancient(config['external_bam'][wildcards.external_label]['file']),
         nread_ip="{libname}/bams/{sample_label}.rmDup.Aligned.sortedByCoord.out.readnum.txt",
         nread_in="CLIPper/external_readnum/{external_label}.readnum.txt",
         peak="CLIPper/{libname}.{sample_label}.peaks.bed"
