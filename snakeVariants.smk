@@ -30,7 +30,7 @@ rule fetch_SNP:
     input:
         finemapped_windows = "DMM/finemapping/mapped_sites/{signal_type}/{libname}.{sample_label}.finemapped_windows.bed.gz"
     output:
-        "variants/{signal_type}/{libname}.{sample_label}.{chr}.vcf"
+        temp("variants/{signal_type}/{libname}.{sample_label}.{chr}.vcf")
     params:
         error_out_file = "error_files/fetch_snp.{signal_type}.{libname}.{sample_label}.{chr}",
         out_file = "stdout/fetch_snp.{signal_type}.{libname}.{sample_label}.{chr}",

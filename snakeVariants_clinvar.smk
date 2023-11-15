@@ -25,7 +25,7 @@ rule all:
         expand("variants_clinvar/{signal_type}/{libname}.{sample_label}.csv",
         signal_type = ['CITS'], 
         libname = ['K562_rep6'],
-        sample_label = ['RBFOX2'],
+        sample_label = rbps,
         )
 
 rule reannotate:
