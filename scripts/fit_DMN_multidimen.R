@@ -5,21 +5,21 @@ library(tidyverse)
 
 args = commandArgs(trailingOnly=TRUE)
 
-# Rscript --vanilla /home/hsher/projects/oligoCLIP/scripts/fit_DMN_multidimen.R \
-# /home/hsher/scratch/oligo_PE_iter5/DMN/table/oCLIP_10_1.tsv.gz \
-# /projects/ps-yeolab4/software/skipper/1.0.0/bin/skipper/annotations/gencode.v38.annotation.k562_totalrna.gt1.tiled_partition.features.tsv.gz \
-# /home/hsher/scratch/oligo_PE_iter5/DMN/output \
+# Rscript --vanilla /tscc/nfs/home/hsher/projects/oligoCLIP/scripts/fit_DMN_multidimen.R \
+# /tscc/nfs/home/hsher/scratch/oligo_PE_iter5/DMN/table/oCLIP_10_1.tsv.gz \
+# /tscc/projects/ps-yeolab4/software/skipper/1.0.0/bin/skipper/annotations/gencode.v38.annotation.k562_totalrna.gt1.tiled_partition.features.tsv.gz \
+# /tscc/nfs/home/hsher/scratch/oligo_PE_iter5/DMN/output \
 # oCLIP_10_1
 # INPUTs
-fl=args[1] #'/home/hsher/scratch/oligo_PE_iter4/internal_output/counts/genome/bgtables/internal/iter4.PRPF8.tsv.gz'
+fl=args[1] #'/tscc/nfs/home/hsher/scratch/oligo_PE_iter4/internal_output/counts/genome/bgtables/internal/iter4.PRPF8.tsv.gz'
 annotation = args[2]
-basedir= args[3] #'/home/hsher/scratch/oligo_PE_iter4_PRPF8_internal'
+basedir= args[3] #'/tscc/nfs/home/hsher/scratch/oligo_PE_iter4_PRPF8_internal'
 out_stem = args[4] #'iter4.PRPF8.Rep1'
 dir.create(basedir, showWarnings = FALSE, recursive = TRUE)
 
-# fl = '/home/hsher/scratch/oligo_PE_iter5/DMN/table/oCLIP_10_1.tsv.gz'
-# annotation = '/projects/ps-yeolab4/software/skipper/1.0.0/bin/skipper/annotations/gencode.v38.annotation.k562_totalrna.gt1.tiled_partition.features.tsv.gz'
-# basedir='/home/hsher/scratch/oligo_PE_iter5/DMN/output'
+# fl = '/tscc/nfs/home/hsher/scratch/oligo_PE_iter5/DMN/table/oCLIP_10_1.tsv.gz'
+# annotation = '/tscc/projects/ps-yeolab4/software/skipper/1.0.0/bin/skipper/annotations/gencode.v38.annotation.k562_totalrna.gt1.tiled_partition.features.tsv.gz'
+# basedir='/tscc/nfs/home/hsher/scratch/oligo_PE_iter5/DMN/output'
 # out_stem='oCLIP_10_1'
 
 options(width=70, digits=2)

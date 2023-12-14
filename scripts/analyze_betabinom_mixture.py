@@ -1,15 +1,15 @@
 '''
-python /home/hsher/projects/oligoCLIP/scripts/analyze_betabinom_mixture.py \
-    /home/hsher/scratch/ABC_2rep_skipper_k562window/internal_output/DMN \
+python /tscc/nfs/home/hsher/projects/oligoCLIP/scripts/analyze_betabinom_mixture.py \
+    /tscc/nfs/home/hsher/scratch/ABC_2rep_skipper_k562window/internal_output/DMN \
     K562_rep4.RBFOX2 \
-    /home/hsher/scratch/ABC_2rep_skipper_k562window/internal_output/counts/genome/bgtables/internal/K562.RBFOX2.tsv.gz \
-    /projects/ps-yeolab4/software/skipper/1.0.0/bin/skipper/annotations/gencode.v38.annotation.k562_totalrna.gt1.tiled_partition.features.tsv.gz
+    /tscc/nfs/home/hsher/scratch/ABC_2rep_skipper_k562window/internal_output/counts/genome/bgtables/internal/K562.RBFOX2.tsv.gz \
+    /tscc/projects/ps-yeolab4/software/skipper/1.0.0/bin/skipper/annotations/gencode.v38.annotation.k562_totalrna.gt1.tiled_partition.features.tsv.gz
 
-python /home/hsher/projects/oligoCLIP/scripts/analyze_betabinom_mixture.py \
-    /home/hsher/scratch/ABC_2rep_skipper_k562window/internal_output/DMN \
+python /tscc/nfs/home/hsher/projects/oligoCLIP/scripts/analyze_betabinom_mixture.py \
+    /tscc/nfs/home/hsher/scratch/ABC_2rep_skipper_k562window/internal_output/DMN \
     K562_rep4.PUM2 \
-    /home/hsher/scratch/ABC_2rep_skipper_k562window/internal_output/counts/genome/bgtables/internal/K562.PUM2.tsv.gz \
-    /projects/ps-yeolab4/software/skipper/1.0.0/bin/skipper/annotations/gencode.v38.annotation.k562_totalrna.gt1.tiled_partition.features.tsv.gz
+    /tscc/nfs/home/hsher/scratch/ABC_2rep_skipper_k562window/internal_output/counts/genome/bgtables/internal/K562.PUM2.tsv.gz \
+    /tscc/projects/ps-yeolab4/software/skipper/1.0.0/bin/skipper/annotations/gencode.v38.annotation.k562_totalrna.gt1.tiled_partition.features.tsv.gz
 
 
 '''

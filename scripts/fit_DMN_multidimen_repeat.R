@@ -5,13 +5,13 @@ library(tidyverse)
 
 args = commandArgs(trailingOnly=TRUE)
 
-fl=args[1] #'/home/hsher/scratch/oligo_PE_iter4/internal_output/counts/genome/bgtables/internal/iter4.PRPF8.tsv.gz'
-basedir= args[2] #'/home/hsher/scratch/oligo_PE_iter4_PRPF8_internal'
+fl=args[1] #'/tscc/nfs/home/hsher/scratch/oligo_PE_iter4/internal_output/counts/genome/bgtables/internal/iter4.PRPF8.tsv.gz'
+basedir= args[2] #'/tscc/nfs/home/hsher/scratch/oligo_PE_iter4_PRPF8_internal'
 out_stem = args[3] #'iter4.PRPF8.Rep1'
 dir.create(basedir, showWarnings = FALSE, recursive = TRUE)
 
-# fl='/home/hsher/scratch/ABC_2rep/counts/repeats/megatables/name/K562_rep6.tsv.gz'
-# basedir= '/home/hsher/scratch/' #'/home/hsher/scratch/oligo_PE_iter4_PRPF8_internal'
+# fl='/tscc/nfs/home/hsher/scratch/ABC_2rep/counts/repeats/megatables/name/K562_rep6.tsv.gz'
+# basedir= '/tscc/nfs/home/hsher/scratch/' #'/tscc/nfs/home/hsher/scratch/oligo_PE_iter4_PRPF8_internal'
 # out_stem = 'K562_rep6'
 
 options(width=70, digits=2)

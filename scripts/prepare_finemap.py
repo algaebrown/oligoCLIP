@@ -9,21 +9,21 @@ import pandas as pd
 import numpy as np
 
 # python scripts/region_breakdown.py \
-# --ip1plus=/home/hsher/scratch/ENCODE_CITS/CITS/548_CLIP1.plus.bw \
-# --ip1minus=/home/hsher/scratch/ENCODE_CITS/CITS/548_CLIP1.minus.bw \
-# --ip2minus=/home/hsher/scratch/ENCODE_CITS/CITS/548_CLIP2.minus.bw \
-# --ip2plus=/home/hsher/scratch/ENCODE_CITS/CITS/548_CLIP2.plus.bw \
-# --inminus=/home/hsher/scratch/ENCODE_CITS/CITS/548_INPUT1.minus.bw \
-# --inplus=/home/hsher/scratch/ENCODE_CITS/CITS/548_INPUT1.plus.bw \
-# --region=/home/hsher/evan_regions/548_ZRANB2_K562.tsv \
-# --bed=/home/hsher/548_ZRANB2_K562.bed
+# --ip1plus=/tscc/nfs/home/hsher/scratch/ENCODE_CITS/CITS/548_CLIP1.plus.bw \
+# --ip1minus=/tscc/nfs/home/hsher/scratch/ENCODE_CITS/CITS/548_CLIP1.minus.bw \
+# --ip2minus=/tscc/nfs/home/hsher/scratch/ENCODE_CITS/CITS/548_CLIP2.minus.bw \
+# --ip2plus=/tscc/nfs/home/hsher/scratch/ENCODE_CITS/CITS/548_CLIP2.plus.bw \
+# --inminus=/tscc/nfs/home/hsher/scratch/ENCODE_CITS/CITS/548_INPUT1.minus.bw \
+# --inplus=/tscc/nfs/home/hsher/scratch/ENCODE_CITS/CITS/548_INPUT1.plus.bw \
+# --region=/tscc/nfs/home/hsher/evan_regions/548_ZRANB2_K562.tsv \
+# --bed=/tscc/nfs/home/hsher/548_ZRANB2_K562.bed
 '''
-python /home/hsher/projects/oligoCLIP/scripts/prepare_finemap.py \
-        --ipminus /home/hsher/scratch/ABC_2rep_skipper_k562window/K562_rep4/bw/COV/RBFOX2.neg.bw \
-        --ipplus /home/hsher/scratch/ABC_2rep_skipper_k562window/K562_rep4/bw/COV/RBFOX2.pos.bw \
-        --inminus /home/hsher/scratch/ABC_2rep_skipper_k562window/K562_rep4/bw_bg/COV/RBFOX2.neg.bw \
-        --inplus /home/hsher/scratch/ABC_2rep_skipper_k562window/K562_rep4/bw_bg/COV/RBFOX2.pos.bw \
-        --region /home/hsher/scratch/ABC_2rep_skipper_k562window/internal_output/DMN/K562_rep4.RBFOX2.enriched_window.tsv \
+python /tscc/nfs/home/hsher/projects/oligoCLIP/scripts/prepare_finemap.py \
+        --ipminus /tscc/nfs/home/hsher/scratch/ABC_2rep_skipper_k562window/K562_rep4/bw/COV/RBFOX2.neg.bw \
+        --ipplus /tscc/nfs/home/hsher/scratch/ABC_2rep_skipper_k562window/K562_rep4/bw/COV/RBFOX2.pos.bw \
+        --inminus /tscc/nfs/home/hsher/scratch/ABC_2rep_skipper_k562window/K562_rep4/bw_bg/COV/RBFOX2.neg.bw \
+        --inplus /tscc/nfs/home/hsher/scratch/ABC_2rep_skipper_k562window/K562_rep4/bw_bg/COV/RBFOX2.pos.bw \
+        --region /tscc/nfs/home/hsher/scratch/ABC_2rep_skipper_k562window/internal_output/DMN/K562_rep4.RBFOX2.enriched_window.tsv \
         --bed test.bed
 
 python ~/projects/oligoCLIP/scripts/prepare_finemap.py --ipminus K562_rep4/bw/COV/PRPF8.neg.bw --ipplus K562_rep4/bw/COV/PRPF8.pos.bw --inminus K562_rep4/bw_bg/COV/PRPF8.neg.bw --inplus K562_rep4/bw_bg/COV/PRPF8.pos.bw --region internal_output/DMN/K562_rep4.PRPF8.enriched_window.tsv --bed testprpf.bed

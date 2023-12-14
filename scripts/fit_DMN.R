@@ -6,19 +6,19 @@ library(tidyverse)
 args = commandArgs(trailingOnly=TRUE)
 
 # INPUTs
-fl=args[1] #'/home/hsher/scratch/oligo_PE_iter4/internal_output/counts/genome/bgtables/internal/iter4.PRPF8.tsv.gz'
-annotation = args[2] # '/projects/ps-yeolab4/software/skipper/1.0.0/bin/skipper/annotations/gencode.v38.annotation.k562_totalrna.gt1.tiled_partition.features.tsv.gz'
+fl=args[1] #'/tscc/nfs/home/hsher/scratch/oligo_PE_iter4/internal_output/counts/genome/bgtables/internal/iter4.PRPF8.tsv.gz'
+annotation = args[2] # '/tscc/projects/ps-yeolab4/software/skipper/1.0.0/bin/skipper/annotations/gencode.v38.annotation.k562_totalrna.gt1.tiled_partition.features.tsv.gz'
 ip_col = args[3]
 in_col = args[4]
-basedir= args[5] #'/home/hsher/scratch/oligo_PE_iter4_PRPF8_internal'
+basedir= args[5] #'/tscc/nfs/home/hsher/scratch/oligo_PE_iter4_PRPF8_internal'
 out_stem = args[6] #'iter4.PRPF8.Rep1'
 dir.create(basedir, showWarnings = FALSE, recursive = TRUE)
 
-# fl = '/home/hsher/scratch/oligo_PE_iter4/internal_output/counts/genome/bgtables/internal/iter4.PRPF8.tsv.gz'
-# annotation = '/projects/ps-yeolab4/software/skipper/1.0.0/bin/skipper/annotations/gencode.v38.annotation.k562_totalrna.gt1.tiled_partition.features.tsv.gz'
+# fl = '/tscc/nfs/home/hsher/scratch/oligo_PE_iter4/internal_output/counts/genome/bgtables/internal/iter4.PRPF8.tsv.gz'
+# annotation = '/tscc/projects/ps-yeolab4/software/skipper/1.0.0/bin/skipper/annotations/gencode.v38.annotation.k562_totalrna.gt1.tiled_partition.features.tsv.gz'
 # ip_col = 'Rep1.PRPF8'
 # in_col = 'Rep1.internal'
-# basedir='/home/hsher/scratch/'
+# basedir='/tscc/nfs/home/hsher/scratch/'
 # out_stem='iter4.PRPF8.Rep1'
 
 sample_cols = c(ip_col, in_col)

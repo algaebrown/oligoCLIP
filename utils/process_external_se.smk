@@ -1,13 +1,13 @@
 # this file serves for users to process external control libraries the skipper way.
 import pandas as pd
 import glob
-fastqs = ['/home/hsher/seqdata/20230401_charl_encode_totalrnaseq/ENCFF133KON.fastq.gz']
+fastqs = ['/tscc/nfs/home/hsher/seqdata/20230401_charl_encode_totalrnaseq/ENCFF133KON.fastq.gz']
 names = ['ENCODE_K562_totalRNAseq']
-workdir:'/home/hsher/seqdata/20230401_charl_encode_totalrnaseq'
+workdir:'/tscc/nfs/home/hsher/seqdata/20230401_charl_encode_totalrnaseq'
 manifest = pd.DataFrame([fastqs, names], index = ['fastq1', 'Sample']).T
 adapter_seq = 'AGATCGGAAGAGCACACGTCTGAACTCCAGTCA'
 
-#snakemake -s utils/process_external_se.smk -j 12 --cluster "qsub -l walltime={params.run_time} -l nodes=1:ppn={params.cores} -q home-yeo -e {params.error_out_file} -o {params.out_file}" --configfile /home/hsher/projects/oligoCLIP/config/preprocess_config/oligose_k562.yaml --use-conda --conda-prefix /home/hsher/snakeconda --use-singularity --singularity-prefix /home/hsher/singularity  -n
+#snakemake -s utils/process_external_se.smk -j 12 --cluster "qsub -l walltime={params.run_time} -l nodes=1:ppn={params.cores} -q home-yeo -e {params.error_out_file} -o {params.out_file}" --configfile /tscc/nfs/home/hsher/projects/oligoCLIP/config/preprocess_config/oligose_k562.yaml --use-conda --conda-prefix /tscc/nfs/home/hsher/snakeconda --use-singularity --singularity-prefix /tscc/nfs/home/hsher/singularity  -n
 rule all:
     input:
         expand("output/bams/{sample_label}.Aligned.sortedByCoord.out.bam", sample_label = manifest['Sample'].tolist())
@@ -28,7 +28,7 @@ rule cutadapt:
         adaptor1 = adapter_seq,
     benchmark: "benchmarks/cutadapt/{sample_label}.extract.txt"
     conda:
-        "/home/hsher/projects/oligoCLIP/rules/envs/cutadapt.yaml"
+        "/tscc/nfs/home/hsher/projects/oligoCLIP/rules/envs/cutadapt.yaml"
     shell:
         """
         cutadapt \
@@ -57,9 +57,10 @@ rule align_reads:
         outprefix = "output/bams/{sample_label}.",
         cores = "8",
     benchmark: "benchmarks/align/{sample_label}.align_reads_genome.txt"
+    container:
+        "docker://howardxu520/skipper:star_2.7.10b"
     shell:        
         """
-        module load star
         STAR \
             --alignEndsType EndToEnd \
             --genomeDir {params.star_sjdb} \
@@ -85,7 +86,23 @@ rule align_reads:
             --readFilesCommand zcat \
             --runMode alignReads \
             --runThreadN {params.cores}\
+        """
 
-        module load samtools
-        samtools index {output.bam}
+rule index_bam:
+    input:
+        "{anything}.bam"
+    output:
+        "{anything}.bam.bai"
+    params:
+        error_out_file = "error_files/{anything}_index_bam",
+        out_file = "stdout/{anything}_index_bam",
+        run_time = "40:00",
+        cores = "1",
+        memory = "10000",
+        job_name = "index_bam",
+    conda:
+        "envs/samtools.yaml"
+    shell:
+        """
+        samtools index {input}
         """

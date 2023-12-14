@@ -131,12 +131,12 @@ if __name__=='__main__':
     control_col = sys.argv[5]
     outdir = basedir
 
-    # basedir=Path('/home/hsher/scratch/SLBP_gc_aware')
+    # basedir=Path('/tscc/nfs/home/hsher/scratch/SLBP_gc_aware')
     # outstem='K562_SLBP_rep1.SLBP'
     # exp, rbp = outstem.split('.')
-    # raw_counts = pd.read_csv(f'/home/hsher/scratch/ABC_singleplex_SLBP/counts_external/genome/eCLIP_SLBP_SMInput/K562_SLBP.SLBP.tsv.gz', sep = '\t')
-    # annotation_df = pd.read_csv('/projects/ps-yeolab4/software/skipper/1.0.0/bin/skipper/annotations/gencode.v38.annotation.k562_totalrna.gt1.tiled_partition.features.tsv.gz', sep = '\t')
-    # outdir = Path('/home/hsher/scratch/beta_test')
+    # raw_counts = pd.read_csv(f'/tscc/nfs/home/hsher/scratch/ABC_singleplex_SLBP/counts_external/genome/eCLIP_SLBP_SMInput/K562_SLBP.SLBP.tsv.gz', sep = '\t')
+    # annotation_df = pd.read_csv('/tscc/projects/ps-yeolab4/software/skipper/1.0.0/bin/skipper/annotations/gencode.v38.annotation.k562_totalrna.gt1.tiled_partition.features.tsv.gz', sep = '\t')
+    # outdir = Path('/tscc/nfs/home/hsher/scratch/beta_test')
     # control_col = 'external.eCLIP_SLBP_SMInput'
 
     # constants

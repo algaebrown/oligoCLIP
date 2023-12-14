@@ -259,9 +259,9 @@ def mask_megaoutput(megaoutputs, mask):
 
 if __name__=='__main__':
     '''
-    cd /home/hsher/scratch/ABC_2rep/
+    cd /tscc/nfs/home/hsher/scratch/ABC_2rep/
     conda activate tensorflow_prob
-    python /home/hsher/projects/oligoCLIP/scripts/analyze_DMM.py HEK293_rep1
+    python /tscc/nfs/home/hsher/projects/oligoCLIP/scripts/analyze_DMM.py HEK293_rep1
     '''
     
     out_stem = sys.argv[1] # K562_rep4

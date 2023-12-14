@@ -3,7 +3,7 @@
 
 ####
 #### ADDED FOR DEPENDENCY ON LOCALLY INSTALLED Statistics::Distributions
-# use lib "/projects/ps-yeolab/software/eclipidrmergepeaks/0.0.1/bin/perl-modules/share/perl5";
+# use lib "/tscc/projects/ps-yeolab/software/eclipidrmergepeaks/0.0.1/bin/perl-modules/share/perl5";
 ####
 
 

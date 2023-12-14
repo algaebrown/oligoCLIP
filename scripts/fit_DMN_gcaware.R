@@ -15,12 +15,12 @@ basedir= args[6]
 out_stem = args[7] 
 dir.create(basedir, showWarnings = FALSE, recursive = TRUE)
 
-# fl='/home/hsher/scratch/ABC_singleplex_SLBP/counts_external/genome/eCLIP_SLBP_SMInput/K562_SLBP.SLBP.tsv.gz'
-# annotation = '/projects/ps-yeolab4/software/skipper/1.0.0/bin/skipper/annotations/gencode.v38.annotation.k562_totalrna.gt1.tiled_partition.features.tsv.gz'
-# gc = '/projects/ps-yeolab4/software/skipper/1.0.0/bin/skipper/annotations/gencode.v38.annotation.k562_totalrna.gt1.tiled_partition.nuc.gz'
+# fl='/tscc/nfs/home/hsher/scratch/ABC_singleplex_SLBP/counts_external/genome/eCLIP_SLBP_SMInput/K562_SLBP.SLBP.tsv.gz'
+# annotation = '/tscc/projects/ps-yeolab4/software/skipper/1.0.0/bin/skipper/annotations/gencode.v38.annotation.k562_totalrna.gt1.tiled_partition.features.tsv.gz'
+# gc = '/tscc/projects/ps-yeolab4/software/skipper/1.0.0/bin/skipper/annotations/gencode.v38.annotation.k562_totalrna.gt1.tiled_partition.nuc.gz'
 # ip_col = 'K562_SLBP_rep1.SLBP'
 # in_col = 'external.eCLIP_SLBP_SMInput'
-# basedir= '/home/hsher/scratch/SLBP_gc_aware'
+# basedir= '/tscc/nfs/home/hsher/scratch/SLBP_gc_aware'
 # out_stem = 'K562_SLBP_rep1.SLBP'
 
 # join annotation

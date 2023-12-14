@@ -1,8 +1,8 @@
 module load subreadfeaturecounts/1.5.3
 
-gff=/projects/ps-yeolab4/software/skipper/1.0.0/bin/skipper/annotations/gencode.v38.annotation.k562.gt1.gff3.gz
+gff=/tscc/projects/ps-yeolab4/software/skipper/1.0.0/bin/skipper/annotations/gencode.v38.annotation.k562.gt1.gff3.gz
 
-full_gff=/projects/ps-yeolab4/software/skipper/1.0.0/bin/skipper/annotations/gencode.v38.annotation.gff3.gz
+full_gff=/tscc/projects/ps-yeolab4/software/skipper/1.0.0/bin/skipper/annotations/gencode.v38.annotation.gff3.gz
 
 zcat $gff > ~/scratch/k562.gff
 zcat $full_gff > ~/scratch/full.gff3
@@ -54,11 +54,11 @@ featureCounts -a ~/scratch/full.gff3 -o ~/scratch/K562_rep4.PUM2.count.full $bam
 
 
 
-bam4=/home/hsher/scratch/katie_singleplex/output/bams/dedup/genome/RBFOX2_IP_1.genome.Aligned.sort.dedup.bam
+bam4=/tscc/nfs/home/hsher/scratch/katie_singleplex/output/bams/dedup/genome/RBFOX2_IP_1.genome.Aligned.sort.dedup.bam
 featureCounts -a ~/scratch/k562.gff -o ~/scratch/katie_singleplex.RBFOX2_IP1 $bam4
 featureCounts -a ~/scratch/full.gff3 -o ~/scratch/katie_singleplex.RBFOX2_IP1.full $bam4
 
-bam5=/home/hsher/scratch/katie_singleplex/output/bams/dedup/genome/RBFOX2_IN_1.genome.Aligned.sort.dedup.bam
+bam5=/tscc/nfs/home/hsher/scratch/katie_singleplex/output/bams/dedup/genome/RBFOX2_IN_1.genome.Aligned.sort.dedup.bam
 featureCounts -a ~/scratch/k562.gff -o ~/scratch/katie_singleplex.RBFOX2_IN1 $bam5
 featureCounts -a ~/scratch/full.gff3 -o ~/scratch/katie_singleplex.RBFOX2_IN1.full $bam5
 

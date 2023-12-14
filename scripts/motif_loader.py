@@ -5,12 +5,12 @@ from scipy.stats import entropy
 import pandas as pd
 import numpy as np
 import os
-rbns_status = pd.read_csv('/home/hsher/projects/rbns_thermo/RBNS_status.csv', names = ['rbp', 'status'])
+rbns_status = pd.read_csv('/tscc/nfs/home/hsher/projects/rbns_thermo/RBNS_status.csv', names = ['rbp', 'status'])
 rbns_status['status'] = rbns_status['status'].fillna('NAN').str.upper()
-rbns_file_dict = pickle.load(open('/home/hsher/projects/rbns_thermo/RBNS_filename.pickle', 'rb'))
+rbns_file_dict = pickle.load(open('/tscc/nfs/home/hsher/projects/rbns_thermo/RBNS_filename.pickle', 'rb'))
 rbp_with_rbns = rbns_status.loc[rbns_status['status']=='PASS', 'rbp'].tolist()
 
-selex_dir = '/home/hsher/selex_motif'
+selex_dir = '/tscc/nfs/home/hsher/selex_motif'
 
 
 def get_RBNS_motif_PWM(rbp):
