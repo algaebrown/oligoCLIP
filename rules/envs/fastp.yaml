@@ -12,4 +12,4 @@ dependencies:
   - libgcc-ng=11.2.0=h1d223b6_11
   - libgomp=11.2.0=h1d223b6_11
   - libstdcxx-ng=11.2.0=he4da1e4_11
-prefix: /home/hsher/miniconda3/envs/fastp
+prefix: /tscc/nfs/home/hsher/miniconda3/envs/fastp

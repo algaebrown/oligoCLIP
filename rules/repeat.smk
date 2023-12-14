@@ -1,13 +1,10 @@
 import pandas as pd
-R_EXE = config['R_EXE']
+locals().update(config)
 rbps = config['rbps']
 experiments = config['experiments']
 libnames = config['libnames']
-SCRIPT_PATH=config['SCRIPT_PATH']
+
 manifest = pd.read_table(config['MANIFEST'], index_col = False, sep = ',')
-REPEAT_TABLE = config['REPEAT_TABLE']
-CHROM_SIZES = config['CHROM_SIZES']
-UNINFORMATIVE_READ = 3 - int(config['INFORMATIVE_READ']) # whether read 1 or read 2 is informative
 
 def experiment_to_libname(experiment):
     libnames = manifest.loc[manifest['experiment']==experiment, 'libname'].tolist()
@@ -17,40 +14,40 @@ def libname_to_experiment(libname):
     return manifest.loc[manifest['libname']==libname, 'experiment'].iloc[0]
 
 
-# rule uniq_repeats:
-#     input:
-#         repeatmasker = config['REPEAT_TABLE'],
-#         genome = config['GENOMEFA']
-#     output:
-#         sorted_bed = temp("repeats.sort.temp.bed.gz"),
-#         unique_repeats = config['REPEAT_TABLE'].replace(".tsv", ".sort.unique.bed")
-#     params:
-#         error_out_file = "error_files/calc_partition_nuc.err",
-#         out_file = "stdout/calc_partition_nuc.out",
-#         run_time = "40:00",
-#         memory = "1000",
-#         job_name = "uniq_repeats_nuc",
-#         cores = 1,
-#     benchmark: "benchmarks/uniq_repeats.txt"
-#     shell:
-#         "zcat {REPEAT_TABLE} | awk -v OFS=\"\\t\" '{{print $6,$7,$8,$11 \":\" name_count[$11]++, $2, $10,$11,$12,$13}} "
-#             "$13 == \"L1\" || $13 == \"Alu\" {{$11 = $11 \"_AS\"; $12 = $12 \"_AS\"; $13 = $13 \"_AS\"; "
-#             "if($10 == \"+\") {{$10 = \"-\"}} else {{$10 = \"+\"}}; print $6,$7,$8,$11 \":\" name_count[$11]++, $2, $10,$11,$12,$13}}' | "
-#             "tail -n +2 | bedtools sort -i - | gzip > {output.sorted_bed}; "
-#         "bedtools coverage -s -d -a {output.sorted_bed} -b {output.sorted_bed}  | awk -v OFS=\"\\t\" "
-#             "'$NF >1 {{print $1,$2+$(NF-1)-1,$2+$(NF-1),$4,$5,$6}}' | "
-#             "bedtools sort -i - | "
-#             "bedtools merge -c 4,5,6 -o distinct -s -i - | "
-#             "bedtools subtract -s -a {output.sorted_bed} -b - | "
-#             "bedtools nuc -s -fi {input.genome} -bed -  | awk -v OFS=\"\\t\" 'NR > 1 {{print $1,$2,$3,$4,$5,$6,$7,$8,$9,$11}}' | "
-#             "gzip -c > {output.unique_repeats}"
+rule uniq_repeats:
+    input:
+        repeatmasker = config['REPEAT_TABLE'],
+        genome = config['GENOMEFA']
+    output:
+        sorted_bed = temp("repeats.sort.temp.bed.gz"),
+        unique_repeats = config['REPEAT_TABLE'].replace(".tsv", ".sort.unique.bed")
+    params:
+        error_out_file = "error_files/calc_partition_nuc.err",
+        out_file = "stdout/calc_partition_nuc.out",
+        run_time = "40:00",
+        memory = "1000",
+        job_name = "uniq_repeats_nuc",
+        cores = 1,
+    benchmark: "benchmarks/uniq_repeats.txt"
+    shell:
+        "zcat {REPEAT_TABLE} | awk -v OFS=\"\\t\" '{{print $6,$7,$8,$11 \":\" name_count[$11]++, $2, $10,$11,$12,$13}} "
+            "$13 == \"L1\" || $13 == \"Alu\" {{$11 = $11 \"_AS\"; $12 = $12 \"_AS\"; $13 = $13 \"_AS\"; "
+            "if($10 == \"+\") {{$10 = \"-\"}} else {{$10 = \"+\"}}; print $6,$7,$8,$11 \":\" name_count[$11]++, $2, $10,$11,$12,$13}}' | "
+            "tail -n +2 | bedtools sort -i - | gzip > {output.sorted_bed}; "
+        "bedtools coverage -s -d -a {output.sorted_bed} -b {output.sorted_bed}  | awk -v OFS=\"\\t\" "
+            "'$NF >1 {{print $1,$2+$(NF-1)-1,$2+$(NF-1),$4,$5,$6}}' | "
+            "bedtools sort -i - | "
+            "bedtools merge -c 4,5,6 -o distinct -s -i - | "
+            "bedtools subtract -s -a {output.sorted_bed} -b - | "
+            "bedtools nuc -s -fi {input.genome} -bed -  | awk -v OFS=\"\\t\" 'NR > 1 {{print $1,$2,$3,$4,$5,$6,$7,$8,$9,$11}}' | "
+            "gzip -c > {output.unique_repeats}"
 
 rule quantify_repeats:
     input:
         config['CHROM_SIZES'],
         bam = "{libname}/bams/{sample_label}.rmDup.Aligned.sortedByCoord.out.bam",
-        #repeats = rules.uniq_repeats.output.unique_repeats,
-        repeats = config['REPEAT_TABLE'].replace(".tsv", ".sort.unique.bed")
+        repeats = rules.uniq_repeats.output.unique_repeats,
+        #repeats = config['REPEAT_TABLE'].replace(".tsv", ".sort.unique.bed")
     output:
         counts = "counts/repeats/vectors/{libname}.{sample_label}.counts"
     params:
@@ -61,9 +58,12 @@ rule quantify_repeats:
         job_name = "dedup_bam",
         replicate_label = "{libname}.{sample_label}",
         cores = 1,
+        uninformative_read = config['UNINFORMATIVE_READ']
     benchmark: "benchmarks/repeats/unassigned_experiment.{libname}.{sample_label}.quantify_repeats.txt"
+    container:
+        "docker://howardxu520/skipper:bigwig_1.0"
     shell:
-        "bedtools bamtobed -i {input.bam} | awk '($1 != \"chrEBV\") && ($4 !~ \"/{UNINFORMATIVE_READ}$\")' | "
+        "bedtools bamtobed -i {input.bam} | awk '($1 != \"chrEBV\") && ($4 !~ \"/{params.uninformative_read}$\")' | "
             "bedtools flank -s -l 1 -r 0 -g {CHROM_SIZES} -i - | "
             "bedtools shift -p 1 -m -1 -g {CHROM_SIZES} -i - | "
             "bedtools sort -i - | "
@@ -115,9 +115,11 @@ rule fit_clip_betabinomial_re_model:
         job_name = "fit_clip_betabinomial_re_model",
         cores = 1,
     benchmark: "benchmarks/fit_clip_betabinomial_re_model/{libname}.{sample_label}.fit_clip.txt"
+    container:
+        "docker://howardxu520/skipper:R_4.1.3_1"
     shell:
         """
-        {R_EXE} --vanilla {SCRIPT_PATH}/fit_clip_betabinom_re.R \
+        Rscript --vanilla {SCRIPT_PATH}/fit_clip_betabinom_re.R \
             {input.table} \
             {wildcards.libname} \
             {wildcards.libname}.{wildcards.sample_label} \
@@ -184,9 +186,11 @@ rule call_enriched_re:
         job_name = "call_enriched_re",
         cores = 1,
     benchmark: "benchmarks/call_enriched_re/{libname}.{sample_label}.call_enriched_re.txt"
+    container:
+        "docker://howardxu520/skipper:R_4.1.3_1"
     shell:
         """
-        {R_EXE} --vanilla {SCRIPT_PATH}/call_enriched_re.R \
+        Rscript --vanilla {SCRIPT_PATH}/call_enriched_re.R \
             {input.table} \
             {input.repeats} \
             {input.parameters} \
@@ -209,4 +213,4 @@ rule call_enriched_re:
 #         job_name = "find_reproducible_enriched_re"
 #     benchmark: "benchmarks/find_reproducible_enriched_re/{experiment_label}.all_replicates.reproducible.txt"
 #     shell:
-#         "{R_EXE} --vanilla {TOOL_DIR}/identify_reproducible_re.R output/enriched_re/ {wildcards.experiment_label}"
+#         "Rscript --vanilla {TOOL_DIR}/identify_reproducible_re.R output/enriched_re/ {wildcards.experiment_label}"

@@ -3,4 +3,4 @@ channels:
   - bioconda
 dependencies:
   - fastx_toolkit
-prefix: /home/hsher/miniconda3/envs/fastx_toolkit
+prefix: /tscc/nfs/home/hsher/miniconda3/envs/fastx_toolkit

@@ -1,6 +1,5 @@
 rule extract_read_two:
     input:
-        #bam="input/{sample_label}.bam"
         bam=lambda wildcards: glob.glob(manifest.loc[manifest.Sample == wildcards.sample_label]["bam"].values[0]),
     output:
         read2="processed_bam/{sample_label}.r2.bam",
@@ -10,9 +9,10 @@ rule extract_read_two:
         cores = 1,
         error_out_file = "error_files/extract_read2",
         out_file = "stdout/extract_read2.{sample_label}"
+    conda:
+        "envs/samtools.yaml"
     shell:
         """
-        module load samtools
         paired=$(samtools view -c -f 1 {input.bam})
         if [ "$paired" -lt "1" ]; 
             then cp {input.bam} {output.read2};
@@ -31,16 +31,17 @@ rule CITS_bam_to_bedgraph:
     input:
         bam="processed_bam/{sample_label}.r2.bam"
     output:
-        pos="CITS/{sample_label}.pos.bedgraph",
-        neg="CITS/{sample_label}.neg.bedgraph"
+        pos=temp("CITS/{sample_label}.pos.bedgraph"),
+        neg=temp("CITS/{sample_label}.neg.bedgraph")
     params:
         run_time="2:00:00",
         error_out_file = "error_files/CITS_bedgraph",
         cores = 1,
         out_file = "stdout/CITS_bedgraph.{sample_label}"
+    container:
+        "docker://howardxu520/skipper:bigwig_1.0"
     shell:
         """
-        module load bedtools;
         set +o pipefail;
         
         bedtools genomecov -ibam {input.bam} -bg -scale 1 -strand + -5 > {output.pos}
@@ -54,18 +55,17 @@ rule COV_bam_to_bedgraph:
     input:
         bam="processed_bam/{sample_label}.r2.bam"
     output:
-        pos="coverage/{sample_label}.pos.bedgraph",
-        neg="coverage/{sample_label}.neg.bedgraph"
+        pos=temp("coverage/{sample_label}.pos.bedgraph"),
+        neg=temp("coverage/{sample_label}.neg.bedgraph")
     params:
         run_time="1:00:00",
         error_out_file = "error_files/coverage_bedgraph",
         out_file = "stdout/COV_bedgraph.{sample_label}",
         cores = 1,
+    container:
+        "docker://howardxu520/skipper:bigwig_1.0"
     shell:
         """
-        module load bedtools;
-        set +o pipefail;
-
         # coverage
         bedtools genomecov -ibam {input.bam} -bg -scale 1 -strand + -split > {output.pos}
         bedSort {output.pos} {output.pos}
@@ -84,8 +84,9 @@ rule bedgraph_to_bw:
         error_out_file = "error_files/{something}.bedgraph_to_bw".replace('/', '.'),
         out_file = "stdout/{something}.bedgraph_to_bw".replace('/', '.'),
         cores = 1,
+    container:
+        "docker://howardxu520/skipper:bigwig_1.0"
     shell:
         """
-        module load ucsctools
         bedGraphToBigWig {input.bedgraph} {params.chr_size} {output.bw}
         """

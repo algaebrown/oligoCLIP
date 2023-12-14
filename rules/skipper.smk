@@ -1,12 +1,9 @@
 import pandas as pd
-R_EXE = config['R_EXE']
-BLACKLIST = config['BLACKLIST'] if 'BLACKLIST' in config else None
+locals().update(config)
 rbps = config['rbps']
 experiments = config['experiments']
 libnames = config['libnames']
-SCRIPT_PATH=config['SCRIPT_PATH']
 manifest = pd.read_table(config['MANIFEST'], index_col = False, sep = ',')
-UNINFORMATIVE_READ = 3 - int(config['INFORMATIVE_READ']) # whether read 1 or read 2 is informative
 
 
 def libname_to_experiment(libname):
@@ -33,8 +30,10 @@ rule partition_bam_reads:
         memory = "10000",
         job_name = "partition_bam_reads",
         replicate_label = "{libname}.{sample_label}",
-        uninformative_read = UNINFORMATIVE_READ
+        uninformative_read = config['UNINFORMATIVE_READ']
     benchmark: "benchmarks/counts/unassigned_experiment.{libname}.{sample_label}.partition_bam_reads.txt"
+    container:
+        "docker://howardxu520/skipper:bigwig_1.0"
     shell:
         "bedtools bamtobed -i {input.bam} | awk '($1 != \"chrEBV\") && ($4 !~ \"/{params.uninformative_read}$\")' | bedtools flank -s -l 1 -r 0 -g {input.chrom_size} -i - | bedtools shift -p -1 -m 1 -g {input.chrom_size} -i - | bedtools coverage -counts -s -a {input.region_partition} -b - | cut -f 7 | awk 'BEGIN {{print \"{params.replicate_label}\"}} {{print}}' > {output.counts};"
 
@@ -72,6 +71,8 @@ rule calc_partition_nuc:
         memory = "1000",
         job_name = "calc_partition_nuc"
     benchmark: "benchmarks/partition_nuc.txt"
+    container:
+        "docker://howardxu520/skipper:bigwig_1.0"
     shell:
         "bedtools nuc -s -fi {input.genome} -bed {input.partition} > {output.nuc}"
 
@@ -90,11 +91,11 @@ rule fit_clip_betabinom:
         job_name = "fit_clip_betabinomial_model",
         cores = "1"
     container:
-        "docker://algaebrown/beta-binom"
+        "docker://howardxu520/skipper:R_4.1.3_1"
     benchmark: "benchmarks/fit_clip_betabinomial_model/{libname}.{sample_label}.fit_clip.txt"
     shell:
         """
-        {R_EXE} --vanilla {SCRIPT_PATH}fit_clip_betabinom_no_other_col.R {input.nuc} {input.table} {wildcards.libname} {wildcards.libname}.{wildcards.sample_label} {output.coef} 
+        Rscript --vanilla {SCRIPT_PATH}fit_clip_betabinom_no_other_col.R {input.nuc} {input.table} {wildcards.libname} {wildcards.libname}.{wildcards.sample_label} {output.coef} 
         """
 
 rule combine_ip_to_background:
@@ -158,11 +159,11 @@ rule call_enriched_windows:
         cores = "1",
         root_folder = lambda wildcards, output: str(output[0]).split('threshold_scan')[0]
     benchmark: "benchmarks/call_enriched_windows/{libname}.{clip_sample_label}.{bg_sample_label}.call_enriched_windows.txt"
-    # container:
-    #     "docker://algaebrown/beta-binom" # TODO: THIS FUCKING SHIT WORKS WITH COPY AND PASTE BUT NOT SNAKEMAKE. no error msg
+    container:
+        "docker://howardxu520/skipper:R_4.1.3_1"
     shell:
         """
-        {R_EXE} --vanilla {SCRIPT_PATH}/call_enriched_windows.R \
+        Rscript --vanilla {SCRIPT_PATH}/call_enriched_windows.R \
             {input.nuc} \
             {input.table} \
             {input.accession_rankings} \
@@ -257,11 +258,11 @@ rule call_enriched_windows_CC:
         cores = "8",
         root_folder = 'skipper_CC'
     benchmark: "benchmarks/call_enriched_windows/{libname}.{clip_sample_label}.internal.call_enriched_windows.txt"
-    # container:
-    #     "docker://algaebrown/beta-binom" # TODO: THIS FUCKING SHIT WORKS WITH COPY AND PASTE BUT NOT SNAKEMAKE. no error msg
+    container:
+        "docker://howardxu520/skipper:R_4.1.3_1"
     shell:
         """
-        {R_EXE} --vanilla {SCRIPT_PATH}/call_enriched_windows.R \
+        Rscript --vanilla {SCRIPT_PATH}/call_enriched_windows.R \
             {input.nuc} \
             {input.table} \
             {input.accession_rankings} \
@@ -290,7 +291,7 @@ use rule partition_bam_reads as partition_external_bams with:
         memory = "10000",
         job_name = "partition_bam_reads",
         replicate_label = "external.{external_label}",
-        uninformative_read = lambda wildcards: 3-config['external_bam'][wildcards.external_label]['INFORMATIVE_READ']
+        uninformative_read = config['UNINFORMATIVE_READ']
     benchmark: "benchmarks/counts/unassigned_experiment.external.{external_label}.partition_bam_reads.txt"
 
 use rule combine_ip_to_CC as combine_ip_to_external with:
@@ -348,11 +349,11 @@ rule call_enriched_windows_external:
         cores = "8",
         root_folder = 'skipper_external/{external_label}'
     benchmark: "benchmarks/call_enriched_windows/{libname}.{clip_sample_label}.{external_label}.call_enriched_windows.txt"
-    # container:
-    #     "docker://algaebrown/beta-binom" # TODO: THIS FUCKING SHIT WORKS WITH COPY AND PASTE BUT NOT SNAKEMAKE. no error msg
+    container:
+        "docker://howardxu520/skipper:R_4.1.3_1"
     shell:
         """
-        {R_EXE} --vanilla {SCRIPT_PATH}/call_enriched_windows.R \
+        Rscript --vanilla {SCRIPT_PATH}/call_enriched_windows.R \
             {input.nuc} \
             {input.table} \
             {input.accession_rankings} \
@@ -382,5 +383,7 @@ rule call_enriched_windows_external:
 #         memory = "2000",
 #         job_name = "find_reproducible_enriched_windows"
 #     benchmark: "benchmarks/find_reproducible_enriched_windows/{experiment}.{clip_sample_label}.all_replicates.reproducible.txt"
-#     shell:
-#         "{R_EXE} --vanilla {SCRIPT_PATH}/identify_reproducible_windows.R internal_output/enriched_windows/ {wildcards.clip_sample_label} " + (BLACKLIST if BLACKLIST is not None else "") 
+#     container:
+        # "docker://howardxu520/skipper:R_4.1.3_1"
+        # shell:
+#         "Rscript --vanilla {SCRIPT_PATH}/identify_reproducible_windows.R internal_output/enriched_windows/ {wildcards.clip_sample_label} " + (BLACKLIST if BLACKLIST is not None else "") 

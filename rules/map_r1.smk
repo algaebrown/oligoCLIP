@@ -16,7 +16,6 @@ rule align_to_GENOME_r1_only:
         fq1= "{libname}/bams/repeat/{sample_label}.Unmapped.out.mate1",
     output:
         bam = "{libname}/bams/genome_r1/{sample_label}.genome-mapped.Aligned.sortedByCoord.out.bam",
-        bai = "{libname}/bams/genome_r1/{sample_label}.genome-mapped.Aligned.sortedByCoord.out.bam.bai",
         unmapped1= "{libname}/bams/genome_r1/{sample_label}.genome-mapped.Unmapped.out.mate1",
         log= "{libname}/bams/genome_r1/{sample_label}.genome-mapped.Log.final.out",
     params:
@@ -29,9 +28,10 @@ rule align_to_GENOME_r1_only:
         star_sjdb = config['STAR_DIR'],
         outprefix = "{libname}/bams/genome_r1/{sample_label}.genome-mapped.",
     benchmark: "benchmarks/align/{libname}.{sample_label}.align_reads.r1.txt"
+    container:
+        "docker://howardxu520/skipper:star_2.7.10b"
     shell:
         """
-        module load star ;
         STAR \
         --alignEndsType EndToEnd \
         --genomeDir {params.star_sjdb} \
@@ -52,9 +52,25 @@ rule align_to_GENOME_r1_only:
         --readFilesIn {input.fq1} \
         --runMode alignReads \
         --runThreadN 8
+        """
 
-        module load samtools
-        samtools index {output.bam}
+rule index_bam:
+    input:
+        "{anything}.bam"
+    output:
+        "{anything}.bam.bai"
+    params:
+        error_out_file = "error_files/{anything}_index_bam",
+        out_file = "stdout/{anything}_index_bam",
+        run_time = "40:00",
+        cores = "1",
+        memory = "10000",
+        job_name = "index_bam",
+    conda:
+        "envs/samtools.yaml"
+    shell:
+        """
+        samtools index {input}
         """
 
 rule umi_dedup:
@@ -71,32 +87,14 @@ rule umi_dedup:
         cores = "4",
         memory = "10000",
         job_name = "sortbam",
-        prefix='{libname}/bams/genome/{sample_label}.genome-mapped',
-        java = config['JAVA_PATH'],
-        umicollapse = config['UMICOLLAPSE_PATH']
-    conda: 
-        "envs/umi_tools.yaml"
+        prefix='{libname}/bams/genome/{sample_label}.genome-mapped'
+    container:
+        "docker://howardxu520/skipper:umicollapse_1.0.0"
     benchmark: "benchmarks/align/dedup.{libname}.{sample_label}.txt"
     shell:
         """
-        {params.java} -server -Xms8G -Xmx8G -Xss20M -jar {params.umicollapse} bam -i {input.bam} -o {output.bam_dedup} --umi-sep : --two-pass
+        java -server -Xms8G -Xmx8G -Xss20M -jar /UMICollapse/umicollapse.jar bam -i {input.bam} -o {output.bam_dedup} --umi-sep : --two-pass
         """
-rule index_genome_bams:
-    input:
-        bam = "{libname}/bams/genome_r1/{sample_label}.genome-mapped.rmDup.Aligned.sortedByCoord.out.bam"
-    output:
-        bai = "{libname}/bams/genome_r1/{sample_label}.genome-mapped.rmDup.Aligned.sortedByCoord.out.bam.bai"
-    params:
-        error_out_file = "error_files/index_bam.{libname}.{sample_label}",
-        out_file = "stdout/index_bam.{libname}.{sample_label}",
-        run_time = "01:40:00",
-        cores = "4",
-        memory = "1000",
-        job_name = "index_bam"
-    benchmark: "benchmarks/align/{libname}.{sample_label}.index_bam.txt"
-    shell:
-        "module load samtools;"
-        "samtools index {input.bam};"
 
 ######### mapstat ###########
 use rule gather_mapstat from QC_1 as mapstat_gather_genome_r1 with:
@@ -108,7 +106,7 @@ use rule gather_mapstat from QC_1 as mapstat_gather_genome_r1 with:
         "QC/genome_r1_mapping_stats.csv"
 
 ######### tracks ###########
-use rule COV_bam_to_bedgraph from make_track_1 as COV_bedgraph_r1 with:
+use rule COV_bam_to_bedgraph from make_track as COV_bedgraph_r1 with:
     input:
         bam="{libname}/bams/genome_r1/{sample_label}.genome-mapped.Aligned.sortedByCoord.out.bam"
     output:

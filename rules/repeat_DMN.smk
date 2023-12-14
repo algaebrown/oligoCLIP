@@ -1,4 +1,4 @@
-SCRIPT_PATH=config['SCRIPT_PATH']
+locals().update(config)
 rule make_repeat_megatable:
     input:
         unique_repeats = config['REPEAT_TABLE'].replace(".tsv", ".sort.unique.bed"),

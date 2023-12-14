@@ -19,4 +19,4 @@ dependencies:
   - statsmodels
   - pip:
     - omniclip
-prefix: /home/hsher/miniconda3/envs/omniEnv
+prefix: /tscc/nfs/home/hsher/miniconda3/envs/omniEnv

@@ -1,31 +1,31 @@
-#snakemake -s score_region.smk -j 12 --cluster "qsub -l walltime={params.run_time} -l nodes=1:ppn={params.cores} -q home-yeo -e {params.error_out_file} -o {params.out_file}" --configfile config/preprocess_config/oligose_k562.yaml --use-conda --conda-prefix /home/hsher/snakeconda -np
+#snakemake -s score_region.smk -j 12 --cluster "qsub -l walltime={params.run_time} -l nodes=1:ppn={params.cores} -q home-yeo -e {params.error_out_file} -o {params.out_file}" --configfile config/preprocess_config/oligose_k562.yaml --use-conda --conda-prefix /tscc/nfs/home/hsher/snakeconda -np
 
 import pandas as pd
 from pathlib import Path
-workdir: '/home/hsher/scratch/count_A3SS'
-rootdir = Path('/home/hsher/scratch/ABC_2rep')
-#cat /home/hsher/scratch/encode_kd/output/rMATs/SF3B4_K562/regions/A3SS/*/long_ss3.bed > ~/scratch/long_ss3.bed
-#cat /home/hsher/scratch/encode_kd/output/rMATs/SF3B4_K562/regions/A3SS/*/long_5intron.bed > ~/scratch/long_5intron.bed
-# cat /home/hsher/scratch/encode_kd/output/rMATs/PRPF8_K562/regions/A5SS/*/long_3intron.bed > ~/scratch/A5SS_long_3intron.bed
-# cat /home/hsher/scratch/encode_kd/output/rMATs/PRPF8_K562/regions/A5SS/*/exon_diff_interval.bed > ~/scratch/A5SS_exon_diff_interval.bed
-# cat /home/hsher/scratch/encode_kd/output/rMATs/RBFOX2_K562/regions/SE/*/casette_exon.bed > ~/scratch/casette_exon.bed
-# cat /home/hsher/scratch/encode_kd/output/rMATs/RBFOX2_K562/regions/SE/*/casette_5intron.bed > ~/scratch/casette_5intron.bed
-# cat /home/hsher/scratch/encode_kd/output/rMATs/RBFOX2_K562/regions/SE/*/casette_3intron.bed > ~/scratch/casette_3intron.bed
-# cat /home/hsher/scratch/encode_kd/output/rMATs/RBFOX2_K562/regions/SE/*/exon5.bed > ~/scratch/exon5.bed
-# cat /home/hsher/scratch/encode_kd/output/rMATs/RBFOX2_K562/regions/SE/*/exon3.bed > ~/scratch/exon3.bed
+workdir: '/tscc/nfs/home/hsher/scratch/count_A3SS'
+rootdir = Path('/tscc/nfs/home/hsher/scratch/ABC_2rep')
+#cat /tscc/nfs/home/hsher/scratch/encode_kd/output/rMATs/SF3B4_K562/regions/A3SS/*/long_ss3.bed > ~/scratch/long_ss3.bed
+#cat /tscc/nfs/home/hsher/scratch/encode_kd/output/rMATs/SF3B4_K562/regions/A3SS/*/long_5intron.bed > ~/scratch/long_5intron.bed
+# cat /tscc/nfs/home/hsher/scratch/encode_kd/output/rMATs/PRPF8_K562/regions/A5SS/*/long_3intron.bed > ~/scratch/A5SS_long_3intron.bed
+# cat /tscc/nfs/home/hsher/scratch/encode_kd/output/rMATs/PRPF8_K562/regions/A5SS/*/exon_diff_interval.bed > ~/scratch/A5SS_exon_diff_interval.bed
+# cat /tscc/nfs/home/hsher/scratch/encode_kd/output/rMATs/RBFOX2_K562/regions/SE/*/casette_exon.bed > ~/scratch/casette_exon.bed
+# cat /tscc/nfs/home/hsher/scratch/encode_kd/output/rMATs/RBFOX2_K562/regions/SE/*/casette_5intron.bed > ~/scratch/casette_5intron.bed
+# cat /tscc/nfs/home/hsher/scratch/encode_kd/output/rMATs/RBFOX2_K562/regions/SE/*/casette_3intron.bed > ~/scratch/casette_3intron.bed
+# cat /tscc/nfs/home/hsher/scratch/encode_kd/output/rMATs/RBFOX2_K562/regions/SE/*/exon5.bed > ~/scratch/exon5.bed
+# cat /tscc/nfs/home/hsher/scratch/encode_kd/output/rMATs/RBFOX2_K562/regions/SE/*/exon3.bed > ~/scratch/exon3.bed
 
 
 
-REGIONS=['/home/hsher/scratch/long_ss3.bed',
-'/home/hsher/scratch/long_5intron.bed',
-'/home/hsher/scratch/exon_diff_interval.bed',
-'/home/hsher/scratch/A5SS_long_3intron.bed',
-'/home/hsher/scratch/A5SS_exon_diff_interval.bed',
-'/home/hsher/scratch/exon3.bed',
-'/home/hsher/scratch/exon5.bed',
-'/home/hsher/scratch/casette_exon.bed',
-'/home/hsher/scratch/casette_5intron.bed',
-'/home/hsher/scratch/casette_3intron.bed'
+REGIONS=['/tscc/nfs/home/hsher/scratch/long_ss3.bed',
+'/tscc/nfs/home/hsher/scratch/long_5intron.bed',
+'/tscc/nfs/home/hsher/scratch/exon_diff_interval.bed',
+'/tscc/nfs/home/hsher/scratch/A5SS_long_3intron.bed',
+'/tscc/nfs/home/hsher/scratch/A5SS_exon_diff_interval.bed',
+'/tscc/nfs/home/hsher/scratch/exon3.bed',
+'/tscc/nfs/home/hsher/scratch/exon5.bed',
+'/tscc/nfs/home/hsher/scratch/casette_exon.bed',
+'/tscc/nfs/home/hsher/scratch/casette_5intron.bed',
+'/tscc/nfs/home/hsher/scratch/casette_3intron.bed'
 ]
 REGION_NAMES = [Path(i).name.replace('.bed','') for i in REGIONS]
 
@@ -35,7 +35,6 @@ MANIFEST=config['MANIFEST']
 SCRIPT_PATH=config['SCRIPT_PATH']
 UNINFORMATIVE_READ = 3 - int(config['INFORMATIVE_READ']) # whether read 1 or read 2 is informative
 CHROM_SIZES = config['CHROM_SIZES']
-R_EXE = config['R_EXE']
 DB_FILE=config['DB_FILE']
 GENOME_dir=config['GENOME_dir']
 GENOMEFA=config['GENOMEFA']
@@ -94,7 +93,7 @@ rule partition_bam_reads:
         memory = "10000",
         job_name = "partition_bam_reads",
         replicate_label = "{libname}.{sample_label}",
-        uninformative_read = UNINFORMATIVE_READ
+        uninformative_read = config['UNINFORMATIVE_READ']
     benchmark: "benchmarks/counts/unassigned_experiment.{libname}.{sample_label}.{region_name}.partition_bam_reads.txt"
     shell:
         "bedtools bamtobed -i {input.bam} | awk '($1 != \"chrEBV\") && ($4 !~ \"/{params.uninformative_read}$\")' | bedtools flank -s -l 1 -r 0 -g {input.chrom_size} -i - | bedtools shift -p -1 -m 1 -g {input.chrom_size} -i - | bedtools coverage -counts -s -a {input.region_partition} -b - | cut -f 7 | awk 'BEGIN {{print \"{params.replicate_label}\"}} {{print}}' > {output.counts};"

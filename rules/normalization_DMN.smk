@@ -1,12 +1,7 @@
 import pandas as pd
-R_EXE = config['R_EXE']
-BLACKLIST = config['BLACKLIST'] if 'BLACKLIST' in config else None
-rbps = config['rbps']
-experiments = config['experiments']
-libnames = config['libnames']
-SCRIPT_PATH=config['SCRIPT_PATH']
+locals().update(config)
+
 manifest = pd.read_table(config['MANIFEST'], index_col = False, sep = ',')
-UNINFORMATIVE_READ = 3 - int(config['INFORMATIVE_READ']) # whether read 1 or read 2 is informative
 
 
 
@@ -21,7 +16,7 @@ def experiment_to_libname(experiment):
 rule fit_beta_mixture_model_CC:
     input:
         feature_annotations = config['FEATURE_ANNOTATIONS'],
-        table = lambda wildcards: f"counts_CC/genome/bgtables/internal/"+libname_to_experiment(wildcards.libname)+f".{wildcards.clip_sample_label}.tsv.gz",
+        table = lambda wildcards: "counts_CC/genome/bgtables/internal/"+libname_to_experiment(wildcards.libname)+'.'+wildcards.clip_sample_label+".tsv.gz",
     output:
         "beta-mixture_CC/{libname}.{clip_sample_label}.fit.rda",
         "beta-mixture_CC/{libname}.{clip_sample_label}.goodness_of_fit.pdf",
@@ -50,37 +45,6 @@ rule fit_beta_mixture_model_CC:
             {wildcards.libname}.{wildcards.clip_sample_label} 
         """
 
-# rule analyze_beta_mixture_results:
-#     input:
-#         "beta-mixture_CC{libname}.{clip_sample_label}.fit.rda",
-#         "beta-mixture_CC{libname}.{clip_sample_label}.goodness_of_fit.pdf",
-#         "beta-mixture_CC{libname}.{clip_sample_label}.weights.tsv",
-#         "beta-mixture_CC{libname}.{clip_sample_label}.alpha.tsv",
-#         "beta-mixture_CC{libname}.{clip_sample_label}.null.alpha.tsv",
-#         "beta-mixture_CC{libname}.{clip_sample_label}.mixture_weight.tsv",
-#         feature_annotations = config['FEATURE_ANNOTATIONS'],
-#         table = lambda wildcards: f"internal_output/counts/genome/bgtables/internal/"+libname_to_experiment(wildcards.libname)+f".{wildcards.clip_sample_label}.tsv.gz",
-#     output:
-#         "beta-mixture_CC{libname}.{clip_sample_label}.enriched_window.tsv"
-#     params:
-#         error_out_file = "error_files/{libname}.{clip_sample_label}.analyze.DMN.err",
-#         out_file = "stdout/{libname}.{clip_sample_label}.analyze.DMN.err",
-#         run_time = "00:40:00",
-#         memory = "10000",
-#         job_name = "DMN_analysis",
-#         cores = "1",
-#     conda:
-#         "envs/metadensity.yaml"
-#     benchmark: "benchmarks/DMN/analyze.{libname}.{clip_sample_label}"
-#     shell:
-#         """
-#         python {SCRIPT_PATH}/analyze_betabinom_mixture.py \
-#             beta-mixture_CC \
-#             {wildcards.libname}.{wildcards.clip_sample_label} \
-#             {input.table} \
-#             {input.feature_annotations}
-#         """
-
 rule analyze_beta_mixture_results_CC:
     input:
         "beta-mixture_CC/{libname}.{clip_sample_label}.fit.rda",
@@ -90,7 +54,7 @@ rule analyze_beta_mixture_results_CC:
         "beta-mixture_CC/{libname}.{clip_sample_label}.null.alpha.tsv",
         "beta-mixture_CC/{libname}.{clip_sample_label}.mixture_weight.tsv",
         feature_annotations = config['FEATURE_ANNOTATIONS'],
-        table = lambda wildcards: f"counts_CC/genome/bgtables/internal/"+libname_to_experiment(wildcards.libname)+f".{wildcards.clip_sample_label}.tsv.gz",
+        table = rules.fit_beta_mixture_model_CC.input.table
     output:
         "beta-mixture_CC/{libname}.{clip_sample_label}.enriched_windows.tsv"
     params:
@@ -193,7 +157,7 @@ rule analyze_beta_mixture_results_another_lib:
 #         job_name = "find_reproducible_enriched_windows"
 #     benchmark: "benchmarks/find_reproducible_enriched_windows/{experiment}.{clip_sample_label}.all_replicates.reproducible.txt"
 #     shell:
-#         "{R_EXE} --vanilla {SCRIPT_PATH}/identify_reproducible_windows.R internal_output/enriched_windows/ {wildcards.clip_sample_label} " + (BLACKLIST if BLACKLIST is not None else "") 
+#         "Rscript --vanilla {SCRIPT_PATH}/identify_reproducible_windows.R internal_output/enriched_windows/ {wildcards.clip_sample_label} " + (BLACKLIST if BLACKLIST is not None else "") 
 
 rule make_window_by_barcode_table:
     input:
@@ -299,7 +263,7 @@ rule softmask:
 rule fit_beta_gc_aware:
     input:
         feature_annotations = config['FEATURE_ANNOTATIONS'],
-        table = lambda wildcards: f"counts_external/genome/{wildcards.external_label}/"+libname_to_experiment(wildcards.libname)+f".{wildcards.clip_sample_label}.tsv.gz",
+        table = lambda wildcards: f'counts_external/genome/{wildcards.external_label}/'+libname_to_experiment(wildcards.libname)+f".{wildcards.clip_sample_label}.tsv.gz",
         gc = config['PARTITION'].replace('bed.gz', 'nuc.gz')
     output:
         expand("beta-mixture_external/{external_label}/{libname}.{clip_sample_label}.gc{index}.goodness_of_fit.pdf",

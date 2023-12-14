@@ -1,4 +1,4 @@
-#snakemake -s snakeVariants_clinvar.smk -j 12 --cluster "qsub -l walltime={params.run_time} -l nodes=1:ppn={params.cores} -q home-yeo -e {params.error_out_file} -o {params.out_file}" --configfile config/preprocess_config/oligose_k562.yaml --use-conda --conda-prefix /home/hsher/snakeconda -np
+#snakemake -s snakeVariants_clinvar.smk -j 12 --cluster "qsub -l walltime={params.run_time} -l nodes=1:ppn={params.cores} -q home-yeo -e {params.error_out_file} -o {params.out_file}" --configfile config/preprocess_config/oligose_k562.yaml --use-conda --conda-prefix /tscc/nfs/home/hsher/snakeconda -np
 import pandas as pd
 workdir: config['WORKDIR']
 SCRIPT_PATH = config['SCRIPT_PATH']
@@ -18,8 +18,8 @@ experiments = manifest['experiment'].tolist()
 config['experiments'] = experiments
 rbps = barcode_df['RBP'].tolist()
 config['rbps'] = rbps
-seq_df = '/home/hsher/scratch/ABC_DL/output/tsv/K562_rep6.RBFOX2.tsv' # need to be of the same as the feature annotatiions
-VCF='/projects/ps-yeolab5/hsher/clinvar/clinvar.vcf.gz'
+seq_df = '/tscc/nfs/home/hsher/scratch/ABC_DL/output/tsv/K562_rep6.RBFOX2.tsv' # need to be of the same as the feature annotatiions
+VCF='/tscc/projects/ps-yeolab5/hsher/clinvar/clinvar.vcf.gz'
 rule all:
     input:
         expand("variants_clinvar/{signal_type}/{libname}.{sample_label}.csv",
@@ -31,7 +31,7 @@ rule all:
 rule reannotate:
     input:
         vcf=VCF,
-        rename="/home/hsher/projects/oligoCLIP/utils/rename_chr.txt"
+        rename="/tscc/nfs/home/hsher/projects/oligoCLIP/utils/rename_chr.txt"
     output:
         VCF.replace('.vcf.gz', '.rename.vcf.gz')
     params:
@@ -39,9 +39,10 @@ rule reannotate:
         out_file = "stdout/rename_chr",
         run_time = "3:20:00",
         cores = 1,
+    container:
+        "docker://miguelpmachado/bcftools:1.9-01"
     shell:
         """
-        module load bcftools
         bcftools annotate --rename-chrs {input.rename} \
             {input.vcf} -Oz -o {output}
         bcftools index {output}
@@ -57,9 +58,10 @@ rule fetch_SNP:
         out_file = "stdout/fetch_snp.{signal_type}.{libname}.{sample_label}",
         run_time = "3:20:00",
         cores = 1,
+    container:
+        "docker://miguelpmachado/bcftools:1.9-01"
     shell:
         """
-        module load bcftools 
         bcftools query -R {input.finemapped_windows} -f '%CHROM\t%POS\t%ID\t%REF\t%ALT\t%INFO/CLNDN\t%INFO/CLNVC\t%INFO/CLNSIG\n' \
             {input.vcf} > {output}
         """
@@ -77,7 +79,7 @@ rule fetch_sequence:
         run_time = "01:20:00",
         cores = 1
     conda:
-        "/home/hsher/projects/oligoCLIP/rules/envs/metadensity.yaml"
+        "/tscc/nfs/home/hsher/projects/oligoCLIP/rules/envs/metadensity.yaml"
     shell:
         """
         python {SCRIPT_PATH}/generate_variant_sequence_clinvar.py {input.subset_vcf} {input.seq_df} {input.feature_annotation} \

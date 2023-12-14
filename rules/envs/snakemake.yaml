@@ -112,4 +112,4 @@ dependencies:
   - zipp=3.8.0=pyhd8ed1ab_0
   - zlib=1.2.13=h166bdaf_4
   - zstd=1.5.2=h3eb15da_6
-prefix: /home/hsher/miniconda3/envs/snakemake
+prefix: /tscc/nfs/home/hsher/miniconda3/envs/snakemake

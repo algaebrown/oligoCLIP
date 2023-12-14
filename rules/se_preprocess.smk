@@ -1,5 +1,6 @@
 import pandas as pd
-SCRIPT_PATH=config['SCRIPT_PATH']
+locals().update(config)
+
 manifest = pd.read_csv(config['MANIFEST'])
 barcode_df = pd.read_csv(config['barcode_csv'], header = None, sep = ':', names = ['barcode', 'RBP'])
 rbps = barcode_df['RBP'].tolist()
@@ -7,7 +8,7 @@ rbps = barcode_df['RBP'].tolist()
 
 rule tile_adaptor:
     output:
-        adafwd = "params/adaptor_fwd.fasta",
+        adafwd = temp("params/adaptor_fwd.fasta"),
     params:
         run_time = "00:20:00",
         cores="1",
@@ -20,15 +21,15 @@ rule tile_adaptor:
     benchmark: "benchmarks/tile_adaptor"
     shell:      
         """
-        python {SCRIPT_PATH}create_adaptor_tile.py {params.adaptor_fwd} {output.adafwd} {params.tiling_length}
+        python {SCRIPT_PATH}/create_adaptor_tile.py {params.adaptor_fwd} {output.adafwd} {params.tiling_length}
         """
 
 rule trim_adaptor:
     input:
         fq = lambda wildcards: manifest.loc[manifest['libname']==wildcards.libname, 'fastq'].iloc[0],
-        ada_fwd = "params/adaptor_fwd.fasta"
+        ada_fwd = rules.tile_adaptor.output.adafwd
     output:
-        fq_trimmed="{libname}/fastqs/all.Tr.fq.gz",
+        fq_trimmed=temp("{libname}/fastqs/all.Tr.fq.gz"),
         metrics = "QC/{libname}.Tr.metrics"
     params:
         run_time = "12:04:00",
@@ -54,9 +55,9 @@ rule trim_adaptor:
 
 rule extract_umi: 
     input:
-        fq = "{libname}/fastqs/all.Tr.fq.gz"
+        fq = rules.trim_adaptor.output.fq_trimmed
     output:
-        fq_umi = "{libname}/fastqs/all.Tr.umi.fq.gz",
+        fq_umi = temp("{libname}/fastqs/all.Tr.umi.fq.gz"),
         metrics = "QC/{libname}.all.Tr.umi.metrics"
     params:
         error_out_file = "error_files/extract_umi",
@@ -79,10 +80,11 @@ rule extract_umi:
 
 rule demultiplex:
     input:
-        fq1 = "{libname}/fastqs/all.Tr.umi.fq.gz",
+        fq1 = rules.extract_umi.output.fq_umi,
         barcode_csv = ancient(config['barcode_csv'])
     output:
-        fq=expand("{libname}/fastqs/ultraplex_demux_{sample_label}.fastq.gz", libname = ["{libname}"], sample_label = rbps),
+        fq=temp(expand("{libname}/fastqs/ultraplex_demux_{sample_label}.fastq.gz", 
+            libname = ["{libname}"], sample_label = rbps)),
         missing_fq="{libname}/fastqs/ultraplex_demux_5bc_no_match.fastq.gz",
         # logs = "{libname}/barcode.log"
     conda:
@@ -127,7 +129,7 @@ rule reverse_complement:
 
 rule fastqc_post_trim:
     input:
-        fq1="{libname}/fastqs/ultraplex_demux_{sample_label}.rev.fastq.gz"
+        fq1=rules.reverse_complement.output.fqrev
     output:
         html1="{libname}/fastqc/ultraplex_demux_{sample_label}.rev_fastqc.html",
         txt1="{libname}/fastqc/ultraplex_demux_{sample_label}.rev_fastqc/fastqc_data.txt",
@@ -138,18 +140,18 @@ rule fastqc_post_trim:
         error_out_file = "error_files/fastqc.{libname}.txt",
         out_file = "stdout/fastqc.{libname}.txt",
     benchmark: "benchmarks/qc/fastqc.{libname}.{sample_label}.txt"
+    container:
+        "docker://howardxu520/skipper:fastqc_0.12.1"
     shell:
         """
-        module load fastqc;
         fastqc {input.fq1} --extract --outdir {params.outdir} -t {params.cores}
         """
 
 rule align_reads:
     input:
-        fq1="{libname}/fastqs/ultraplex_demux_{sample_label}.rev.fastq.gz"
+        fq1=rules.reverse_complement.output.fqrev
     output:
-        bam = "{libname}/bams/{sample_label}.Aligned.sortedByCoord.out.bam",
-        bai = "{libname}/bams/{sample_label}.Aligned.sortedByCoord.out.bam.bai",
+        bam = temp("{libname}/bams/{sample_label}.Aligned.sortedByCoord.out.bam"),
         unmapped1= "{libname}/bams/{sample_label}.Unmapped.out.mate1",
         log= "{libname}/bams/{sample_label}.Log.final.out",
     params:
@@ -162,9 +164,10 @@ rule align_reads:
         outprefix = "{libname}/bams/{sample_label}.",
         cores = "8",
     benchmark: "benchmarks/align/{libname}.{sample_label}.align_reads_genome.txt"
+    container:
+        "docker://howardxu520/skipper:star_2.7.10b"
     shell:        
         """
-        module load star
         STAR \
             --alignEndsType EndToEnd \
             --genomeDir {params.star_sjdb} \
@@ -189,15 +192,12 @@ rule align_reads:
             --readFilesIn {input.fq1} \
             --readFilesCommand zcat \
             --runMode alignReads \
-            --runThreadN {params.cores}\
-
-        module load samtools
-        samtools index {output.bam}
+            --runThreadN {params.cores}
         """
 
 rule umi_dedup:
     input:
-        bam="{libname}/bams/{sample_label}.Aligned.sortedByCoord.out.bam",
+        bam=rules.align_reads.output.bam,
         bai="{libname}/bams/{sample_label}.Aligned.sortedByCoord.out.bam.bai"
     output:
         bam_dedup="{libname}/bams/{sample_label}.rmDup.Aligned.sortedByCoord.out.bam",
@@ -209,28 +209,31 @@ rule umi_dedup:
         memory = "10000",
         job_name = "sortbam",
         prefix='{libname}/bams/genome/{sample_label}.genome-mapped',
-        java = config['JAVA_PATH'],
-        umicollapse = config['UMICOLLAPSE_PATH']
     conda: 
         "envs/umi_tools.yaml"
     benchmark: "benchmarks/align/dedup.{libname}.{sample_label}.txt"
+    container:
+        "docker://howardxu520/skipper:umicollapse_1.0.0"
     shell:
         """
-        {params.java} -server -Xms8G -Xmx8G -Xss20M -jar {params.umicollapse} bam -i {input.bam} -o {output.bam_dedup} --umi-sep : --two-pass --paired
+        java -server -Xms8G -Xmx8G -Xss20M -jar /UMICollapse/umicollapse.jar bam -i {input.bam} -o {output.bam_dedup} --umi-sep : --two-pass --paired
         """
-rule index_genome_bams:
+
+rule index_bam:
     input:
-        bam = "{libname}/bams/{sample_label}.rmDup.Aligned.sortedByCoord.out.bam"
+        "{anything}.bam"
     output:
-        bai = "{libname}/bams/{sample_label}.rmDup.Aligned.sortedByCoord.out.bam.bai"
+        "{anything}.bam.bai"
     params:
-        error_out_file = "error_files/index_bam.{libname}.{sample_label}",
-        out_file = "stdout/index_bam.{libname}.{sample_label}",
-        run_time = "01:40:00",
-        cores = "4",
-        memory = "1000",
-        job_name = "index_bam"
-    benchmark: "benchmarks/align/{libname}.{sample_label}.index_bam.txt"
+        error_out_file = "error_files/{anything}_index_bam",
+        out_file = "stdout/{anything}_index_bam",
+        run_time = "40:00",
+        cores = "1",
+        memory = "10000",
+        job_name = "index_bam",
+    conda:
+        "envs/samtools.yaml"
     shell:
-        "module load samtools;"
-        "samtools index {input.bam};"
+        """
+        samtools index {input}
+        """

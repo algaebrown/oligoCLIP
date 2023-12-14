@@ -1,12 +1,10 @@
-SCRIPT_PATH = config['SCRIPT_PATH']
-FEATURE_ANNOTATIONS = config['FEATURE_ANNOTATIONS']
-R_EXE = config['R_EXE']
+locals().update(config)
 
 rule sample_background_windows_by_region:
     input:
         enriched_windows = lambda wildcards: f"{wildcards.root_dir}/enriched_windows/{wildcards.libname}.{wildcards.sample_label}.enriched_windows.tsv.gz" if 'skipper' 
-            in wildcards.root_dir else f"{wildcards.root_dir}/{wildcards.libname}.{wildcards.sample_label}.enriched_windows.tsv",
-        all_windows = FEATURE_ANNOTATIONS,
+            in wildcards.root_dir else Path(wildcards.root_dir)/(wildcards.libname+'.'+wildcards.sample_label+".enriched_windows.tsv"),
+        all_windows = config['FEATURE_ANNOTATIONS'],
     output:
         variable_windows = "{root_dir}/homer/region_matched_background/variable/{libname}.{sample_label}.sampled_variable_windows.bed.gz",
         fixed_windows = "{root_dir}/homer/region_matched_background/fixed/{libname}.{sample_label}.sampled_fixed_windows.bed.gz"
@@ -18,9 +16,11 @@ rule sample_background_windows_by_region:
         window_size =  75,
         outdir = lambda wildcards, output: output.variable_windows.split('variable')[0]
     benchmark: "benchmarks/sample_background_windows_by_region/{libname}.{sample_label}.{root_dir}.sample_background_windows_by_region.txt"
+    container:
+        "docker://howardxu520/skipper:R_4.1.3_1"
     shell:
         """
-        {R_EXE} --vanilla {SCRIPT_PATH}/sample_matched_background_by_region.R \
+        Rscript --vanilla {SCRIPT_PATH}/sample_matched_background_by_region.R \
             {input.enriched_windows} \
             {input.all_windows} \
             {params.window_size} \
@@ -51,41 +51,3 @@ rule run_homer:
             -preparsedDir {params.outdir}/preparsed -size given -rna -nofacts -S 20 -len 5,6,7,8,9 -nlen 1 \
             -bg <(zcat {input.background} | awk -v OFS=\"\t\" '{{print $4,$1,$2+1,$3,$6}}') 
         """
-
-# use rule sample_background_windows_by_region as sample_background_windows_by_region_beta with:
-#     input:
-#         enriched_windows = "beta-mixture_CC/{libname}.{sample_label}.enriched_windows.tsv",
-#         all_windows = FEATURE_ANNOTATIONS,
-#     output:
-#         variable_windows = "beta-mixture_CC/homer/region_matched_background/variable/{libname}.{sample_label}.sampled_variable_windows.bed.gz",
-#         fixed_windows = "beta-mixture_CC/homer/region_matched_background/fixed/{libname}.{sample_label}.sampled_fixed_windows.bed.gz"
-    
-
-# use rule run_homer as run_homer_beta with:
-#     input:
-#         finemapped_windows = "beta-mixture_CC/finemapping/mapped_sites/{signal_type}/{libname}.{sample_label}.finemapped_windows.bed.gz",
-#         background = "beta-mixture_CC/homer/region_matched_background/fixed/{libname}.{sample_label}.sampled_fixed_windows.bed.gz",
-#         genome = config['GENOMEFA']
-#     output:
-#         report = "beta-mixture_CC/homer/finemapped_results/{signal_type}/{libname}.{sample_label}/homerResults.html",
-#         motif = "beta-mixture_CC/homer/finemapped_results/{signal_type}/{libname}.{sample_label}/homerMotifs.all.motifs"
-    
-
-# use rule sample_background_windows_by_region as sample_background_windows_by_region_dmm with:
-#     input:
-#         enriched_windows = "DMM/{libname}.{sample_label}.enriched_windows.tsv",
-#         all_windows = FEATURE_ANNOTATIONS,
-#     output:
-#         variable_windows = "DMM/homer/region_matched_background/variable/{libname}.{sample_label}.sampled_variable_windows.bed.gz",
-#         fixed_windows = "DMM/homer/region_matched_background/fixed/{libname}.{sample_label}.sampled_fixed_windows.bed.gz"
-
-# use rule run_homer as run_homer_dmm with:
-#     input:
-#         finemapped_windows = "DMM/finemapping/mapped_sites/{signal_type}/{libname}.{sample_label}.finemapped_windows.bed.gz",
-#         background = "DMM/homer/region_matched_background/fixed/{libname}.{sample_label}.sampled_fixed_windows.bed.gz",
-#         genome = config['GENOMEFA']
-#     output:
-#         report = "DMM/homer/finemapped_results/{signal_type}/{libname}.{sample_label}/homerResults.html",
-#         motif = "DMM/homer/finemapped_results/{signal_type}/{libname}.{sample_label}/homerMotifs.all.motifs"
-    
-

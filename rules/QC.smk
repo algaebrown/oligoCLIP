@@ -1,10 +1,10 @@
-SCRIPT_PATH=config['SCRIPT_PATH']
+locals().update(config)
 
 sample_labels = config['rbps']
 libnames = config['libnames']
 rbps = config['rbps']
 
-HUMAN_RNA_NUCLEOTIDE='/projects/ps-yeolab4/seqdata/20200622_gencode_coords_hsher/GRCh38_latest_rna.fna'
+HUMAN_RNA_NUCLEOTIDE='/tscc/projects/ps-yeolab4/seqdata/20200622_gencode_coords_hsher/GRCh38_latest_rna.fna'
 N_READ_TO_SAMPLE=5*10**3
 
 rule gather_trimming_stat:
@@ -163,11 +163,12 @@ rule what_is_read_wo_barcode:
         run_time = "00:40:00",
         cores = "1",
         nlines = N_READ_TO_SAMPLE * 4
+    conda:
+        "envs/blast.yaml"
     shell:
         """
         set +o pipefail; 
         zcat {input.query_fq_gz} | head -n {params.nlines} | sed -n '1~4s/^@/>/p;2~4p' > {output.fasta}
-        module load blast
         blastn -db {input.target} -query {output.fasta} -out {output.blast_result} -outfmt 6 -max_target_seqs 1 
         """
 
@@ -188,13 +189,13 @@ rule blast_unmapped_reads:
         run_time = "00:40:00",
         cores = "1",
         nlines = N_READ_TO_SAMPLE * 4
+    conda:
+        "envs/blast.yaml"
     shell:
         """
         set +o pipefail; 
-        module load samtools
         samtools fasta {input.unmapped1_fq} | head -n {params.nlines} > {output.fasta1}
         samtools fasta {input.unmapped2_fq} | head -n {params.nlines} > {output.fasta2}
-        module load blast
         blastn -db {input.target} -query {output.fasta1} -out {output.blast_result1} -outfmt 6 -max_target_seqs 1 
         blastn -db {input.target} -query {output.fasta2} -out {output.blast_result2} -outfmt 6 -max_target_seqs 1 
         """
@@ -213,12 +214,12 @@ rule blast_unmapped_reads_too_short:
         run_time = "00:40:00",
         cores = "1",
         nlines = N_READ_TO_SAMPLE
+    conda:
+        "envs/blast.yaml"
     shell:
         """
         set +o pipefail; 
-        module load samtools
         samtools view -f 4 {input.bam} | grep uT:A:1 | head -n {params.nlines} | samtools fasta >  {output.fasta}
-        module load blast
         blastn -db {input.target} -query {output.fasta} -out {output.blast_result} -outfmt 6 -max_target_seqs 1 
         """
 

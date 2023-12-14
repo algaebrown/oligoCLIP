@@ -3,4 +3,4 @@ channels:
   - bioconda
 dependencies:
   - piranha
-prefix: /home/hsher/miniconda3/envs/prianha
+prefix: /tscc/nfs/home/hsher/miniconda3/envs/prianha

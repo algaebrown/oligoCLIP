@@ -8,15 +8,16 @@ rule merge_other_bw_as_bg:
         )
     output:
         tem=temp("{libname}/bw_bg/{signal_type}/{sample_label}.{strand}.temp.bedgraph"),
-        merged_bedgraph="{libname}/bw_bg/{signal_type}/{sample_label}.{strand}.bedgraph",
+        merged_bedgraph=temp("{libname}/bw_bg/{signal_type}/{sample_label}.{strand}.bedgraph"),
     params:
         run_time="2:00:00",
         error_out_file = "error_files/merge_bw.{libname}.{signal_type}.{sample_label}.{strand}.err",
         out_file = "stdout/merge_bw.{libname}.{signal_type}.{sample_label}.{strand}.out",
         cores = 1,
+    conda:
+        "envs/bwmerge.yaml"
     shell:
         """
-        module load ucsctools
         bigWigMerge {input.bws} {output.tem} -threshold=-99999999
         bedSort {output.tem} {output.merged_bedgraph}
         """

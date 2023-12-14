@@ -2,19 +2,21 @@
 from importlib.resources import path
 import pandas as pd
 import os
-#snakemake -s snakeOligoCLIP_PE.smk -j 12 --cluster "qsub -l walltime={params.run_time} -l nodes=1:ppn={params.cores} -q home-yeo -e {params.error_out_file} -o {params.out_file}" --configfile /home/hsher/scratch/katie_manifest.yaml --use-conda --conda-prefix /home/hsher/snakeconda -n
+#snakemake -s snakeOligoCLIP_PE.smk -j 12 --cluster "qsub -l walltime={params.run_time} -l nodes=1:ppn={params.cores} -q home-yeo -e {params.error_out_file} -o {params.out_file}" --configfile /tscc/nfs/home/hsher/scratch/katie_manifest.yaml --use-conda --conda-prefix /tscc/nfs/home/hsher/snakeconda -n
 #snakemake -s snakeOligoCLIP_PE.smk -j 12 --cluster "qsub -l walltime={params.run_time} -l nodes=1:ppn={params.cores} -q home-yeo -e {params.error_out_file} -o {params.out_file}" --configfile config/preprocess_config/oligope_iter9.yaml --use-conda --conda-prefix -n
-#snakemake -s snakeOligoCLIP_PE.smk -j 30 --cluster "qsub -l walltime={params.run_time} -l nodes=1:ppn={params.cores} -q home-yeo -e {params.error_out_file} -o {params.out_file}" --configfile config/preprocess_config/oligope_iter6_reseq.yaml --use-conda --conda-prefix /home/hsher/snakeconda  QC/summary.csv -n
+"""
+snakemake -s snakeOligoCLIP_PE.smk -j 30 \
+    --cluster "qsub -l walltime={params.run_time} -l nodes=1:ppn={params.cores} -q home-yeo -e {params.error_out_file} -o {params.out_file}" \
+    --configfile config/preprocess_config/oligope_iter9.yaml \
+    --use-conda --conda-prefix /tscc/nfs/home/hsher/snakeconda -n
 
+snakemake -s snakeOligoCLIP_PE.smk -j 5 --configfile config/preprocess_config/oligope_iter6_reseq.yaml \
+    --use-conda \
+    --conda-prefix /tscc/projects/ps-yeolab5/hsher/snakeconda -n
+"""
 workdir: config['WORKDIR']
-MANIFEST=config['MANIFEST']
-SCRIPT_PATH=config['SCRIPT_PATH']
-UNINFORMATIVE_READ = 3 - int(config['INFORMATIVE_READ']) # whether read 1 or read 2 is informative
-CHROM_SIZES = config['CHROM_SIZES']
-R_EXE = config['R_EXE']
-DB_FILE=config['DB_FILE']
-GENOME_dir=config['GENOME_dir']
-GENOMEFA=config['GENOMEFA']
+locals().update(config)
+config['UNINFORMATIVE_READ'] = 3-INFORMATIVE_READ
 
 
 manifest = pd.read_table(MANIFEST, index_col = False, sep = ',')

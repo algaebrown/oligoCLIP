@@ -1,10 +1,10 @@
 import pandas as pd
 manifest = pd.read_csv(config['MANIFEST'])
-SCRIPT_PATH=config['SCRIPT_PATH']
-# /projects/ps-yeolab3/eboyle/encode/pipeline/04_20220506
-
 barcode_df = pd.read_csv(config['barcode_csv'], header = None, sep = ':', names = ['barcode', 'RBP'])
 rbps = barcode_df['RBP'].tolist()
+
+locals().update(config)
+
 
 rule tile_adaptor:
     output:
@@ -31,11 +31,11 @@ rule trim_adaptor:
     input:
         fq1 = lambda wildcards: manifest.loc[manifest['libname']==wildcards.libname, 'fastq1'],
         fq2 = lambda wildcards: manifest.loc[manifest['libname']==wildcards.libname, 'fastq2'],
-        adaptor_fwd = "params/adaptor_fwd.fasta",
-        adaptor_rev = "params/adaptor_rev.fasta"
+        adaptor_fwd = rules.tile_adaptor.output.adafwd,
+        adaptor_rev = rules.tile_adaptor.output.adarev
     output:
-        fq1 = "{libname}/fastqs/all.Tr.fq1.gz",
-        fq2 = "{libname}/fastqs/all.Tr.fq2.gz",
+        fq1 = temp("{libname}/fastqs/all.Tr.fq1.gz"),
+        fq2 = temp("{libname}/fastqs/all.Tr.fq2.gz"),
         metric = "QC/{libname}.Tr.metrics"
     params:
         run_time = "12:04:00",
@@ -63,8 +63,8 @@ rule trim_adaptor:
 rule extract_umi_and_trim_polyG: # TODO: adaptor TRIM first
 #fastp does not remove UMI from read2
     input:
-        fq1 = "{libname}/fastqs/all.Tr.fq1.gz",
-        fq2 = "{libname}/fastqs/all.Tr.fq2.gz",
+        fq1 = rules.trim_adaptor.output.fq1,
+        fq2 = rules.trim_adaptor.output.fq2,
     output:
         fq1 = "{libname}/fastqs/all.Tr.umi.fq1.gz",
         fq2 = "{libname}/fastqs/all.Tr.umi.fq2.gz",
@@ -99,10 +99,10 @@ rule extract_umi_and_trim_polyG: # TODO: adaptor TRIM first
 rule trim_umi_from_read2:
     # sometimes read2 has some UMI left despite fastp claims to trim it.
     input:
-        fq2 = "{libname}/fastqs/all.Tr.umi.fq2.gz",
+        fq2 = rules.extract_umi_and_trim_polyG.output.fq2,
     output:
         fq2_unzip = temp("{libname}/fastqs/all.Tr.umi.fq2"),
-        fq2 = "{libname}/fastqs/all.Tr.umi.fq2.trim.gz",
+        fq2 = temp("{libname}/fastqs/all.Tr.umi.fq2.trim.gz"),
     params:
         error_out_file = "error_files/remove_UMI_from_r2.{libname}.txt",
         out_file = "stdout/remove_UMI_from_r2.{libname}.txt",
@@ -124,12 +124,12 @@ rule trim_umi_from_read2:
 # the pgzip thing is slow. always lead to incomplete file
 rule demultiplex: ################ never used the trimmed fastq file
     input:
-        fq1 = "{libname}/fastqs/all.Tr.umi.fq1.gz",
-        fq2 = "{libname}/fastqs/all.Tr.umi.fq2.trim.gz",
+        fq1 = rules.extract_umi_and_trim_polyG.output.fq1,
+        fq2 = rules.trim_umi_from_read2.output.fq2,
         barcode_csv = ancient(config['barcode_csv'])
     output:
-        fq1=expand("{libname}/fastqs/ultraplex_demux_{sample_label}_Rev.fastq.gz", libname = ["{libname}"], sample_label = rbps),
-        fq2=expand("{libname}/fastqs/ultraplex_demux_{sample_label}_Fwd.fastq.gz", libname = ["{libname}"], sample_label = rbps),
+        fq1=temp(expand("{libname}/fastqs/ultraplex_demux_{sample_label}_Rev.fastq.gz", libname = ["{libname}"], sample_label = rbps)),
+        fq2=temp(expand("{libname}/fastqs/ultraplex_demux_{sample_label}_Fwd.fastq.gz", libname = ["{libname}"], sample_label = rbps)),
         missing_fq1="{libname}/fastqs/ultraplex_demux_5bc_no_match_Rev.fastq.gz",
         missing_fq2="{libname}/fastqs/ultraplex_demux_5bc_no_match_Fwd.fastq.gz",
         # logs = "{libname}/barcode.log"
@@ -198,8 +198,8 @@ rule trim_barcode_r1:
 # TODO, CHECK IF THE TRIMMING IS SUCCESSFUL, CHECK CROSS CONTAMINATION
 rule fastqc_post_trim:
     input:
-        fq1="{libname}/fastqs/ultraplex_demux_{sample_label}_Rev.Tr.fastq.gz",
-        fq2="{libname}/fastqs/ultraplex_demux_{sample_label}_Fwd.Tr.fastq.gz",
+        fq1=rules.trim_barcode_r1.output.fq1,
+        fq2=rules.trim_barcode_r1.output.fq2,
     output:
         # PRPF8.umi.fqTrTr.rev.sorted_fastqc
         html1="{libname}/fastqc/ultraplex_demux_{sample_label}_Rev.Tr_fastqc.html",
@@ -213,20 +213,20 @@ rule fastqc_post_trim:
         error_out_file = "error_files/fastqc.{libname}.txt",
         out_file = "stdout/fastqc.{libname}.txt",
     benchmark: "benchmarks/qc/fastqc.{libname}.{sample_label}.txt"
+    container:
+        "docker://howardxu520/skipper:fastqc_0.12.1"
     shell:
         """
-        module load fastqc;
         fastqc {input.fq1} --extract --outdir {params.outdir} -t {params.cores}
         fastqc {input.fq2} --extract --outdir {params.outdir} -t {params.cores}
         """
 
 rule align_reads:
     input:
-        fq1="{libname}/fastqs/ultraplex_demux_{sample_label}_Rev.Tr.fastq.gz",
-        fq2="{libname}/fastqs/ultraplex_demux_{sample_label}_Fwd.Tr.fastq.gz",
+        fq1=rules.trim_barcode_r1.output.fq1,
+        fq2=rules.trim_barcode_r1.output.fq2,
     output:
         bam = "{libname}/bams/{sample_label}.Aligned.sortedByCoord.out.bam",
-        bai = "{libname}/bams/{sample_label}.Aligned.sortedByCoord.out.bam.bai",
         unmapped1= "{libname}/bams/{sample_label}.Unmapped.out.mate1",
         unmapped2= "{libname}/bams/{sample_label}.Unmapped.out.mate2",
         log= "{libname}/bams/{sample_label}.Log.final.out",
@@ -240,9 +240,10 @@ rule align_reads:
         outprefix = "{libname}/bams/{sample_label}.",
         cores = "8",
     benchmark: "benchmarks/pre/align.{libname}.{sample_label}.txt"
+    container:
+        "docker://howardxu520/skipper:star_2.7.10b"
     shell:        
         """
-        module load star
         STAR \
             --alignEndsType Local \
             --genomeDir {params.star_sjdb} \
@@ -267,111 +268,31 @@ rule align_reads:
             --readFilesIn {input.fq1} {input.fq2} \
             --readFilesCommand zcat \
             --runMode alignReads \
-            --runThreadN {params.cores}\
-
-        module load samtools
-        samtools index {output.bam}
+            --runThreadN {params.cores}
         """
 
-# rule align_reads_to_REPEAT:
-#     input:
-#         fq1="{libname}/fastqs/ultraplex_demux_{sample_label}_Rev.Tr.fastq.gz",
-#         fq2="{libname}/fastqs/ultraplex_demux_{sample_label}_Fwd.Tr.fastq.gz",
-#     output:
-#         ubam = "{libname}/bams/repeat/{sample_label}.Aligned.out.bam",
-#         unmapped1= "{libname}/bams/repeat/{sample_label}.Unmapped.out.mate1",
-#         unmapped2= "{libname}/bams/repeat/{sample_label}.Unmapped.out.mate2",
-#         log= "{libname}/bams/repeat/{sample_label}.Log.final.out",
-#     params:
-#         error_out_file = "error_files/{sample_label}_align_reads",
-#         out_file = "stdout/{sample_label}_align_reads",
-#         run_time = "06:40:00",
-#         cores = "4",
-#         memory = "10000",
-#         job_name = "align_reads",
-#         star_sjdb = config['STAR_REP'],
-#         outprefix = "{libname}/bams/repeat/{sample_label}.",
-#     benchmark: "benchmarks/align/{libname}.{sample_label}.align_reads.txt"
-#     shell:
-#         """
-#         module load star ;
-#         STAR \
-#             --alignEndsType EndToEnd \
-#             --genomeDir {params.star_sjdb} \
-#             --genomeLoad NoSharedMemory \
-#             --outBAMcompression 10 \
-#             --outFileNamePrefix {params.outprefix} \
-#             --outFilterMultimapNmax 30 \
-#             --outFilterMultimapScoreRange 1 \
-#             --outFilterScoreMin 10 \
-#             --outFilterType BySJout \
-#             --outReadsUnmapped Fastx \
-#             --outSAMattrRGline ID:foo \
-#             --outSAMattributes All \
-#             --outSAMmode Full \
-#             --outSAMtype BAM Unsorted \
-#             --outSAMunmapped Within \
-#             --outStd Log \
-#             --readFilesIn {input.fq1} {input.fq2}\
-#             --readFilesCommand zcat \
-#             --runMode alignReads \
-#             --runThreadN 8
-#         """
-
-# rule align_to_GENOME:
-#     input:
-#         fq1= "{libname}/bams/repeat/{sample_label}.Unmapped.out.mate1",
-#         fq2= "{libname}/bams/repeat/{sample_label}.Unmapped.out.mate2",
-#     output:
-#         bam = "{libname}/bams/genome/{sample_label}.genome-mapped.Aligned.sortedByCoord.out.bam",
-#         bai = "{libname}/bams/genome/{sample_label}.genome-mapped.Aligned.sortedByCoord.out.bam.bai",
-#         unmapped1= "{libname}/bams/genome/{sample_label}.genome-mapped.Unmapped.out.mate1",
-#         unmapped2= "{libname}/bams/genome/{sample_label}.genome-mapped.Unmapped.out.mate2",
-#         log= "{libname}/bams/genome/{sample_label}.genome-mapped.Log.final.out",
-#     params:
-#         error_out_file = "error_files/{libname}.{sample_label}_align_reads_genome",
-#         out_file = "stdout/{sample_label}_align_reads_genome",
-#         run_time = "06:40:00",
-#         cores = "4",
-#         memory = "10000",
-#         job_name = "align_reads",
-#         star_sjdb = config['STAR_DIR'],
-#         outprefix = "{libname}/bams/genome/{sample_label}.genome-mapped.",
-#     benchmark: "benchmarks/align/{libname}.{sample_label}.align_reads.txt"
-#     shell:
-#         """
-#         module load star ;
-#         STAR \
-#         --alignEndsType EndToEnd \
-#         --genomeDir {params.star_sjdb} \
-#         --genomeLoad NoSharedMemory \
-#         --outBAMcompression 10 \
-#         --outFileNamePrefix {params.outprefix} \
-#         --outFilterMultimapNmax 1 \
-#         --outFilterMultimapScoreRange 1 \
-#         --outFilterScoreMin 10 \
-#         --outFilterType BySJout \
-#         --outReadsUnmapped Fastx \
-#         --outSAMattrRGline ID:foo \
-#         --outSAMattributes All \
-#         --outSAMmode Full \
-#         --outSAMtype BAM SortedByCoordinate \
-#         --outSAMunmapped Within \
-#         --outStd Log \
-#         --readFilesIn {input.fq1} {input.fq2} \
-#         --runMode alignReads \
-#         --runThreadN 8
-
-#         module load samtools
-#         samtools index {output.bam}
-#         """
-
+rule index_bam:
+    input:
+        "{anything}.bam"
+    output:
+        "{anything}.bam.bai"
+    params:
+        error_out_file = "error_files/{anything}_index_bam",
+        out_file = "stdout/{anything}_index_bam",
+        run_time = "40:00",
+        cores = "1",
+        memory = "10000",
+        job_name = "index_bam",
+    conda:
+        "envs/samtools.yaml"
+    shell:
+        """
+        samtools index {input}
+        """
 
 rule umi_dedup:
     input:
-        #bam="{libname}/bams/genome/{sample_label}.genome-mapped.Aligned.sortedByCoord.out.bam",
-        bam="{libname}/bams/{sample_label}.Aligned.sortedByCoord.out.bam",
-        #bai="{libname}/bams/genome/{sample_label}.genome-mapped.Aligned.sortedByCoord.out.bam.bai",
+        bam=rules.align_reads.output.bam,
         bai="{libname}/bams/{sample_label}.Aligned.sortedByCoord.out.bam.bai"
     output:
         bam_dedup="{libname}/bams/{sample_label}.rmDup.Aligned.sortedByCoord.out.bam",
@@ -383,28 +304,10 @@ rule umi_dedup:
         memory = "10000",
         job_name = "sortbam",
         prefix='{libname}/bams/genome/{sample_label}.genome-mapped',
-        java = config['JAVA_PATH'],
-        umicollapse = config['UMICOLLAPSE_PATH']
-    conda: 
-        "envs/umi_tools.yaml"
+    container:
+        "docker://howardxu520/skipper:umicollapse_1.0.0"
     benchmark: "benchmarks/pre/umi_dedup.{libname}.{sample_label}.txt"
     shell:
         """
-        {params.java} -server -Xms8G -Xmx8G -Xss20M -jar {params.umicollapse} bam -i {input.bam} -o {output.bam_dedup} --umi-sep : --two-pass --paired
+        java -server -Xms8G -Xmx8G -Xss20M -jar /UMICollapse/umicollapse.jar bam -i {input.bam} -o {output.bam_dedup} --umi-sep : --two-pass --paired
         """
-rule index_genome_bams:
-    input:
-        bam = "{libname}/bams/{sample_label}.rmDup.Aligned.sortedByCoord.out.bam"
-    output:
-        bai = "{libname}/bams/{sample_label}.rmDup.Aligned.sortedByCoord.out.bam.bai"
-    params:
-        error_out_file = "error_files/index_bam.{libname}.{sample_label}",
-        out_file = "stdout/index_bam.{libname}.{sample_label}",
-        run_time = "01:40:00",
-        cores = "4",
-        memory = "1000",
-        job_name = "index_bam"
-    benchmark: "benchmarks/pre/index_bam.{libname}.{sample_label}.txt"
-    shell:
-        "module load samtools;"
-        "samtools index {input.bam};"

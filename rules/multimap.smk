@@ -9,9 +9,10 @@ rule extract_multimap_and_uniquemap:
         error_out_file = "error_files/{libname}.{sample_label}.extractmap",
         out_file = "stdout/{libname}.{sample_label}.extractmap",
         cores = 1,
+    conda:
+        "envs/bamtools"
     shell:
         """
-        module load bamtools
         bamtools filter -in {input} -out {output.multi} -mapQuality "<=3"
         bamtools filter -in {input} -out {output.uniq} -mapQuality ">3"
         """

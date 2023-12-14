@@ -3,4 +3,5 @@ channels:
   - bioconda
 dependencies:
   - ucsc-bigwigmerge
-prefix: /home/hsher/miniconda3/envs/ucsc-bigwigmerge
+  - ucsc-bedsort
+prefix: /tscc/nfs/home/hsher/miniconda3/envs/ucsc-bigwigmerge

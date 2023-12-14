@@ -3,4 +3,4 @@ channels:
   - bioconda
 dependencies:
   - cutadapt
-prefix: /home/hsher/miniconda3/envs/cutadapt_env
+prefix: /tscc/nfs/home/hsher/miniconda3/envs/cutadapt_env

@@ -1,17 +1,21 @@
 import pandas as pd
+"""
+snakemake -s snakeABC_SE.smk -j 12 --cluster "qsub -l walltime={params.run_time} -l nodes=1:ppn={params.cores} -q home-yeo -e {params.error_out_file} -o {params.out_file}" \
+    --configfile config/preprocess_config/oligose_k562.yaml \
+    --use-singularity --singularity-prefix /tscc/nfs/home/hsher/scratch/singularity \
+    --use-conda --conda-prefix /tscc/nfs/home/hsher/snakeconda -n --delete-temp-output 
+    
+snakemake -s snakeABC_SE.smk -j 5 --configfile config/preprocess_config/oligose_k562_noalt.yaml \
+    --use-conda \
+    --conda-prefix /tscc/projects/ps-yeolab5/hsher/snakeconda \
+    --conda-create-envs-only
+"""
 
-#snakemake -s snakeABC_SE.smk -j 12 --cluster "qsub -l walltime={params.run_time} -l nodes=1:ppn={params.cores} -q home-yeo -e {params.error_out_file} -o {params.out_file}" --configfile config/preprocess_config/oligose_k562.yaml --use-conda --conda-prefix /home/hsher/snakeconda -np
-#snakemake -s snakeABC_SE.smk -j 12 --cluster "qsub -l walltime={params.run_time} -l nodes=1:ppn={params.cores} -q home-yeo -e {params.error_out_file} -o {params.out_file}" --configfile config/preprocess_config/oligose_k562.yaml --use-conda --conda-prefix /home/hsher/snakeconda -np
-#snakemake -s snakeABC_SE.smk -j 12 --cluster "qsub -l walltime={params.run_time} -l nodes=1:ppn={params.cores} -q home-yeo -e {params.error_out_file} -o {params.out_file}" --configfile config/preprocess_config/oligose_single_slbp_k562.yaml --use-conda --conda-prefix /home/hsher/snakeconda -np
 workdir: config['WORKDIR']
-MANIFEST=config['MANIFEST']
-SCRIPT_PATH=config['SCRIPT_PATH']
-UNINFORMATIVE_READ = 3 - int(config['INFORMATIVE_READ']) # whether read 1 or read 2 is informative
-CHROM_SIZES = config['CHROM_SIZES']
-R_EXE = config['R_EXE']
-DB_FILE=config['DB_FILE']
-GENOME_dir=config['GENOME_dir']
-GENOMEFA=config['GENOMEFA']
+locals().update(config)
+
+config['UNINFORMATIVE_READ'] = 3 - int(INFORMATIVE_READ) # whether read 1 or read 2 is informative
+
 
 manifest = pd.read_table(MANIFEST, index_col = False, sep = ',')
 print(manifest)
@@ -23,6 +27,7 @@ assert not barcode_df['RBP'].str.contains(' ').any() # DO NOT CONTAIN white spac
 assert not manifest['fastq'].duplicated().any()
 assert not manifest['libname'].str.contains(' ').any()
 libnames = manifest['libname'].tolist() 
+
 
 config['libnames'] = libnames
 experiments = manifest['experiment'].tolist()

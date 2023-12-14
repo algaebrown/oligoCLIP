@@ -1,15 +1,11 @@
 import pandas as pd
 import os
+locals().update(config)
+manifest = pd.read_table(config['MANIFEST'], index_col = False, sep = ',')
 rbps = config['rbps']
 experiments = config['experiments']
 libnames = config['libnames']
-SCRIPT_PATH=config['SCRIPT_PATH']
-manifest = pd.read_table(config['MANIFEST'], index_col = False, sep = ',')
 
-
-DB_FILE=config['DB_FILE']
-GENOME_dir=config['GENOME_dir']
-GENOMEFA = config['GENOMEFA']
 
 
 
@@ -39,8 +35,7 @@ rule piranha_internal:
         "envs/piranha.yaml"
     benchmark: "benchmarks/run_piranha.{libname}.{clip_sample_label}.txt"
     shell:
-        """
-        module load piranha    
+        """  
         zcat {input.counts} | awk -f {SCRIPT_PATH}/awk_by_colname.txt -v cols=chr,start,end,name,{wildcards.libname}.{wildcards.clip_sample_label},strand > {output.ip}
         zcat {input.counts} | awk -f {SCRIPT_PATH}/awk_by_colname.txt -v cols=chr,start,end,name,{wildcards.libname}.internal,strand > {output.cc}
         awk '{{if ($5>0) {{print}}}}' {output.ip} > {output.filtered_ip}
@@ -52,8 +47,8 @@ rule uniquely_mapped_reads_for_omni_and_pure:
         bam_ip="{libname}/bams/{sample_label}.rmDup.Aligned.sortedByCoord.out.bam",
         bam_in="CLIPper/CC_bams/{libname}.{sample_label}.sorted.bam",
     output:
-        bam_ip_umap = "{libname}/bams/{sample_label}.rmDup.Aligned.sortedByCoord.out.umap.bam",
-        bam_in_umap = "CLIPper/CC_bams_umap/{libname}.{sample_label}.sorted.bam",
+        bam_ip_umap = temp("{libname}/bams/{sample_label}.rmDup.Aligned.sortedByCoord.out.umap.bam"),
+        bam_in_umap = temp("CLIPper/CC_bams_umap/{libname}.{sample_label}.sorted.bam"),
     params:
         error_out_file = "error_files/uniquemap.{libname}.{sample_label}.err",
         out_file = "stdout/uniquemap.{libname}.{sample_label}.out",
@@ -61,13 +56,12 @@ rule uniquely_mapped_reads_for_omni_and_pure:
         memory = "10000",
         job_name = "bamtools_umap",
         cores = 1,
+    conda:
+        "envs/bamtools.yaml"
     shell:
         """
-        module load bamtools
         bamtools filter -in {input.bam_ip} -out {output.bam_ip_umap} -mapQuality ">3"
         bamtools filter -in {input.bam_in} -out {output.bam_in_umap} -mapQuality ">3"
-
-        module load samtools
         samtools index {output.bam_ip_umap}
         samtools index {output.bam_in_umap}
         """

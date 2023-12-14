@@ -3,4 +3,4 @@ channels:
   - bioconda
 dependencies:
   - umi_tools
-prefix: /home/hsher/miniconda3/envs/umi_tools
+prefix: /tscc/nfs/home/hsher/miniconda3/envs/umi_tools

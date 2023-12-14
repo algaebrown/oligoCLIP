@@ -5,4 +5,4 @@ channels:
   - defaults
 dependencies:
   - homer
-prefix: /home/hsher/miniconda3/envs/homer
+prefix: /tscc/nfs/home/hsher/miniconda3/envs/homer

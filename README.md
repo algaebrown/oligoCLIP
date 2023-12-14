@@ -9,11 +9,7 @@
     - Yeolab internal users: `module load snakemake/7.3.8`
 - Download this repository: `https://github.com/algaebrown/oligoCLIP.git` and then checkout this branch `git checkout oligo-pe`
     - `git branch` to double check you are on the right branch.
-- Download depending repository and modify config variables as follow: # TODO: containerize or make to snakemake hub
-    - Yeolab internal users don't need to.
-- Install skipper dependecies and modify the following config variables:`JAVA_PATH`,`UMICOLLAPSE_PATH`, `R_EXE`. # TODO: containerize
-    - follow [skipper instructions](https://github.com/YeoLab/skipper#prerequisites) to set up
-- Most dependencies are already specified in `rules/envs`. When running snakemake, using `--use-conda` should automatically install everything for you.
+- Most dependencies are already specified `conda:` and `container:` for each rule. When running snakemake, using `--use-conda` and `--use-singularity` should automatically install everything for you.
 
 
 # How to run.
@@ -25,7 +21,7 @@ snakemake -s snakeOligoCLIP_PE.smk \
     --cluster "qsub -l walltime={params.run_time} -l nodes=1:ppn={params.cores} -q home-yeo -e {params.error_out_file} -o {params.out_file}" \
     --configfile PATH_TO_YOUR_CONFIG \
     --use-conda \
-    --conda-prefix /home/hsher/snakeconda -npk
+    --conda-prefix /tscc/nfs/home/hsher/snakeconda -npk
 ```
 - `-s`: use `snakeOligoCLIP_PE.smk` if you did YeoLab internal pair-end protocol. use `snakeABC_SE.smk` if you did ABC
 - `--configfile`: yaml file to specify your inputs, including where are the fastqs, what are the barcode, what reference genome...etc.
@@ -46,7 +42,7 @@ snakemake -s snakeOligoCLIP_PE.smk \
     - ABC single-end protocol: `config/preprocess_config/ABC_2rep.yaml` 
 - Singleplex Example: 
     - ABC single-end protocol: `config/preprocess_config/oligose_single_rbfox2_hek.yaml`
-    - Yeo lab internal paired-end protocol: /home/hsher/projects/oligoCLIP/config/preprocess_config/oligope_v5_nanos2.yaml
+    - Yeo lab internal paired-end protocol: /tscc/nfs/home/hsher/projects/oligoCLIP/config/preprocess_config/oligope_v5_nanos2.yaml
     - Process 1 type of singleplex per 1 manifest.
 ### `MANIFEST`: a csv specifying fastq locations, replicates
 - Example: 
@@ -93,7 +89,7 @@ But if you want to add an background library, here is how to do:
 ```
 # For example:
 oligoCLIP_ctrlBead_rep2:
-    file: /home/hsher/scratch/oligo_PE_iter7/1022-Rep2/bams/ctrlBead.rmDup.Aligned.sortedByCoord.out.bam
+    file: /tscc/nfs/home/hsher/scratch/oligo_PE_iter7/1022-Rep2/bams/ctrlBead.rmDup.Aligned.sortedByCoord.out.bam
     INFORMATIVE_READ: 1
 ```
 - This can be an eCLIP SMInput, total RNA-seq, IgG pull down from another experiment, bead control, spike-ins
@@ -104,7 +100,6 @@ oligoCLIP_ctrlBead_rep2:
 
 ## Dependencies:
 - `SCRIPT_PATH`: Absolute path to `scripts` folder.
-- `JAVA_PATH`,`UMICOLLAPSE_PATH`, `R_EXE`: skipper dependencies. See `Installation`.
 
 ## Preprocessing options:
 - `adaptor_fwd`,`adaptor_rev`: adapter sequence to trim. Do not include barcode
@@ -115,7 +110,7 @@ oligoCLIP_ctrlBead_rep2:
 
 ## Annotations:
 - skipper annotations: [follow skipper instructions](https://github.com/YeoLab/skipper#prerequisites) or generate with [skipper_utils](https://github.com/algaebrown/skipper_utils)
-    - Yeolab internal users: Brian had all sorts of annotations here `/projects/ps-yeolab4/software/skipper/1.0.0/bin/skipper/annotations/`.
+    - Yeolab internal users: Brian had all sorts of annotations here `/tscc/projects/ps-yeolab4/software/skipper/1.0.0/bin/skipper/annotations/`.
 - `CHROM_SIZES`
 - `GENOMEFA`
 
