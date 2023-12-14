@@ -1,5 +1,5 @@
 ,fastq,libname
-4,/projects/ps-yeolab5/hsher/RBFOX2_abcCLIP_1_S7_R1_001.fastq.gz,ABC1_RBFOX2
-5,/projects/ps-yeolab5/hsher/RBFOX2_abcCLIP_2_S8_R1_001.fastq.gz,ABC2_RBFOX2
-6,/projects/ps-yeolab5/hsher/RBFOX2_fly_abcCLIP_1_S9_R1_001.fastq.gz,ABC1_RBFOX2_dros
-7,/projects/ps-yeolab5/hsher/RBFOX2_fly_abcCLIP_2_S10_R1_001.fastq.gz,ABC2_RBFOX2_dros
+4,/tscc/projects/ps-yeolab5/hsher/RBFOX2_abcCLIP_1_S7_R1_001.fastq.gz,ABC1_RBFOX2
+5,/tscc/projects/ps-yeolab5/hsher/RBFOX2_abcCLIP_2_S8_R1_001.fastq.gz,ABC2_RBFOX2
+6,/tscc/projects/ps-yeolab5/hsher/RBFOX2_fly_abcCLIP_1_S9_R1_001.fastq.gz,ABC1_RBFOX2_dros
+7,/tscc/projects/ps-yeolab5/hsher/RBFOX2_fly_abcCLIP_2_S10_R1_001.fastq.gz,ABC2_RBFOX2_dros

@@ -1,8 +1,8 @@
 # Basic settings
 COMMENT: This is barcode conjugated to beads instead of antibody, splint ligation suggested by Noor
-MANIFEST: /home/hsher/projects/oligoCLIP/config/fastq_csv/katie_pe_iteration7_splint.csv
-barcode_csv: /home/hsher/projects/oligoCLIP/config/barcode_csv/iter7-splint.csv # reverse complemented sequence.
-WORKDIR: /home/hsher/scratch/oligo_PE_iter7_splint
+MANIFEST: /tscc/nfs/home/hsher/projects/oligoCLIP/config/fastq_csv/katie_pe_iteration7_splint.csv
+barcode_csv: /tscc/nfs/home/hsher/projects/oligoCLIP/config/barcode_csv/iter7-splint.csv # reverse complemented sequence.
+WORKDIR: /tscc/nfs/home/hsher/scratch/oligo_PE_iter7_splint
 AS_INPUT:  # this must be one of the rows in barcode_csv
 RBP_TO_RUN_MOTIF:
 - RBFOX2
@@ -12,15 +12,12 @@ run_skipper: True
 debug: True
 
 external_bam:
-  K562_totalRNAseq: /home/hsher/seqdata/20230401_charl_encode_totalrnaseq/output/bams/ENCODE_K562_totalRNAseq.Aligned.sortedByCoord.out.bam
+  K562_totalRNAseq: /tscc/nfs/home/hsher/seqdata/20230401_charl_encode_totalrnaseq/output/bams/ENCODE_K562_totalRNAseq.Aligned.sortedByCoord.out.bam
 
 # dependency
-SCRIPT_PATH: /home/hsher/projects/oligoCLIP/scripts/
+SCRIPT_PATH: /tscc/nfs/home/hsher/projects/oligoCLIP/scripts/
 
-# Skipper dependencies
-JAVA_PATH: /projects/ps-yeolab3/eboyle/software/jdk-18.0.1.1/bin/java
-UMICOLLAPSE_PATH: /projects/ps-yeolab3/eboyle/software/UMICollapse/umicollapse.jar
-R_EXE: /projects/ps-yeolab4/software/R-4.1.2/bin/Rscript
+
 
 # preprocessing options
 adaptor_fwd: AGATCGGAAGAGCACACGTC
@@ -29,18 +26,18 @@ tile_length: 10
 QUALITY_CUTOFF: 15
 error_rate: 0.2
 umi_length: 10
-STAR_DIR: /projects/ps-yeolab5/hsher/Tao_circSTAMP/star_2_7_gencode35
+STAR_DIR: /tscc/projects/ps-yeolab5/hsher/Tao_circSTAMP/star_2_7_gencode35
 
 # skipper annotations
-PARTITION: /projects/ps-yeolab4/software/skipper/1.0.0/bin/skipper/annotations/gencode.v38.annotation.k562_totalrna.gt1.tiled_partition.bed.gz
-FEATURE_ANNOTATIONS: /projects/ps-yeolab4/software/skipper/1.0.0/bin/skipper/annotations/gencode.v38.annotation.k562_totalrna.gt1.tiled_partition.features.tsv.gz
-ACCESSION_RANKINGS: /projects/ps-yeolab3/eboyle/encode/pipeline/01_20211115/input/accession_type_ranking.txt
-REPEAT_TABLE: /projects/ps-yeolab3/eboyle/encode/pipeline/05_20220720/repeatmasker.grch38.tsv.gz
+PARTITION: /tscc/projects/ps-yeolab4/software/skipper/1.0.0/bin/skipper/annotations/gencode.v38.annotation.k562_totalrna.gt1.tiled_partition.bed.gz
+FEATURE_ANNOTATIONS: /tscc/projects/ps-yeolab4/software/skipper/1.0.0/bin/skipper/annotations/gencode.v38.annotation.k562_totalrna.gt1.tiled_partition.features.tsv.gz
+ACCESSION_RANKINGS: /tscc/projects/ps-yeolab3/eboyle/encode/pipeline/01_20211115/input/accession_type_ranking.txt
+REPEAT_TABLE: /tscc/projects/ps-yeolab3/eboyle/encode/pipeline/05_20220720/repeatmasker.grch38.tsv.gz
 
 
 # other annotations
-CHROM_SIZES: /home/hsher/gencode_coords/GRCh38.primary_assembly.chrom.sizes
-GENOMEFA: /home/hsher/gencode_coords/GRCh38.primary_assembly.genome.fa
+CHROM_SIZES: /tscc/nfs/home/hsher/gencode_coords/GRCh38.primary_assembly.chrom.sizes
+GENOMEFA: /tscc/nfs/home/hsher/gencode_coords/GRCh38.primary_assembly.genome.fa
 
 
 # Single-end: enter 1. Paired-end: enter read (1 or 2) corresponding to crosslink site
@@ -48,6 +45,6 @@ INFORMATIVE_READ: 1
 
 # CLIPper
 SPECIES: GRCh38v35noalt
-DATADIR: /home/hsher/scratch/clipper/clipper/data
-GTF: /home/hsher/gencode_coords/gencode.v35.gtf.db
+DATADIR: /tscc/nfs/home/hsher/scratch/clipper/clipper/data
+GTF: /tscc/nfs/home/hsher/gencode_coords/gencode.v35.gtf.db
 ANNOTATOR_SPECIES: GRCh38

@@ -1,6 +1,6 @@
-MANIFEST: /home/hsher/projects/oligoCLIP/config/fastq_csv/ABC_2rep.csv
-barcode_csv: /home/hsher/projects/oligoCLIP/config/barcode_csv/ABC_barcode.csv
-WORKDIR: /home/hsher/scratch/ABC_2rep
+MANIFEST: /tscc/nfs/home/hsher/projects/oligoCLIP/config/fastq_csv/ABC_2rep.csv
+barcode_csv: /tscc/nfs/home/hsher/projects/oligoCLIP/config/barcode_csv/ABC_barcode.csv
+WORKDIR: /tscc/nfs/home/hsher/scratch/ABC_2rep
 
 run_clipper: True
 run_skipper: True
@@ -9,32 +9,32 @@ debug: True
 
 external_bam:
   K562_totalRNAseq: 
-    file: /home/hsher/seqdata/20230401_charl_encode_totalrnaseq/output/bams/ENCODE_K562_totalRNAseq.Aligned.sortedByCoord.out.bam
+    file: /tscc/nfs/home/hsher/seqdata/20230401_charl_encode_totalrnaseq/output/bams/ENCODE_K562_totalRNAseq.Aligned.sortedByCoord.out.bam
     INFORMATIVE_READ: 1
   eCLIP_SLBP_SMInput: 
-    file: /home/hsher/scratch/ENCODE_k562/output/bams/dedup/genome_R2/SLBP_IN_1.genome.Aligned.sort.dedup.R2.bam
+    file: /tscc/nfs/home/hsher/scratch/ENCODE_k562/output/bams/dedup/genome_R2/SLBP_IN_1.genome.Aligned.sort.dedup.R2.bam
     INFORMATIVE_READ: 2
   oligoCLIP_IgG_rep1:
-    file: /home/hsher/scratch/oligo_PE_iter4/Rep1/bams/IgG_Rabbit.rmDup.Aligned.sortedByCoord.out.bam
+    file: /tscc/nfs/home/hsher/scratch/oligo_PE_iter4/Rep1/bams/IgG_Rabbit.rmDup.Aligned.sortedByCoord.out.bam
     INFORMATIVE_READ: 1
   oligoCLIP_IgG_rep2:
-    file: /home/hsher/scratch/oligo_PE_iter4/Rep2/bams/IgG_Rabbit.rmDup.Aligned.sortedByCoord.out.bam
+    file: /tscc/nfs/home/hsher/scratch/oligo_PE_iter4/Rep2/bams/IgG_Rabbit.rmDup.Aligned.sortedByCoord.out.bam
     INFORMATIVE_READ: 1
   oligoCLIP_ctrlSpike_rep1:
-    file: /home/hsher/scratch/oligo_PE_iter7/1022-Rep1/bams/ctrlSpike.rmDup.Aligned.sortedByCoord.out.bam
+    file: /tscc/nfs/home/hsher/scratch/oligo_PE_iter7/1022-Rep1/bams/ctrlSpike.rmDup.Aligned.sortedByCoord.out.bam
     INFORMATIVE_READ: 1
   oligoCLIP_ctrlSpike_rep2:
-    file: /home/hsher/scratch/oligo_PE_iter7/1022-Rep2/bams/ctrlSpike.rmDup.Aligned.sortedByCoord.out.bam
+    file: /tscc/nfs/home/hsher/scratch/oligo_PE_iter7/1022-Rep2/bams/ctrlSpike.rmDup.Aligned.sortedByCoord.out.bam
     INFORMATIVE_READ: 1
   oligoCLIP_ctrlBead_rep1:
-    file: /home/hsher/scratch/oligo_PE_iter7/1022-Rep1/bams/ctrlBead.rmDup.Aligned.sortedByCoord.out.bam
+    file: /tscc/nfs/home/hsher/scratch/oligo_PE_iter7/1022-Rep1/bams/ctrlBead.rmDup.Aligned.sortedByCoord.out.bam
     INFORMATIVE_READ: 1
   oligoCLIP_ctrlBead_rep2:
-    file: /home/hsher/scratch/oligo_PE_iter7/1022-Rep2/bams/ctrlBead.rmDup.Aligned.sortedByCoord.out.bam
+    file: /tscc/nfs/home/hsher/scratch/oligo_PE_iter7/1022-Rep2/bams/ctrlBead.rmDup.Aligned.sortedByCoord.out.bam
     INFORMATIVE_READ: 1
 
 
-# ADAPTOR_PATH: /projects/ps-yeolab4/software/eclip/0.7.0/examples/inputs
+# ADAPTOR_PATH: /tscc/projects/ps-yeolab4/software/eclip/0.7.0/examples/inputs
 # adaptor: InvRiL19
 adaptor_fwd: AGATCGGAAGAGCACACGTC
 tile_length: 10
@@ -44,22 +44,17 @@ QUALITY_CUTOFF: 6
 umi_pattern: XXXXXNNNNN
 
 # Resources
-STAR_DIR: /projects/ps-yeolab5/hsher/Tao_circSTAMP/star_2_7_gencode35
-SCRIPT_PATH: /home/hsher/projects/oligoCLIP/scripts/
-
-# UMI colla[se]
-JAVA_PATH: /projects/ps-yeolab3/eboyle/software/jdk-18.0.1.1/bin/java
-UMICOLLAPSE_PATH: /projects/ps-yeolab3/eboyle/software/UMICollapse/umicollapse.jar
+STAR_DIR: /tscc/projects/ps-yeolab5/hsher/Tao_circSTAMP/star_2_7_gencode35
+SCRIPT_PATH: /tscc/nfs/home/hsher/projects/oligoCLIP/scripts/
 
 # region caller
-PARTITION: /projects/ps-yeolab4/software/skipper/1.0.0/bin/skipper/annotations/gencode.v38.annotation.k562_totalrna.gt1.tiled_partition.bed.gz
-FEATURE_ANNOTATIONS: /projects/ps-yeolab4/software/skipper/1.0.0/bin/skipper/annotations/gencode.v38.annotation.k562_totalrna.gt1.tiled_partition.features.tsv.gz
-ACCESSION_RANKINGS: /projects/ps-yeolab4/software/skipper/1.0.0/bin/skipper/annotations/accession_type_ranking.txt
-CHROM_SIZES: /home/hsher/gencode_coords/GRCh38.primary_assembly.chrom.sizes
-GENOMEFA: /home/hsher/gencode_coords/GRCh38.primary_assembly.genome.fa
+PARTITION: /tscc/projects/ps-yeolab4/software/skipper/1.0.0/bin/skipper/annotations/gencode.v38.annotation.k562_totalrna.gt1.tiled_partition.bed.gz
+FEATURE_ANNOTATIONS: /tscc/projects/ps-yeolab4/software/skipper/1.0.0/bin/skipper/annotations/gencode.v38.annotation.k562_totalrna.gt1.tiled_partition.features.tsv.gz
+ACCESSION_RANKINGS: /tscc/projects/ps-yeolab4/software/skipper/1.0.0/bin/skipper/annotations/accession_type_ranking.txt
+CHROM_SIZES: /tscc/nfs/home/hsher/gencode_coords/GRCh38.primary_assembly.chrom.sizes
+GENOMEFA: /tscc/nfs/home/hsher/gencode_coords/GRCh38.primary_assembly.genome.fa
 AS_INPUT:  # this must be one of the rows in barcode_csv
-R_EXE: /projects/ps-yeolab4/software/R-4.1.2/bin/Rscript
-REPEAT_TABLE: /projects/ps-yeolab3/eboyle/encode/pipeline/05_20220720/repeatmasker.grch38.tsv.gz
+REPEAT_TABLE: /tscc/projects/ps-yeolab3/eboyle/encode/pipeline/05_20220720/repeatmasker.grch38.tsv.gz
 
 
 trackhub_genome: GRCh38
@@ -77,11 +72,11 @@ RBP_TO_RUN_MOTIF:
 
 # CLIPper
 SPECIES: GRCh38v35noalt
-DATADIR: /home/hsher/scratch/clipper/clipper/data
-GTF: /home/hsher/gencode_coords/gencode.v35.gtf.db
+DATADIR: /tscc/nfs/home/hsher/scratch/clipper/clipper/data
+GTF: /tscc/nfs/home/hsher/gencode_coords/gencode.v35.gtf.db
 ANNOTATOR_SPECIES: GRCh38
 
 # omniclip stuffs
-GFF_file: /home/hsher/gencode_coords/gencode.v38.primary_assembly.annotation.gff3'
-DB_FILE: /home/hsher/scratch/gencode.v38.k562.ominclip.db'
-GENOME_dir: /home/hsher/scratch/GRCh38.primary/'
+GFF_file: /tscc/nfs/home/hsher/gencode_coords/gencode.v38.primary_assembly.annotation.gff3'
+DB_FILE: /tscc/nfs/home/hsher/scratch/gencode.v38.k562.ominclip.db'
+GENOME_dir: /tscc/nfs/home/hsher/scratch/GRCh38.primary/'

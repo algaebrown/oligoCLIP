@@ -1,26 +1,31 @@
 # Basic settings
-COMMENT: This is barcode conjugated to beads instead of antibody
-MANIFEST: /tscc/nfs/home/hsher/projects/oligoCLIP/config/fastq_csv/katie_pe_iteration6.csv
-barcode_csv: /tscc/nfs/home/hsher/projects/oligoCLIP/config/barcode_csv/iter6.csv # reverse complemented sequence.
-WORKDIR: /tscc/nfs/home/hsher/scratch/oligo_PE_iter6
-AS_INPUT:  # this must be one of the rows in barcode_csv
-RBP_TO_RUN_MOTIF:
-- RBFOX2
-- PUM2
-- TIAL1
-- PRPF8
-- QKI
+COMMENT: Repeat iter9, SLBP with template switching
+MANIFEST: /tscc/nfs/home/hsher/projects/oligoCLIP/config/fastq_csv/katie_pe_iteration10_SLBP_template.csv
+barcode_csv: /tscc/nfs/home/hsher/projects/oligoCLIP/config/barcode_csv/iter10-SLBP.csv # reverse complemented sequence.
+WORKDIR: /tscc/nfs/home/hsher/scratch/oligo_PE_iter10_SLBP_template
 
-run_clipper: False
+AS_INPUT:
+# this must be one of the rows in barcode_csv
+RBP_TO_RUN_MOTIF:
+
+run_clipper: True
 run_skipper: True
 run_comparison: False
 debug: True
 
 external_bam:
-  K562_totalRNAseq: /tscc/nfs/home/hsher/seqdata/20230401_charl_encode_totalrnaseq/output/bams/ENCODE_K562_totalRNAseq.Aligned.sortedByCoord.out.bam
-
+  eCLIP_SLBP_SMInput: 
+    file: /tscc/nfs/home/hsher/scratch/ENCODE_k562_noalt/output/bams/dedup/genome_R2/SLBP_IN_1.genome.Aligned.sort.dedup.R2.bam
+    INFORMATIVE_READ: 2
+  iter10_IgG_rep1:
+    file: /tscc/nfs/home/hsher/scratch/oligo_PE_iter10_IgG/IgG_1/bams/IgG.rmDup.Aligned.sortedByCoord.out.bam
+    INFORMATIVE_READ: 1
+  iter10_IgG_rep2:
+    file: /tscc/nfs/home/hsher/scratch/oligo_PE_iter10_IgG/IgG_2/bams/IgG.rmDup.Aligned.sortedByCoord.out.bam
+    INFORMATIVE_READ: 1
 # dependency
 SCRIPT_PATH: /tscc/nfs/home/hsher/projects/oligoCLIP/scripts/
+
 
 
 # preprocessing options
@@ -43,11 +48,11 @@ REPEAT_TABLE: /tscc/projects/ps-yeolab3/eboyle/encode/pipeline/05_20220720/repea
 CHROM_SIZES: /tscc/projects/ps-yeolab3/bay001/annotations/GRCh38/GRCh38_no_alt_analysis_set_GCA_000001405.15.chrom.sizes
 GENOMEFA: /tscc/projects/ps-yeolab3/bay001/annotations/GRCh38/GRCh38_no_alt_analysis_set_GCA_000001405.15.fasta
 
-
 # Single-end: enter 1. Paired-end: enter read (1 or 2) corresponding to crosslink site
 INFORMATIVE_READ: 1
 
 # CLIPper
+#python ~/bin/clipperhelper/util/make_custom_species_files.py --gtf /tscc/nfs/home/hsher/gencode_coords/gencode.v35.annotation.gtf --species GRCh38v35noal
 SPECIES: GRCh38v35noalt
 DATADIR: /tscc/nfs/home/hsher/scratch/clipper/clipper/data
 GTF: /tscc/nfs/home/hsher/gencode_coords/gencode.v35.gtf.db

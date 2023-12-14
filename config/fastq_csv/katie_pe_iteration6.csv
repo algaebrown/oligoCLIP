@@ -1,3 +1,3 @@
 ,fastq1,libname,fastq2,experiment
-0,/projects/ps-yeolab4/seqdata/20230414_katie_multiplex_combined/GN_1020.fq1.gz,GN_1020,/projects/ps-yeolab4/seqdata/20230414_katie_multiplex_combined/GN_1020.fq2.gz,iter6
-1,/projects/ps-yeolab4/seqdata/20230414_katie_multiplex_combined/GN_1019.fq1.gz,GN_1019,/projects/ps-yeolab4/seqdata/20230414_katie_multiplex_combined/GN_1019.fq2.gz,iter6
+0,/tscc/projects/ps-yeolab4/seqdata/20230414_katie_multiplex_combined/GN_1020.fq1.gz,GN_1020,/tscc/projects/ps-yeolab4/seqdata/20230414_katie_multiplex_combined/GN_1020.fq2.gz,iter6
+1,/tscc/projects/ps-yeolab4/seqdata/20230414_katie_multiplex_combined/GN_1019.fq1.gz,GN_1019,/tscc/projects/ps-yeolab4/seqdata/20230414_katie_multiplex_combined/GN_1019.fq2.gz,iter6

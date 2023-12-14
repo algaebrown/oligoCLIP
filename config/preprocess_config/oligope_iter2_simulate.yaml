@@ -1,5 +1,5 @@
-MANIFEST: /home/hsher/scratch/simulate_oligoPE_test/output/fastq.csv
-WORKDIR: /home/hsher/scratch/simulate_oligoPE_2million/
+MANIFEST: /tscc/nfs/home/hsher/scratch/simulate_oligoPE_test/output/fastq.csv
+WORKDIR: /tscc/nfs/home/hsher/scratch/simulate_oligoPE_2million/
 adaptor_fwd: AGATCGGAAGAGCACACGTC
 adaptor_rev: AGATCGGAAGAGCGTCGTGT
 tile_length: 10
@@ -8,24 +8,20 @@ error_rate: 0.2
 
 umi_length: 5
 
-barcode_csv: /home/hsher/scratch/simulate_oligoPE_test/output/barcode.csv # reverse complemented sequence.
+barcode_csv: /tscc/nfs/home/hsher/scratch/simulate_oligoPE_test/output/barcode.csv # reverse complemented sequence.
 
-STAR_REP: /projects/ps-yeolab4/software/eclip/0.7.0/examples/inputs/star_2_7_homo_sapiens_repbase_fixed_v2
-STAR_DIR: /projects/ps-yeolab5/hsher/Tao_circSTAMP/star_2_7_gencode35
-
-JAVA_PATH: /projects/ps-yeolab3/eboyle/software/jdk-18.0.1.1/bin/java
-UMICOLLAPSE_PATH: /projects/ps-yeolab3/eboyle/software/UMICollapse/umicollapse.jar
+STAR_REP: /tscc/projects/ps-yeolab4/software/eclip/0.7.0/examples/inputs/star_2_7_homo_sapiens_repbase_fixed_v2
+STAR_DIR: /tscc/projects/ps-yeolab5/hsher/Tao_circSTAMP/star_2_7_gencode35
 
 # region caller
-PARTITION: /projects/ps-yeolab3/eboyle/encode/pipeline/01_20211115/input/tx_annotations/gencode.v38.annotation.hek293t_totalrna.gt1.tiled_partition.bed
-FEATURE_ANNOTATIONS: /projects/ps-yeolab3/eboyle/encode/pipeline/01_20211115/input/tx_annotations/gencode.v38.annotation.hek293t_totalrna.gt1.tiled_partition.features.tsv
-ACCESSION_RANKINGS: /projects/ps-yeolab3/eboyle/encode/pipeline/01_20211115/input/accession_type_ranking.txt
-CHROM_SIZES: /home/hsher/gencode_coords/GRCh38.primary_assembly.chrom.sizes
-GENOMEFA: /home/hsher/gencode_coords/GRCh38.primary_assembly.genome.fa
+PARTITION: /tscc/projects/ps-yeolab3/eboyle/encode/pipeline/01_20211115/input/tx_annotations/gencode.v38.annotation.hek293t_totalrna.gt1.tiled_partition.bed
+FEATURE_ANNOTATIONS: /tscc/projects/ps-yeolab3/eboyle/encode/pipeline/01_20211115/input/tx_annotations/gencode.v38.annotation.hek293t_totalrna.gt1.tiled_partition.features.tsv
+ACCESSION_RANKINGS: /tscc/projects/ps-yeolab3/eboyle/encode/pipeline/01_20211115/input/accession_type_ranking.txt
+CHROM_SIZES: /tscc/nfs/home/hsher/gencode_coords/GRCh38.primary_assembly.chrom.sizes
+GENOMEFA: /tscc/nfs/home/hsher/gencode_coords/GRCh38.primary_assembly.genome.fa
 AS_INPUT:  # this must be one of the rows in barcode_csv
-R_EXE: /projects/ps-yeolab4/software/R-4.1.2/bin/Rscript
 
-SCRIPT_PATH: /home/hsher/projects/oligoCLIP/scripts/
+SCRIPT_PATH: /tscc/nfs/home/hsher/projects/oligoCLIP/scripts/
 
 # 
 trackhub_genome: GRCh38

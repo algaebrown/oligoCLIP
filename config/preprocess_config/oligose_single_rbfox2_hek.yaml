@@ -1,38 +1,35 @@
-MANIFEST: /home/hsher/projects/oligoCLIP/config/fastq_csv/ABC_HEK293_RBFOX2_singleplex.csv
-barcode_csv: /home/hsher/projects/oligoCLIP/config/barcode_csv/ABC_barcode_rbfox2_hek293.csv
-WORKDIR: /home/hsher/scratch/ABC_singleplex_HEK293_RBFOX2
+MANIFEST: /tscc/nfs/home/hsher/projects/oligoCLIP/config/fastq_csv/ABC_HEK293_RBFOX2_singleplex.csv
+barcode_csv: /tscc/nfs/home/hsher/projects/oligoCLIP/config/barcode_csv/ABC_barcode_rbfox2_hek293.csv
+WORKDIR: /tscc/nfs/home/hsher/scratch/ABC_singleplex_HEK293_RBFOX2
 
-# ADAPTOR_PATH: /projects/ps-yeolab4/software/eclip/0.7.0/examples/inputs
+# ADAPTOR_PATH: /tscc/projects/ps-yeolab4/software/eclip/0.7.0/examples/inputs
 # adaptor: InvRiL19
 adaptor_fwd: AGATCGGAAGAGCACACGTC
 tile_length: 10
 QUALITY_CUTOFF: 6
 
 external_bam:
-  K562_totalRNAseq: /home/hsher/seqdata/20230401_charl_encode_totalrnaseq/output/bams/ENCODE_K562_totalRNAseq.Aligned.sortedByCoord.out.bam
-  eCLIP_SLBP_SMInput: /projects/ps-yeolab5/rbp-portal/encode3/eclip/Skipper/1.0.0/bams/dedup/genome_R2/SLBP_IN_1.genome.Aligned.sort.dedup.R2.bam
-  eCLIP_FAM120A_SMInput: /projects/ps-yeolab5/rbp-portal/encode3/eclip/Skipper/1.0.0/bams/dedup/genome_R2/FAM120A_IN_1.genome.Aligned.sort.dedup.R2.bam
+  K562_totalRNAseq: /tscc/nfs/home/hsher/seqdata/20230401_charl_encode_totalrnaseq/output/bams/ENCODE_K562_totalRNAseq.Aligned.sortedByCoord.out.bam
+  eCLIP_SLBP_SMInput: /tscc/projects/ps-yeolab5/rbp-portal/encode3/eclip/Skipper/1.0.0/bams/dedup/genome_R2/SLBP_IN_1.genome.Aligned.sort.dedup.R2.bam
+  eCLIP_FAM120A_SMInput: /tscc/projects/ps-yeolab5/rbp-portal/encode3/eclip/Skipper/1.0.0/bams/dedup/genome_R2/FAM120A_IN_1.genome.Aligned.sort.dedup.R2.bam
   
 # UMI_TOOLS
 umi_pattern: XXXXXNNNNN
 
 # Resources
-STAR_DIR: /projects/ps-yeolab5/hsher/Tao_circSTAMP/star_2_7_gencode35
-SCRIPT_PATH: /home/hsher/projects/oligoCLIP/scripts/
+STAR_DIR: /tscc/projects/ps-yeolab5/hsher/Tao_circSTAMP/star_2_7_gencode35
+SCRIPT_PATH: /tscc/nfs/home/hsher/projects/oligoCLIP/scripts/
 
-# UMI colla[se]
-JAVA_PATH: /projects/ps-yeolab3/eboyle/software/jdk-18.0.1.1/bin/java
-UMICOLLAPSE_PATH: /projects/ps-yeolab3/eboyle/software/UMICollapse/umicollapse.jar
+
 
 # region caller
-PARTITION: /projects/ps-yeolab4/software/skipper/1.0.0/bin/skipper/annotations/gencode.v38.annotation.k562_totalrna.gt1.tiled_partition.bed.gz
-FEATURE_ANNOTATIONS: /projects/ps-yeolab4/software/skipper/1.0.0/bin/skipper/annotations/gencode.v38.annotation.k562_totalrna.gt1.tiled_partition.features.tsv.gz
-ACCESSION_RANKINGS: /projects/ps-yeolab4/software/skipper/1.0.0/bin/skipper/annotations/accession_type_ranking.txt
-CHROM_SIZES: /home/hsher/gencode_coords/GRCh38.primary_assembly.chrom.sizes
-GENOMEFA: /home/hsher/gencode_coords/GRCh38.primary_assembly.genome.fa
+PARTITION: /tscc/projects/ps-yeolab4/software/skipper/1.0.0/bin/skipper/annotations/gencode.v38.annotation.k562_totalrna.gt1.tiled_partition.bed.gz
+FEATURE_ANNOTATIONS: /tscc/projects/ps-yeolab4/software/skipper/1.0.0/bin/skipper/annotations/gencode.v38.annotation.k562_totalrna.gt1.tiled_partition.features.tsv.gz
+ACCESSION_RANKINGS: /tscc/projects/ps-yeolab4/software/skipper/1.0.0/bin/skipper/annotations/accession_type_ranking.txt
+CHROM_SIZES: /tscc/nfs/home/hsher/gencode_coords/GRCh38.primary_assembly.chrom.sizes
+GENOMEFA: /tscc/nfs/home/hsher/gencode_coords/GRCh38.primary_assembly.genome.fa
 AS_INPUT:  # this must be one of the rows in barcode_csv
-R_EXE: /projects/ps-yeolab4/software/R-4.1.2/bin/Rscript
-REPEAT_TABLE: /projects/ps-yeolab3/eboyle/encode/pipeline/05_20220720/repeatmasker.grch38.tsv.gz
+REPEAT_TABLE: /tscc/projects/ps-yeolab3/eboyle/encode/pipeline/05_20220720/repeatmasker.grch38.tsv.gz
 
 
 trackhub_genome: GRCh38
@@ -47,4 +44,4 @@ RBP_TO_RUN_MOTIF:
 
 # CLIPper
 SPECIES: GRCh38v35noalt
-DATADIR: /home/hsher/scratch/clipper/clipper/data
+DATADIR: /tscc/nfs/home/hsher/scratch/clipper/clipper/data

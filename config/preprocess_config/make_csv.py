@@ -3,18 +3,18 @@ import pandas as pd
 
 
 #======= exp 1 ===========
-fastqs=['/projects/ps-yeolab5/hsher/ABC009_1_S1_R1_001.fastq.gz',
-'/projects/ps-yeolab5/hsher/ABC009_2_S2_R1_001.fastq.gz',
-'/projects/ps-yeolab5/hsher/ABC009_3_S3_R1_001.fastq.gz',
-'/projects/ps-yeolab5/hsher/ABC009_4_S4_R1_001.fastq.gz',
-'/projects/ps-yeolab5/hsher/ABC011_5_S5_R1_001.trimmed.fastq.gz',
-'/projects/ps-yeolab5/hsher/ABC011_6_S6_R1_001.trimmed.fastq.gz',
-'/projects/ps-yeolab5/hsher/ABC011_7_S7_R1_001.trimmed.fastq.gz',
-'/projects/ps-yeolab5/hsher/ABC011_8_S8_R1_001.trimmed.fastq.gz',
-'/projects/ps-yeolab5/hsher/ABC011_1_S1_R1_001.trimmed.fastq.gz',
-'/projects/ps-yeolab5/hsher/ABC011_2_S2_R1_001.trimmed.fastq.gz',
-'/projects/ps-yeolab5/hsher/ABC011_3_S3_R1_001.trimmed.fastq.gz',
-'/projects/ps-yeolab5/hsher/ABC011_4_S4_R1_001.trimmed.fastq.gz']
+fastqs=['/tscc/projects/ps-yeolab5/hsher/ABC009_1_S1_R1_001.fastq.gz',
+'/tscc/projects/ps-yeolab5/hsher/ABC009_2_S2_R1_001.fastq.gz',
+'/tscc/projects/ps-yeolab5/hsher/ABC009_3_S3_R1_001.fastq.gz',
+'/tscc/projects/ps-yeolab5/hsher/ABC009_4_S4_R1_001.fastq.gz',
+'/tscc/projects/ps-yeolab5/hsher/ABC011_5_S5_R1_001.trimmed.fastq.gz',
+'/tscc/projects/ps-yeolab5/hsher/ABC011_6_S6_R1_001.trimmed.fastq.gz',
+'/tscc/projects/ps-yeolab5/hsher/ABC011_7_S7_R1_001.trimmed.fastq.gz',
+'/tscc/projects/ps-yeolab5/hsher/ABC011_8_S8_R1_001.trimmed.fastq.gz',
+'/tscc/projects/ps-yeolab5/hsher/ABC011_1_S1_R1_001.trimmed.fastq.gz',
+'/tscc/projects/ps-yeolab5/hsher/ABC011_2_S2_R1_001.trimmed.fastq.gz',
+'/tscc/projects/ps-yeolab5/hsher/ABC011_3_S3_R1_001.trimmed.fastq.gz',
+'/tscc/projects/ps-yeolab5/hsher/ABC011_4_S4_R1_001.trimmed.fastq.gz']
 
 names = ['K562_rep1',
 'K562_rep2',

@@ -1,5 +1,5 @@
 ,fastq,libname,experiment
-2,/projects/ps-yeolab5/hsher/ABC009_3_S3_R1_001.fastq.gz,HEK293_rep1,HEK293
-3,/projects/ps-yeolab5/hsher/ABC009_4_S4_R1_001.fastq.gz,HEK293_rep2,HEK293
-1,/projects/ps-yeolab5/hsher/ABC011_2_S2_R1_001.trimmed.fastq.gz,K562_rep4,K562
-3,/projects/ps-yeolab5/hsher/ABC011_4_S4_R1_001.trimmed.fastq.gz,K562_rep6,K562
+2,/tscc/projects/ps-yeolab5/hsher/ABC009_3_S3_R1_001.fastq.gz,HEK293_rep1,HEK293
+3,/tscc/projects/ps-yeolab5/hsher/ABC009_4_S4_R1_001.fastq.gz,HEK293_rep2,HEK293
+1,/tscc/projects/ps-yeolab5/hsher/ABC011_2_S2_R1_001.trimmed.fastq.gz,K562_rep4,K562
+3,/tscc/projects/ps-yeolab5/hsher/ABC011_4_S4_R1_001.trimmed.fastq.gz,K562_rep6,K562

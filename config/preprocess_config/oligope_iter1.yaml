@@ -1,11 +1,11 @@
-MANIFEST: /home/hsher/projects/oligoCLIP/config/fastq_csv/katie_pe.csv
-barcode_csv: /home/hsher/projects/oligoCLIP/config/barcode_csv/katie_pe.csv # reverse complemented sequence.
+MANIFEST: /tscc/nfs/home/hsher/projects/oligoCLIP/config/fastq_csv/katie_pe.csv
+barcode_csv: /tscc/nfs/home/hsher/projects/oligoCLIP/config/barcode_csv/katie_pe.csv # reverse complemented sequence.
 RBP_TO_RUN_MOTIF:
 - RBFOX2
 - PUM2
 - TIAL1
 AS_INPUT: IgG_Rb # this must be one of the rows in barcode_csv
-WORKDIR: /home/hsher/scratch/oligo_PE_iter1
+WORKDIR: /tscc/nfs/home/hsher/scratch/oligo_PE_iter1
 adaptor_fwd: AGATCGGAAGAGCACACGTC
 adaptor_rev: AGATCGGAAGAGCGTCGTGT
 tile_length: 10
@@ -20,24 +20,21 @@ run_comparison: False
 debug: True
 
 
-STAR_DIR: /projects/ps-yeolab3/bay001/annotations/GRCh38/star_2_7_gencode40_sjdb
-
-JAVA_PATH: /projects/ps-yeolab3/eboyle/software/jdk-18.0.1.1/bin/java
-UMICOLLAPSE_PATH: /projects/ps-yeolab3/eboyle/software/UMICollapse/umicollapse.jar
+STAR_DIR: /tscc/projects/ps-yeolab3/bay001/annotations/GRCh38/star_2_7_gencode40_sjdb
 
 # region caller: Cell type specific annotations!
-PARTITION: /projects/ps-yeolab4/software/skipper/1.0.0/bin/skipper/annotations/gencode.v38.annotation.k562_totalrna.gt1.tiled_partition.bed.gz
-FEATURE_ANNOTATIONS: /projects/ps-yeolab4/software/skipper/1.0.0/bin/skipper/annotations/gencode.v38.annotation.k562_totalrna.gt1.tiled_partition.features.tsv.gz
-ACCESSION_RANKINGS: /projects/ps-yeolab3/eboyle/encode/pipeline/01_20211115/input/accession_type_ranking.txt
-CHROM_SIZES: /projects/ps-yeolab3/bay001/annotations/GRCh38/GRCh38_no_alt_analysis_set_GCA_000001405.15.chrom.sizes
-GENOMEFA: /projects/ps-yeolab3/bay001/annotations/GRCh38/GRCh38_no_alt_analysis_set_GCA_000001405.15.fasta
+PARTITION: /tscc/projects/ps-yeolab4/software/skipper/1.0.0/bin/skipper/annotations/gencode.v38.annotation.k562_totalrna.gt1.tiled_partition.bed.gz
+FEATURE_ANNOTATIONS: /tscc/projects/ps-yeolab4/software/skipper/1.0.0/bin/skipper/annotations/gencode.v38.annotation.k562_totalrna.gt1.tiled_partition.features.tsv.gz
+ACCESSION_RANKINGS: /tscc/projects/ps-yeolab3/eboyle/encode/pipeline/01_20211115/input/accession_type_ranking.txt
+CHROM_SIZES: /tscc/projects/ps-yeolab3/bay001/annotations/GRCh38/GRCh38_no_alt_analysis_set_GCA_000001405.15.chrom.sizes
+GENOMEFA: /tscc/projects/ps-yeolab3/bay001/annotations/GRCh38/GRCh38_no_alt_analysis_set_GCA_000001405.15.fasta
 
-R_EXE: /projects/ps-yeolab4/software/R-4.1.2/bin/Rscript
 
-SCRIPT_PATH: /home/hsher/projects/oligoCLIP/scripts/
+
+SCRIPT_PATH: /tscc/nfs/home/hsher/projects/oligoCLIP/scripts/
 
 # REPEATS
-REPEAT_TABLE: /projects/ps-yeolab3/eboyle/encode/pipeline/05_20220720/repeatmasker.grch38.tsv.gz
+REPEAT_TABLE: /tscc/projects/ps-yeolab3/eboyle/encode/pipeline/05_20220720/repeatmasker.grch38.tsv.gz
 
 # 
 trackhub_genome: GRCh38
@@ -49,11 +46,11 @@ INFORMATIVE_READ: 1
 
 # CLIPper
 SPECIES: GRCh38v35noalt
-DATADIR: /home/hsher/scratch/clipper/clipper/data
-GTF: /home/hsher/gencode_coords/gencode.v35.gtf.db
+DATADIR: /tscc/nfs/home/hsher/scratch/clipper/clipper/data
+GTF: /tscc/nfs/home/hsher/gencode_coords/gencode.v35.gtf.db
 ANNOTATOR_SPECIES: GRCh38
 
 #OmniCLIP
-GFF_file: /home/hsher/gencode_coords/gencode.v38.primary_assembly.annotation.gff3
-DB_FILE: /home/hsher/scratch/gencode.v38.k562.ominclip.db
-GENOME_dir: /home/hsher/scratch/GRCh38.primary/
+GFF_file: /tscc/nfs/home/hsher/gencode_coords/gencode.v38.primary_assembly.annotation.gff3
+DB_FILE: /tscc/nfs/home/hsher/scratch/gencode.v38.k562.ominclip.db
+GENOME_dir: /tscc/nfs/home/hsher/scratch/GRCh38.primary/

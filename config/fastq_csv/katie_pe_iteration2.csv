@@ -1,4 +1,4 @@
 ,libname,fastq1,fastq2,experiment
-0,multiplex_HEK293_1,/projects/ps-yeolab4/seqdata/20220809_katie_multiplex_combined/multiplex_HEK293_1.fq1.gz,/projects/ps-yeolab4/seqdata/20220809_katie_multiplex_combined/multiplex_HEK293_1.fq2.gz,multiplex_HEK293
-1,multiplex_HEK293_2,/projects/ps-yeolab4/seqdata/20220809_katie_multiplex_combined/multiplex_HEK293_2.fq1.gz,/projects/ps-yeolab4/seqdata/20220809_katie_multiplex_combined/multiplex_HEK293_2.fq2.gz,multiplex_HEK293
-2,multiplex_HEK293_3,/projects/ps-yeolab4/seqdata/20220809_katie_multiplex_combined/multiplex_HEK293_3.fq1.gz,/projects/ps-yeolab4/seqdata/20220809_katie_multiplex_combined/multiplex_HEK293_3.fq2.gz,multiplex_HEK293
+0,multiplex_HEK293_1,/tscc/projects/ps-yeolab4/seqdata/20220809_katie_multiplex_combined/multiplex_HEK293_1.fq1.gz,/tscc/projects/ps-yeolab4/seqdata/20220809_katie_multiplex_combined/multiplex_HEK293_1.fq2.gz,multiplex_HEK293
+1,multiplex_HEK293_2,/tscc/projects/ps-yeolab4/seqdata/20220809_katie_multiplex_combined/multiplex_HEK293_2.fq1.gz,/tscc/projects/ps-yeolab4/seqdata/20220809_katie_multiplex_combined/multiplex_HEK293_2.fq2.gz,multiplex_HEK293
+2,multiplex_HEK293_3,/tscc/projects/ps-yeolab4/seqdata/20220809_katie_multiplex_combined/multiplex_HEK293_3.fq1.gz,/tscc/projects/ps-yeolab4/seqdata/20220809_katie_multiplex_combined/multiplex_HEK293_3.fq2.gz,multiplex_HEK293
