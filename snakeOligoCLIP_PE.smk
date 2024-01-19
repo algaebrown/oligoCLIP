@@ -2,18 +2,8 @@
 from importlib.resources import path
 import pandas as pd
 import os
-#snakemake -s snakeOligoCLIP_PE.smk -j 12 --cluster "qsub -l walltime={params.run_time} -l nodes=1:ppn={params.cores} -q home-yeo -e {params.error_out_file} -o {params.out_file}" --configfile /tscc/nfs/home/hsher/scratch/katie_manifest.yaml --use-conda --conda-prefix /tscc/nfs/home/hsher/snakeconda -n
-#snakemake -s snakeOligoCLIP_PE.smk -j 12 --cluster "qsub -l walltime={params.run_time} -l nodes=1:ppn={params.cores} -q home-yeo -e {params.error_out_file} -o {params.out_file}" --configfile config/preprocess_config/oligope_iter9.yaml --use-conda --conda-prefix -n
-"""
-snakemake -s snakeOligoCLIP_PE.smk -j 30 \
-    --cluster "qsub -l walltime={params.run_time} -l nodes=1:ppn={params.cores} -q home-yeo -e {params.error_out_file} -o {params.out_file}" \
-    --configfile config/preprocess_config/oligope_iter9.yaml \
-    --use-conda --conda-prefix /tscc/nfs/home/hsher/snakeconda -n
 
-snakemake -s snakeOligoCLIP_PE.smk -j 5 --configfile config/preprocess_config/oligope_iter6_reseq.yaml \
-    --use-conda \
-    --conda-prefix /tscc/projects/ps-yeolab5/hsher/snakeconda -n
-"""
+container: "docker://continuumio/miniconda3:23.10.0-1"
 workdir: config['WORKDIR']
 locals().update(config)
 config['UNINFORMATIVE_READ'] = 3-INFORMATIVE_READ
@@ -164,6 +154,15 @@ use rule gather_fastqc_report from QC as fastqc_gather with:
         expand("{libname}/fastqc/ultraplex_demux_{sample_label}_Rev.Tr_fastqc/fastqc_data.txt", libname = libnames, sample_label = rbps)+
         expand("{libname}/fastqc/ultraplex_demux_{sample_label}_Fwd.Tr_fastqc/fastqc_data.txt", libname = libnames, sample_label = rbps)
 
+use rule gather_fastqc_report from QC as fastqc_gather_initial with:
+    input:
+        expand("{libname}/fastqc/initial_{read}_fastqc/fastqc_data.txt",
+        libname = libnames,
+        read = ['r1', 'r2'])
+    output:
+        basic='QC/fastQC_initial_basic_summary.csv',
+        passfail='QC/fastQC_initial_passfail.csv'
+
 ### region caller ###
 use rule * from normalization as skipper_*
 
@@ -214,6 +213,7 @@ use rule CITS_bam_to_bedgraph from make_track as CITS_bedgraph_external with:
         error_out_file = "error_files/coverage_bedgraph",
         out_file = "stdout/CITS_bedgraph.{external_label}",
         cores = 1,
+        memory = 40000,
 use rule COV_bam_to_bedgraph from make_track as COV_bedgraph_external with:
     input:
         bam=lambda wildcards: ancient(config['external_bam'][wildcards.external_label]['file'])
@@ -225,8 +225,9 @@ use rule COV_bam_to_bedgraph from make_track as COV_bedgraph_external with:
         error_out_file = "error_files/coverage_bedgraph",
         out_file = "stdout/CITS_bedgraph.{external_label}",
         cores = 1,
+        memory = 40000,
 
-use rule bedgraph_to_bw from make_track
+use rule  from make_track
 ########## MERGE BW ############
 use rule * from merge_bw
 

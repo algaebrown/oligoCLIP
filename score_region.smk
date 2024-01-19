@@ -91,7 +91,6 @@ rule partition_bam_reads:
         run_time = "20:00",
         cores = "1",
         memory = "10000",
-        job_name = "partition_bam_reads",
         replicate_label = "{libname}.{sample_label}",
         uninformative_read = config['UNINFORMATIVE_READ']
     benchmark: "benchmarks/counts/unassigned_experiment.{libname}.{sample_label}.{region_name}.partition_bam_reads.txt"
