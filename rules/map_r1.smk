@@ -23,8 +23,7 @@ rule align_to_GENOME_r1_only:
         out_file = "stdout/{sample_label}_align_reads_genome",
         run_time = "06:40:00",
         cores = "4",
-        memory = "10000",
-        job_name = "align_reads",
+        memory = 10000,
         star_sjdb = config['STAR_DIR'],
         outprefix = "{libname}/bams/genome_r1/{sample_label}.genome-mapped.",
     benchmark: "benchmarks/align/{libname}.{sample_label}.align_reads.r1.txt"
@@ -64,8 +63,7 @@ rule index_bam:
         out_file = "stdout/{anything}_index_bam",
         run_time = "40:00",
         cores = "1",
-        memory = "10000",
-        job_name = "index_bam",
+        memory = 10000,
     conda:
         "envs/samtools.yaml"
     shell:
@@ -85,8 +83,7 @@ rule umi_dedup:
         out_file = "stdout/{libname}.{sample_label}.index_reads",
         run_time = "06:40:00",
         cores = "4",
-        memory = "10000",
-        job_name = "sortbam",
+        memory = 10000,
         prefix='{libname}/bams/genome/{sample_label}.genome-mapped'
     container:
         "docker://howardxu520/skipper:umicollapse_1.0.0"

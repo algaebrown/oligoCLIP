@@ -28,8 +28,7 @@ rule piranha_internal:
         error_out_file = "error_files/prianha.{libname}.{clip_sample_label}.err",
         out_file = "stdout/piranha.{libname}.{clip_sample_label}.out",
         run_time = "06:10:00",
-        memory = "10000",
-        job_name = "prianha",
+        memory = 10000,
         cores = 1,
     conda:
         "envs/piranha.yaml"
@@ -53,8 +52,7 @@ rule uniquely_mapped_reads_for_omni_and_pure:
         error_out_file = "error_files/uniquemap.{libname}.{sample_label}.err",
         out_file = "stdout/uniquemap.{libname}.{sample_label}.out",
         run_time = "0:30:00",
-        memory = "10000",
-        job_name = "bamtools_umap",
+        memory = 10000,
         cores = 1,
     conda:
         "envs/bamtools.yaml"
@@ -77,13 +75,13 @@ rule pureclip_internal:
         error_out_file = "error_files/pureclip.{libname}.{sample_label}.err",
         out_file = "stdout/pureclip.{libname}.{sample_label}.out",
         run_time = "60:10:00",
-        memory = "10000",
-        job_name = "pureclip",
+        memory = 10000,
         cores = 8,
+    conda:
+        "envs/pureclip.yaml"
     benchmark: "benchmarks/pureclip.{libname}.{sample_label}.txt"
     shell:
         """
-        module load pureclip
         pureclip -i {input.bam_ip_umap} -bai {input.bam_ip_umap}.bai -g {GENOMEFA} \
             -ibam {input.bam_in_umap} -ibai {input.bam_in_umap}.bai \
             -o {output.csln} \
@@ -105,8 +103,7 @@ rule omniclip_parse:
         error_out_file = "error_files/omniclip_parse.{libname}.{sample_label}.err",
         out_file = "stdout/omniclip_parse.{libname}.{sample_label}.out",
         run_time = "16:10:00",
-        memory = "10000",
-        job_name = "omniclip",
+        memory = 10000,
         cores = 1,
     conda:
         "envs/omniclip.yaml"
@@ -128,8 +125,7 @@ rule omniclip_call:
         error_out_file = "error_files/omniclip_call.{libname}.{sample_label}.err",
         out_file = "stdout/omniclip_call.{libname}.{sample_label}.out",
         run_time = "16:10:00",
-        memory = "10000",
-        job_name = "omniclip_call",
+        memory = 10000,
         cores = 12,
     conda:
         "envs/omniclip.yaml"

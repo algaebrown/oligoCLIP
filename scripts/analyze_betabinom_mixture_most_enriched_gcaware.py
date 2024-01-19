@@ -36,6 +36,8 @@ def main(outstem_gc, raw_counts):
     nread_per_window = counts.sum(axis = 1)
     mapped_reads = counts.sum(axis = 0)
     mapped_reads_fraction = mapped_reads.div(mapped_reads.sum())
+    assert mapped_reads_fraction.values[0] < 1
+    assert mapped_reads_fraction.values[0] > 0
     print('========Fraction mapped reads: \n ========',mapped_reads_fraction)
 
     if component_alpha.shape[1]>1:
@@ -117,7 +119,7 @@ def main(outstem_gc, raw_counts):
         results['enriched']=(results['qvalue']<FDR_cutoff)
 
     enriched_windows = results.loc[results['enriched']]
-    print(f'Finish testing, found enriched_windows: ', enriched_windows.shape[0])
+    print(f'Finish testing, found enriched_windows: ', enriched_windows.shape[0], 'out of ', results.shape[0])
 
     return results, metadata
 
@@ -164,7 +166,9 @@ if __name__=='__main__':
 
     # analysis
     print(results['enriched'].value_counts())
-    fcount = results.groupby(by = 'enriched')['feature_type_top'].value_counts().unstack().fillna(0).T
+    fcount = pd.pivot_table(results, index = 'feature_type_top', columns = 'enriched', aggfunc = 'size').fillna(0)
+    print(fcount)
+    #fcount = results.groupby(by = 'enriched')['feature_type_top'].value_counts().unstack().fillna(0).T
     fcount['Positive rate'] = fcount[True]/(fcount[True]+fcount[False])
     fcount.to_csv(outdir / f'{outstem}.feature_type_summary.tsv', sep = '\t')
 

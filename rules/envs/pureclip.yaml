@@ -1,0 +1,7 @@
+name: pureclip
+channels:
+  - bioconda
+  - conda-forge
+dependencies:
+  - pureclip
+prefix: /tscc/nfs/home/hsher/miniconda3/envs/omniEnv

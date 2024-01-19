@@ -28,8 +28,8 @@ rule fit_beta_mixture_model_CC:
         error_out_file = "error_files/fit_betaCC.{libname}.{clip_sample_label}.err",
         out_file = "stdout/fit_betaCC.{libname}.{clip_sample_label}.out",
         run_time = "02:40:00",
-        job_name = "DMN_internal",
         cores = "1",
+        memory = 80000,
         root_folder = lambda wildcards, output: Path(output[0]).parent
     conda:
         "envs/DMN.yaml"
@@ -54,7 +54,7 @@ rule analyze_beta_mixture_results_CC:
         "beta-mixture_CC/{libname}.{clip_sample_label}.null.alpha.tsv",
         "beta-mixture_CC/{libname}.{clip_sample_label}.mixture_weight.tsv",
         feature_annotations = config['FEATURE_ANNOTATIONS'],
-        table = rules.fit_beta_mixture_model_CC.input.table
+        table = lambda wildcards: "counts_CC/genome/bgtables/internal/"+libname_to_experiment(wildcards.libname)+'.'+wildcards.clip_sample_label+".tsv.gz",
     output:
         "beta-mixture_CC/{libname}.{clip_sample_label}.enriched_windows.tsv"
     params:
@@ -62,7 +62,8 @@ rule analyze_beta_mixture_results_CC:
         out_file = "stdout/analyze_beta_CC.{libname}.{clip_sample_label}.err",
         run_time = "00:40:00",
         cores = "1",
-        root_folder = lambda wildcards, output: Path(output[0]).parent
+        root_folder = lambda wildcards, output: Path(output[0]).parent,
+        memory = 40000,
     conda:
         "envs/tensorflow.yaml"
     benchmark: "benchmarks/DMN/analyze.{libname}.{clip_sample_label}"
@@ -91,7 +92,8 @@ rule fit_beta_mixture_model_another_lib:
         out_file = "error_files/fit_beta.{bg_sample_label}.{libname}.{clip_sample_label}.out",
         run_time = "00:40:00",
         cores = "1",
-        root_folder = lambda wildcards, output: Path(output[0]).parent
+        root_folder = lambda wildcards, output: Path(output[0]).parent,
+        memory = 80000,
     conda:
         "envs/DMN.yaml"
     benchmark: "benchmarks/DMN/fit_model.{libname}.{clip_sample_label}.{bg_sample_label}"
@@ -123,10 +125,9 @@ rule analyze_beta_mixture_results_another_lib:
         error_out_file = "error_files/analyze_beta.{bg_sample_label}.{libname}.{clip_sample_label}.err",
         out_file = "stdout/analyze_beta.{bg_sample_label}.{libname}.{clip_sample_label}.err",
         run_time = "00:40:00",
-        memory = "10000",
-        job_name = "DMN_analysis",
         cores = "1",
-        root_folder = lambda wildcards, output: Path(output[0]).parent
+        root_folder = lambda wildcards, output: Path(output[0]).parent,
+        memory = 40000,
     conda:
         "envs/tensorflow.yaml"
     benchmark: "benchmarks/DMN/analyze.{libname}.{clip_sample_label}.{bg_sample_label}"
@@ -154,7 +155,6 @@ rule analyze_beta_mixture_results_another_lib:
 #         out_file = "stdout/{experiment}.{clip_sample_label}.find_reproducible_enriched_windows.out",
 #         run_time = "5:00",
 #         memory = "2000",
-#         job_name = "find_reproducible_enriched_windows"
 #     benchmark: "benchmarks/find_reproducible_enriched_windows/{experiment}.{clip_sample_label}.all_replicates.reproducible.txt"
 #     shell:
 #         "Rscript --vanilla {SCRIPT_PATH}/identify_reproducible_windows.R internal_output/enriched_windows/ {wildcards.clip_sample_label} " + (BLACKLIST if BLACKLIST is not None else "") 
@@ -170,7 +170,8 @@ rule make_window_by_barcode_table:
         error_out_file = "error_files/window_by_barcode_table.{libname}.err",
         out_file = "stdout/window_by_barcode_table.{libname}.out",
         run_time = "20:00",
-        cores = 1
+        cores = 1,
+        memory = 40000,
     shell:
         """
         paste -d '\t' {input.counts} | gzip  > {output.counts}
@@ -190,10 +191,9 @@ rule fit_DMN:
         error_out_file = "error_files/fit_DMM.{libname}.err",
         out_file = "stdout/DMM.{libname}.internal.out",
         run_time = "48:00:00",
-        memory = "10000",
-        job_name = "DMN_internal",
+        memory = 40000,
         cores = "4",
-        root_folder = "DMM"
+        root_folder = "DMM",
     benchmark: "benchmarks/DMM/fit.{libname}"
     conda:
         "envs/DMN.yaml"
@@ -221,9 +221,8 @@ rule analyze_DMN:
         error_out_file = "error_files/analyze_DMN.{libname}.err",
         out_file = "stdout/analyze_DMN.{libname}.out",
         run_time = "2:00:00",
-        memory = "10000",
-        job_name = "DMM_analysis",
         cores = "1",
+        memory = 80000,
     benchmark: "benchmarks/DMM/analysis.{libname}"
     conda:
         "envs/tensorflow.yaml"
@@ -247,9 +246,8 @@ rule softmask:
         error_out_file = "error_files/softmask.{libname}.err",
         out_file = "stdout/softmask.{libname}.out",
         run_time = "2:00:00",
-        memory = "10000",
-        job_name = "softmask",
         cores = "1",
+        memory = 80000,
     benchmark: "benchmarks/DMM/softmask.{libname}"
     conda:
         "envs/tensorflow.yaml"
@@ -285,9 +283,8 @@ rule fit_beta_gc_aware:
         error_out_file = "error_files/fit_beta_gcaware.{libname}.{clip_sample_label}.{external_label}.err",
         out_file = "stdout/beta-mixture_GC.{libname}.{clip_sample_label}.{external_label}.internal.out",
         run_time = "2:00:00",
-        memory = "10000",
-        job_name = "DMN_internal",
         cores = "2",
+        memory = 80000,
         root_folder = "beta-mixture_external/{external_label}",
 
     benchmark: "benchmarks/DMM/fit-beta-mixture_GC.{libname}.{clip_sample_label}.{external_label}"
@@ -317,10 +314,9 @@ rule analyze_beta_GC_aware:
         error_out_file = "error_files/analyze_beta_gcaware.{libname}.{clip_sample_label}.{external_label}.err",
         out_file = "stdout/analyze_beta-mixture_GC.{libname}.{clip_sample_label}.{external_label}.out",
         run_time = "1:00:00",
-        memory = "10000",
-        job_name = "DMN_internal",
         cores = "1",
         root_folder = "beta-mixture_external/{external_label}",
+        memory = 80000,
     benchmark: "benchmarks/DMM/analyze-beta-mixture_GC.{libname}.{clip_sample_label}.{external_label}"
     conda:
         "envs/tensorflow.yaml"

@@ -1,4 +1,5 @@
 rule annotate:
+    # https://github.com/byee4/annotator
     input:
         peak="{something}.normed.compressed.bed"
     output:
@@ -9,7 +10,8 @@ rule annotate:
         out_file =  "stdout/annotate.{something}",
         cores = "1",
         gtf_db = config['GTF'],
-        sps = config['ANNOTATOR_SPECIES']
+        sps = config['ANNOTATOR_SPECIES'],
+        memory = 40000,
     shell:
         """
         module load annotator/0.0.15
@@ -20,6 +22,7 @@ rule annotate:
         """
         
 rule motif_analysis:
+    # https://github.com/YeoLab/clip_analysis_legacy
     input:
         peak="{something}.normed.compressed.bed"
     output:
@@ -36,6 +39,7 @@ rule motif_analysis:
         homer="{something}.normed.compressed.homer",
         log10p_thres=3,
         l2fc_thres = 3,
+        memory = 80000,
     shell:
         """
         module load eclipanalysis

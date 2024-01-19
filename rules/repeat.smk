@@ -25,10 +25,11 @@ rule uniq_repeats:
         error_out_file = "error_files/calc_partition_nuc.err",
         out_file = "stdout/calc_partition_nuc.out",
         run_time = "40:00",
-        memory = "1000",
-        job_name = "uniq_repeats_nuc",
+        memory = 1000,
         cores = 1,
     benchmark: "benchmarks/uniq_repeats.txt"
+    conda:
+        "envs/bedtools.yaml"
     shell:
         "zcat {REPEAT_TABLE} | awk -v OFS=\"\\t\" '{{print $6,$7,$8,$11 \":\" name_count[$11]++, $2, $10,$11,$12,$13}} "
             "$13 == \"L1\" || $13 == \"Alu\" {{$11 = $11 \"_AS\"; $12 = $12 \"_AS\"; $13 = $13 \"_AS\"; "
@@ -54,14 +55,15 @@ rule quantify_repeats:
         error_out_file = "error_files/quantify_repeats.{libname}.{sample_label}.err",
         out_file = "stdout/quantify_repeats.{libname}.{sample_label}.out",
         run_time = "15:00",
-        memory = "20000",
-        job_name = "dedup_bam",
+        memory = 20000,
         replicate_label = "{libname}.{sample_label}",
         cores = 1,
         uninformative_read = config['UNINFORMATIVE_READ']
     benchmark: "benchmarks/repeats/unassigned_experiment.{libname}.{sample_label}.quantify_repeats.txt"
-    container:
-        "docker://howardxu520/skipper:bigwig_1.0"
+    # container:
+    #     "docker://howardxu520/skipper:bigwig_1.0" # keep having problems with TSCC 2.0 with docker
+    conda:
+        "envs/bedtools.yaml"
     shell:
         "bedtools bamtobed -i {input.bam} | awk '($1 != \"chrEBV\") && ($4 !~ \"/{params.uninformative_read}$\")' | "
             "bedtools flank -s -l 1 -r 0 -g {CHROM_SIZES} -i - | "
@@ -71,7 +73,7 @@ rule quantify_repeats:
             "awk 'BEGIN {{print \"{params.replicate_label}\"}} {{print $NF}}' > {output.counts}"
 
 
-rule make_repeat_count_tables:
+rule count_repeat_tables:
     input:
         unique_repeats = config['REPEAT_TABLE'].replace(".tsv", ".sort.unique.bed"),
         replicate_counts = lambda wildcards: expand(
@@ -87,9 +89,9 @@ rule make_repeat_count_tables:
         out_file = "stdout/make_repeat_count_tables.{experiment}.{sample_label}..out",
         run_time = "00:15:00",
         cores = "1",
-        memory = "200",
-        job_name = "make_repeat_count_tables",
+        memory = 200,
     benchmark: "benchmarks/counts/{experiment}.{sample_label}.all_replicates.make_repeat_count_table.txt"
+    container: None
     shell:
         "echo \"repeat_name\" | paste - {input.replicate_counts} | sed -n '1p' | gzip > {output.name_table};"
         "echo \"repeat_class\" | paste - {input.replicate_counts} | sed -n '1p' | gzip > {output.class_table};"
@@ -111,8 +113,7 @@ rule fit_clip_betabinomial_re_model:
         error_out_file = "error_files/fit_clip_betabinomial_re_model.{libname}.{sample_label}.err",
         out_file = "stdout/fit_clip_betabinomial_re_model.{libname}.{sample_label}.out",
         run_time = "10:00",
-        memory = "2000",
-        job_name = "fit_clip_betabinomial_re_model",
+        memory = 40000,
         cores = 1,
     benchmark: "benchmarks/fit_clip_betabinomial_re_model/{libname}.{sample_label}.fit_clip.txt"
     container:
@@ -139,8 +140,7 @@ rule sum_all_other_background_re:
         out_file = "stdout/sum_re_reads.{libname}.{sample_label}.out",
         run_time = "20:00",
         cores = "1",
-        memory = "10000",
-        job_name = "sum_other_libs",
+        memory = 10000,
         replicate_label = "{libname}.internal",
     benchmark: "benchmarks/counts/unassigned_experiment.{libname}.{sample_label}.sum_read.txt"
     shell:
@@ -161,8 +161,7 @@ rule combine_ip_to_internal_background: # bg_sample_label = 'internal'
         out_file = "stdout/combine_ip_to_background.{experiment}.{sample_label}.combine.out",
         run_time = "1:00:00",
         cores = "1",
-        memory = "10000",
-        job_name = "combine_table"
+        memory = 10000,
     benchmark: "benchmarks/combine_table/{experiment}.internal.{sample_label}.combine.txt"
     shell:
         """
@@ -182,8 +181,7 @@ rule call_enriched_re:
         error_out_file = "error_files/{libname}.{sample_label}.call_enriched_re.err",
         out_file = "stdout/{libname}.{sample_label}.call_enriched_re.out",
         run_time = "00:25:00",
-        memory = "3000",
-        job_name = "call_enriched_re",
+        memory = 3000,
         cores = 1,
     benchmark: "benchmarks/call_enriched_re/{libname}.{sample_label}.call_enriched_re.txt"
     container:
@@ -210,7 +208,6 @@ rule call_enriched_re:
 #         out_file = "stdout/{experiment_label}.find_reproducible_enriched_re.out",
 #         run_time = "5:00",
 #         memory = "1000",
-#         job_name = "find_reproducible_enriched_re"
 #     benchmark: "benchmarks/find_reproducible_enriched_re/{experiment_label}.all_replicates.reproducible.txt"
 #     shell:
 #         "Rscript --vanilla {TOOL_DIR}/identify_reproducible_re.R output/enriched_re/ {wildcards.experiment_label}"

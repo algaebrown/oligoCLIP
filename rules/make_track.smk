@@ -8,7 +8,8 @@ rule extract_read_two:
         run_time="2:00:00",
         cores = 1,
         error_out_file = "error_files/extract_read2",
-        out_file = "stdout/extract_read2.{sample_label}"
+        out_file = "stdout/extract_read2.{sample_label}",
+        memory = 40000,
     conda:
         "envs/samtools.yaml"
     shell:
@@ -37,18 +38,14 @@ rule CITS_bam_to_bedgraph:
         run_time="2:00:00",
         error_out_file = "error_files/CITS_bedgraph",
         cores = 1,
-        out_file = "stdout/CITS_bedgraph.{sample_label}"
+        out_file = "stdout/CITS_bedgraph.{sample_label}",
+        memory = 40000,
     container:
         "docker://howardxu520/skipper:bigwig_1.0"
     shell:
         """
-        set +o pipefail;
-        
-        bedtools genomecov -ibam {input.bam} -bg -scale 1 -strand + -5 > {output.pos}
-        bedSort {output.pos} {output.pos}
-
-        bedtools genomecov -ibam {input.bam} -bg -scale -1 -strand - -5 > {output.neg}
-        bedSort {output.neg} {output.neg}
+        bedtools genomecov -ibam {input.bam} -bg -scale 1 -strand + -5 | sort -k 1,1 -k2,2n > {output.pos}
+        bedtools genomecov -ibam {input.bam} -bg -scale -1 -strand - -5 | sort -k 1,1 -k2,2n > {output.neg}
         """
         
 rule COV_bam_to_bedgraph:
@@ -62,15 +59,13 @@ rule COV_bam_to_bedgraph:
         error_out_file = "error_files/coverage_bedgraph",
         out_file = "stdout/COV_bedgraph.{sample_label}",
         cores = 1,
+        memory = 40000,
     container:
         "docker://howardxu520/skipper:bigwig_1.0"
     shell:
         """
-        # coverage
-        bedtools genomecov -ibam {input.bam} -bg -scale 1 -strand + -split > {output.pos}
-        bedSort {output.pos} {output.pos}
-        bedtools genomecov -ibam {input.bam} -bg -scale -1 -strand - -split > {output.neg}
-        bedSort {output.neg} {output.neg}
+        bedtools genomecov -ibam {input.bam} -bg -scale 1 -strand + -split | sort -k 1,1 -k2,2n > {output.pos}
+        bedtools genomecov -ibam {input.bam} -bg -scale -1 -strand - -split | sort -k 1,1 -k2,2n > {output.neg}
         """
 
 rule bedgraph_to_bw:
@@ -81,9 +76,10 @@ rule bedgraph_to_bw:
     params:
         run_time="6:00:00",
         chr_size=config['CHROM_SIZES'],
-        error_out_file = "error_files/{something}.bedgraph_to_bw".replace('/', '.'),
-        out_file = "stdout/{something}.bedgraph_to_bw".replace('/', '.'),
+        error_out_file = lambda wildcards: "error_files/bedgraph2bw."+wildcards.something.replace('/', '.')+".err",
+        out_file = lambda wildcards: "stdout/bedgraph2bw."+wildcards.something.replace('/', '.')+".err",
         cores = 1,
+        memory = 80000,
     container:
         "docker://howardxu520/skipper:bigwig_1.0"
     shell:

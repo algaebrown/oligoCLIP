@@ -14,6 +14,7 @@ rule merge_other_bw_as_bg:
         error_out_file = "error_files/merge_bw.{libname}.{signal_type}.{sample_label}.{strand}.err",
         out_file = "stdout/merge_bw.{libname}.{signal_type}.{sample_label}.{strand}.out",
         cores = 1,
+        memory = 80000,
     conda:
         "envs/bwmerge.yaml"
     shell:

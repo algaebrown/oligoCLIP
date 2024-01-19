@@ -5,6 +5,39 @@ rbps = barcode_df['RBP'].tolist()
 
 locals().update(config)
 
+rule fastqc_initial:
+    input:
+        fq1 = lambda wildcards: manifest.loc[manifest['libname']==wildcards.libname, 'fastq1'],
+        fq2 = lambda wildcards: manifest.loc[manifest['libname']==wildcards.libname, 'fastq2'],
+    output:
+        html1="{libname}/fastqc/initial_r1_fastqc.html",
+        txt1="{libname}/fastqc/initial_r1_fastqc/fastqc_data.txt",
+        html2="{libname}/fastqc/initial_r2_fastqc.html",
+        txt2="{libname}/fastqc/initial_r2_fastqc/fastqc_data.txt",
+    params:
+        outdir="{libname}/fastqc/",
+        run_time = "02:09:00",
+        cores="2",
+        error_out_file = "error_files/fastqc.{libname}.txt",
+        out_file = "stdout/fastqc.{libname}.txt",
+        memory = 40000,
+    benchmark: "benchmarks/qc/fastqc_initial.{libname}.txt"
+    container:
+        "docker://howardxu520/skipper:fastqc_0.12.1"
+    shell:
+        """
+        zcat {input.fq1} | \
+            fastqc stdin:initial_r1 \
+            --extract \
+            --outdir {params.outdir} \
+            -t {params.cores}
+
+        zcat {input.fq2} | \
+            fastqc stdin:initial_r2 \
+            --extract \
+            --outdir {params.outdir} \
+            -t {params.cores}
+        """
 
 rule tile_adaptor:
     output:
@@ -17,7 +50,8 @@ rule tile_adaptor:
         adaptor_rev = config['adaptor_rev'],
         error_out_file = "error_files/adatile.txt",
         out_file = "stdout/adatile.txt",
-        tiling_length = config['tile_length']
+        tiling_length = config['tile_length'],
+        memory = 1000,
     conda:
         "envs/metadensity.yaml"
     benchmark: "benchmarks/tile_adaptor"
@@ -43,6 +77,7 @@ rule trim_adaptor:
         error_out_file = "error_files/trim_adaptor.{libname}.txt",
         quality_cutoff = config['QUALITY_CUTOFF'],
         out_file = "stdout/trim_adaptor.{libname}.txt.txt",
+        memory = 80000,
     conda:
         "envs/cutadapt.yaml"
     benchmark: "benchmarks/pre/trim_adaptor.{libname}"
@@ -75,8 +110,7 @@ rule extract_umi_and_trim_polyG: # TODO: adaptor TRIM first
         out_file = "stdout/extract_umi.{libname}.txt",
         run_time = "3:45:00",
         cores = "4",
-        memory = "10000",
-        job_name = "extract_umi",
+        memory = 10000,
         umi_length = config['umi_length']
     conda:
         "envs/fastp.yaml"
@@ -108,8 +142,7 @@ rule trim_umi_from_read2:
         out_file = "stdout/remove_UMI_from_r2.{libname}.txt",
         run_time = "3:45:00",
         cores = "4",
-        memory = "10000",
-        job_name = "extract_umi",
+        memory = 10000,
         umi_length = config['umi_length']
     conda:
         "envs/seqtk.yaml"
@@ -143,6 +176,7 @@ rule demultiplex: ################ never used the trimmed fastq file
         prefix = "{libname}/fastqs/",
         error_out_file = "error_files/demux.{libname}.txt",
         out_file = "stdout/demux.{libname}.txt",
+        memory = 80000,
     shell:
         """
         cd {params.prefix}
@@ -171,6 +205,7 @@ rule trim_barcode_r1:
     params:
         run_time = "12:04:00",
         cores="4",
+        memory = 10000,
         error_out_file = "error_files/trim_barcode.{libname}.{sample_label}.txt",
         quality_cutoff = config['QUALITY_CUTOFF'],
         out_file = "stdout/trim_barcode.{libname}.{sample_label}.txt",
@@ -210,6 +245,7 @@ rule fastqc_post_trim:
         outdir="{libname}/fastqc/",
         run_time = "02:09:00",
         cores="1",
+        memory = 40000,
         error_out_file = "error_files/fastqc.{libname}.txt",
         out_file = "stdout/fastqc.{libname}.txt",
     benchmark: "benchmarks/qc/fastqc.{libname}.{sample_label}.txt"
@@ -234,8 +270,7 @@ rule align_reads:
         error_out_file = "error_files/align.{libname}.{sample_label}.err",
         out_file = "stdout/align.{libname}.{sample_label}.out",
         run_time = "02:00:00",
-        memory = "40000",
-        job_name = "align_reads",
+        memory = 160000,
         star_sjdb = config['STAR_DIR'],
         outprefix = "{libname}/bams/{sample_label}.",
         cores = "8",
@@ -277,12 +312,11 @@ rule index_bam:
     output:
         "{anything}.bam.bai"
     params:
-        error_out_file = "error_files/{anything}_index_bam",
-        out_file = "stdout/{anything}_index_bam",
+        error_out_file = "error_files/index_bam",
+        out_file = "stdout/index_bam",
         run_time = "40:00",
         cores = "1",
-        memory = "10000",
-        job_name = "index_bam",
+        memory = 40000,
     conda:
         "envs/samtools.yaml"
     shell:
@@ -301,8 +335,7 @@ rule umi_dedup:
         out_file = "stdout/dedup.{libname}.{sample_label}",
         run_time = "06:40:00",
         cores = "4",
-        memory = "10000",
-        job_name = "sortbam",
+        memory = 10000,
         prefix='{libname}/bams/genome/{sample_label}.genome-mapped',
     container:
         "docker://howardxu520/skipper:umicollapse_1.0.0"

@@ -181,10 +181,11 @@ def comparison_outputs():
     outputs = expand("comparison/piranha/CC/{libname}.{sample_label}.bed",
         libname = libnames,
         sample_label =list(set(rbps)-set(config['AS_INPUT'])),
-    )+expand("comparison/pureclip/{libname}.{sample_label}.bind.bed",
-        libname = libnames,
-        sample_label = list(set(rbps)-set(config['AS_INPUT']))
     )
+    # )+expand("comparison/pureclip/{libname}.{sample_label}.bind.bed",
+    #     libname = libnames,
+    #     sample_label = list(set(rbps)-set(config['AS_INPUT']))
+    # ) # very slow to run
     # )+expand("comparison/omniCLIP/output/{libname}.{sample_label}.omniclip_done.txt",
     #     libname = libnames,
     #     sample_label = list(set(rbps)-set(config['AS_INPUT']))

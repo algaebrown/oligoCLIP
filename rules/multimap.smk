@@ -9,6 +9,7 @@ rule extract_multimap_and_uniquemap:
         error_out_file = "error_files/{libname}.{sample_label}.extractmap",
         out_file = "stdout/{libname}.{sample_label}.extractmap",
         cores = 1,
+        memory = 10000,
     conda:
         "envs/bamtools"
     shell:
@@ -35,8 +36,7 @@ use rule partition_bam_reads from skipper as partition_map_by_status with:
         out_file = "stdout/{libname}.{sample_label}.{mapstat}.partition_bam_reads.out",
         run_time = "20:00",
         cores = "1",
-        memory = "10000",
-        job_name = "partition_bam_reads",
+        memory = 10000,
         replicate_label = "{libname}.{sample_label}.{mapstat}"
     benchmark: "benchmarks/counts/unassigned_experiment.{libname}.{sample_label}.{mapstat}.partition_bam_reads.txt"
 
@@ -55,6 +55,5 @@ use rule make_genome_count_table from skipper as make_genome_count_bymap with:
         out_file = "stdout/debug.{libname}.{sample_label}.make_count_table.out",
         run_time = "00:05:00",
         cores = "1",
-        memory = "200",
-        job_name = "make_genome_count_table"
+        memory = 200,
     benchmark: "benchmarks/counts/debug.{libname}.{sample_label}.all_replicates.make_genome_count_table.txt"

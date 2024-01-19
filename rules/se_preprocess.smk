@@ -5,6 +5,30 @@ manifest = pd.read_csv(config['MANIFEST'])
 barcode_df = pd.read_csv(config['barcode_csv'], header = None, sep = ':', names = ['barcode', 'RBP'])
 rbps = barcode_df['RBP'].tolist()
 
+rule fastqc_initial:
+    input:
+        fq1 = lambda wildcards: manifest.loc[manifest['libname']==wildcards.libname, 'fastq'],
+    output:
+        html1="{libname}/fastqc/initial_r1_fastqc.html",
+        txt1="{libname}/fastqc/initial_r1_fastqc/fastqc_data.txt",
+    params:
+        outdir="{libname}/fastqc/",
+        run_time = "02:09:00",
+        cores="2",
+        error_out_file = "error_files/fastqc.{libname}.txt",
+        out_file = "stdout/fastqc.{libname}.txt",
+        memory = 20000,
+    benchmark: "benchmarks/qc/fastqc_initial.{libname}.txt"
+    container:
+        "docker://howardxu520/skipper:fastqc_0.12.1"
+    shell:
+        """
+        zcat {input.fq1} | \
+            fastqc stdin:initial_r1 \
+            --extract \
+            --outdir {params.outdir} \
+            -t {params.cores}
+        """
 
 rule tile_adaptor:
     output:
@@ -15,7 +39,8 @@ rule tile_adaptor:
         adaptor_fwd = config['adaptor_fwd'],
         error_out_file = "error_files/adatile.txt",
         out_file = "stdout/adatile.txt",
-        tiling_length = config['tile_length']
+        tiling_length = config['tile_length'],
+        memory = 10000,
     conda:
         "envs/metadensity.yaml"
     benchmark: "benchmarks/tile_adaptor"
@@ -37,6 +62,7 @@ rule trim_adaptor:
         error_out_file = "error_files/trim_adaptor.{libname}.txt",
         out_file = "stdout/trim_adaptor.{libname}.txt",
         quality_cutoff = config['QUALITY_CUTOFF'],
+        memory = 80000,
     benchmark: "benchmarks/cutadapt/trim_adaptor.{libname}.txt"
     conda:
         "envs/cutadapt.yaml"
@@ -64,7 +90,8 @@ rule extract_umi:
         out_file = "stdout/extract_umi.{libname}.txt",
         run_time = "3:45:00",
         cores = "4",
-        umi_pattern = config['umi_pattern']
+        umi_pattern = config['umi_pattern'],
+        memory = 80000,
     benchmark: "benchmarks/umi/extract.{libname}.txt"
     conda:
         "envs/umi_tools.yaml"
@@ -97,6 +124,7 @@ rule demultiplex:
         prefix = "{libname}/fastqs/",
         error_out_file = "error_files/demux.{libname}.txt",
         out_file = "stdout/demux.{libname}.txt",
+        memory = 160000,
     shell:
         """
         cd {params.prefix}
@@ -120,6 +148,7 @@ rule reverse_complement:
         cores="1",
         out_file = "stdout/revcomp.{libname}.txt",
         error_out_file = "error_files/revcomp.{libname}.txt",
+        memory = 40000,
     conda:
         "envs/fastx_toolkit.yaml"
     shell:
@@ -139,6 +168,7 @@ rule fastqc_post_trim:
         cores="1",
         error_out_file = "error_files/fastqc.{libname}.txt",
         out_file = "stdout/fastqc.{libname}.txt",
+        memory = 40000,
     benchmark: "benchmarks/qc/fastqc.{libname}.{sample_label}.txt"
     container:
         "docker://howardxu520/skipper:fastqc_0.12.1"
@@ -158,11 +188,10 @@ rule align_reads:
         error_out_file = "error_files/{libname}.{sample_label}.align_reads_genome.err",
         out_file = "stdout/{libname}.{sample_label}.align_reads_genome.out",
         run_time = "02:00:00",
-        memory = "40000",
-        job_name = "align_reads",
         star_sjdb = config['STAR_DIR'],
         outprefix = "{libname}/bams/{sample_label}.",
         cores = "8",
+        memory = 320000,
     benchmark: "benchmarks/align/{libname}.{sample_label}.align_reads_genome.txt"
     container:
         "docker://howardxu520/skipper:star_2.7.10b"
@@ -206,11 +235,8 @@ rule umi_dedup:
         out_file = "stdout/{libname}.{sample_label}.index_reads",
         run_time = "06:40:00",
         cores = "4",
-        memory = "10000",
-        job_name = "sortbam",
         prefix='{libname}/bams/genome/{sample_label}.genome-mapped',
-    conda: 
-        "envs/umi_tools.yaml"
+        memory = 160000,
     benchmark: "benchmarks/align/dedup.{libname}.{sample_label}.txt"
     container:
         "docker://howardxu520/skipper:umicollapse_1.0.0"
@@ -225,12 +251,11 @@ rule index_bam:
     output:
         "{anything}.bam.bai"
     params:
-        error_out_file = "error_files/{anything}_index_bam",
-        out_file = "stdout/{anything}_index_bam",
+        error_out_file = "error_files/index_bam",
+        out_file = "stdout/index_bam",
         run_time = "40:00",
         cores = "1",
-        memory = "10000",
-        job_name = "index_bam",
+        memory = 40000,
     conda:
         "envs/samtools.yaml"
     shell:

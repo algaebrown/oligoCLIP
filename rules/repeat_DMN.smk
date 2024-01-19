@@ -12,12 +12,12 @@ rule make_repeat_megatable:
         family_table = "counts/repeats/megatables/family/{libname}.tsv.gz",
     params:
         error_out_file = "error_files/make_repeat_megatable.{libname}.err",
-        out_file = "stderr/make_repeat_megatable.{libname}.out",
-        run_time = "00:15:00",
+        out_file = "stdout/make_repeat_megatable.{libname}.out",
+        run_time = "00:45:00",
         cores = "1",
-        memory = "200",
-        job_name = "make_repeat_count_tables",
+        memory = 80000,
     benchmark: "benchmarks/counts/make_repeat_megatable.{libname}.txt"
+    container: None
     shell:
         "echo \"repeat_name\" | paste - {input.replicate_counts} | sed -n '1p' | gzip > {output.name_table};"
         "echo \"repeat_class\" | paste - {input.replicate_counts} | sed -n '1p' | gzip > {output.class_table};"
@@ -42,8 +42,7 @@ rule fit_DMN:
         error_out_file = "error_files/fit_DMM_repeat.{libname}.{repeat_type}.err",
         out_file = "stdout/fit_DMM_repeat.{libname}.{repeat_type}.out",
         run_time = "12:00:00",
-        memory = "10000",
-        job_name = "DMN_internal",
+        memory = 10000,
         cores = "4",
         root_folder = lambda wildcards, output: Path(output[0]).parent
     benchmark: "benchmarks/DMM/fit.{libname}.{repeat_type}"
@@ -77,8 +76,7 @@ rule analyze_DMN:
         error_out_file = "error_files/analyze_DMM_repeat.{libname}.{repeat_type}.err",
         out_file = "stdout/fit_DMM_repeat.{libname}.{repeat_type}.out",
         run_time = "1:00:00",
-        memory = "10000",
-        job_name = "DMN_internal",
+        memory = 10000,
         cores = "1",
     benchmark: "benchmarks/DMM/fit.{libname}.{repeat_type}"
     conda:

@@ -27,13 +27,12 @@ rule partition_bam_reads:
         out_file = "stdout/partition_bam_reads.{libname}.{sample_label}.out",
         run_time = "20:00",
         cores = "1",
-        memory = "10000",
-        job_name = "partition_bam_reads",
+        memory = 10000,
         replicate_label = "{libname}.{sample_label}",
         uninformative_read = config['UNINFORMATIVE_READ']
     benchmark: "benchmarks/counts/unassigned_experiment.{libname}.{sample_label}.partition_bam_reads.txt"
-    container:
-        "docker://howardxu520/skipper:bigwig_1.0"
+    conda:
+        "envs/bedtools.yaml"
     shell:
         "bedtools bamtobed -i {input.bam} | awk '($1 != \"chrEBV\") && ($4 !~ \"/{params.uninformative_read}$\")' | bedtools flank -s -l 1 -r 0 -g {input.chrom_size} -i - | bedtools shift -p -1 -m 1 -g {input.chrom_size} -i - | bedtools coverage -counts -s -a {input.region_partition} -b - | cut -f 7 | awk 'BEGIN {{print \"{params.replicate_label}\"}} {{print}}' > {output.counts};"
 
@@ -52,8 +51,7 @@ rule make_genome_count_table:
         out_file = "stdout/{experiment}.{sample_label}.make_count_table.out",
         run_time = "00:05:00",
         cores = "1",
-        memory = "200",
-        job_name = "make_genome_count_table"
+        memory = 200,
     benchmark: "benchmarks/counts/{experiment}.{sample_label}.all_replicates.make_genome_count_table.txt"
     shell:
         "paste <(zcat {input.partition} | awk -v OFS=\"\\t\" 'BEGIN {{print \"chr\\tstart\\tend\\tname\\tscore\\tstrand\"}} {{print $1,$2,$3,$4,$5,$6}}' ) {input.replicate_counts} | gzip -c > {output.count_table}"
@@ -68,8 +66,7 @@ rule calc_partition_nuc:
         error_out_file = "stderr/calc_partition_nuc.err",
         out_file = "stdout/calc_partition_nuc.out",
         run_time = "00:10:00",
-        memory = "1000",
-        job_name = "calc_partition_nuc"
+        memory = 1000,
     benchmark: "benchmarks/partition_nuc.txt"
     container:
         "docker://howardxu520/skipper:bigwig_1.0"
@@ -78,7 +75,7 @@ rule calc_partition_nuc:
 
 rule fit_clip_betabinom:
     input:
-        nuc = config['PARTITION'].replace(".bed", ".nuc"),
+        nuc = ancient(config['PARTITION'].replace(".bed", ".nuc")),
         table = lambda wildcards: "counts/genome/tables/"+libname_to_experiment(wildcards.libname)+f".{wildcards.sample_label}.tsv.gz"
     output:
         coef = "skipper/clip_model_coef/{libname}.{sample_label}.tsv",
@@ -87,8 +84,7 @@ rule fit_clip_betabinom:
         error_out_file = "error_files/fit_clip_betabinomial_model.{libname}.{sample_label}.err",
         out_file = "stdout/fit_clip_betabinomial_model.{libname}.{sample_label}.out",
         run_time = "1:00:00",
-        memory = "1000",
-        job_name = "fit_clip_betabinomial_model",
+        memory = 40000,
         cores = "1"
     container:
         "docker://howardxu520/skipper:R_4.1.3_1"
@@ -111,8 +107,7 @@ rule combine_ip_to_background:
         out_file = "stdout/combine.{experiment}.{bg_sample_label}.{clip_sample_label}",
         run_time = "1:00:00",
         cores = "1",
-        memory = "1000",
-        job_name = "combine_table"
+        memory = 1000,
     benchmark: "benchmarks/combine_table/{experiment}.{bg_sample_label}.{clip_sample_label}.combine.txt"
     shell:
         """
@@ -154,8 +149,7 @@ rule call_enriched_windows:
         error_out_file = "error_files/call_enriched_window.bg.{libname}.{clip_sample_label}.{bg_sample_label}.err",
         out_file = "stdout/call_enriched_window.bg.{libname}.{clip_sample_label}.{bg_sample_label}.out",
         run_time = "00:25:00",
-        memory = "1000",
-        job_name = "call_enriched_windows",
+        memory = 80000,
         cores = "1",
         root_folder = lambda wildcards, output: str(output[0]).split('threshold_scan')[0]
     benchmark: "benchmarks/call_enriched_windows/{libname}.{clip_sample_label}.{bg_sample_label}.call_enriched_windows.txt"
@@ -189,8 +183,7 @@ rule sum_all_other_background_as_CC:
         out_file = "stdout/sum_reads.{libname}.{clip_sample_label}",
         run_time = "20:00",
         cores = "1",
-        memory = "10000",
-        job_name = "sum_other_libs",
+        memory = 10000,
         replicate_label = "{libname}.internal"
     benchmark: "benchmarks/counts/unassigned_experiment.{libname}.{clip_sample_label}.sum_read.txt"
     shell:
@@ -211,8 +204,7 @@ rule combine_ip_to_CC: # bg_sample_label = 'internal'
         out_file = "stdout/combine.CC{experiment}.{clip_sample_label}.out",
         run_time = "1:00:00",
         cores = "1",
-        memory = "10000",
-        job_name = "combine_table"
+        memory = 10000,
     benchmark: "benchmarks/combine_table/{experiment}.internal.{clip_sample_label}.combine.txt"
     shell:
         """
@@ -253,8 +245,7 @@ rule call_enriched_windows_CC:
         error_out_file = "error_files/call_enriched_windows.CC.{libname}.{clip_sample_label}",
         out_file = "stdout/call_enriched_windows.CC.{libname}.{clip_sample_label}",
         run_time = "00:25:00",
-        memory = "10000",
-        job_name = "call_enriched_windows",
+        memory = 40000,
         cores = "8",
         root_folder = 'skipper_CC'
     benchmark: "benchmarks/call_enriched_windows/{libname}.{clip_sample_label}.internal.call_enriched_windows.txt"
@@ -288,10 +279,9 @@ use rule partition_bam_reads as partition_external_bams with:
         out_file = "stdout/partition_bam_reads.external.{external_label}.out",
         run_time = "20:00",
         cores = "1",
-        memory = "10000",
-        job_name = "partition_bam_reads",
+        memory = 10000,
         replicate_label = "external.{external_label}",
-        uninformative_read = config['UNINFORMATIVE_READ']
+        uninformative_read = lambda wildcards: 3 - config['external_bam'][wildcards.external_label]['INFORMATIVE_READ']
     benchmark: "benchmarks/counts/unassigned_experiment.external.{external_label}.partition_bam_reads.txt"
 
 use rule combine_ip_to_CC as combine_ip_to_external with:
@@ -306,7 +296,6 @@ use rule combine_ip_to_CC as combine_ip_to_external with:
         run_time = "1:00:00",
         cores = "1",
         memory = "10000",
-        job_name = "combine_table"
     benchmark: "benchmarks/combine_table/{experiment}.{external_label}.{clip_sample_label}.combine.txt"
 
 rule call_enriched_windows_external:
@@ -344,8 +333,7 @@ rule call_enriched_windows_external:
         error_out_file = "error_files/call_enriched_windows.{external_label}.{libname}.{clip_sample_label}",
         out_file = "stdout/call_enriched_windows.{external_label}.{libname}.{clip_sample_label}",
         run_time = "00:25:00",
-        memory = "10000",
-        job_name = "call_enriched_windows",
+        memory = 40000,
         cores = "8",
         root_folder = 'skipper_external/{external_label}'
     benchmark: "benchmarks/call_enriched_windows/{libname}.{clip_sample_label}.{external_label}.call_enriched_windows.txt"
@@ -381,7 +369,6 @@ rule call_enriched_windows_external:
 #         out_file = "stdout/{experiment}.{clip_sample_label}.find_reproducible_enriched_windows.out",
 #         run_time = "5:00",
 #         memory = "2000",
-#         job_name = "find_reproducible_enriched_windows"
 #     benchmark: "benchmarks/find_reproducible_enriched_windows/{experiment}.{clip_sample_label}.all_replicates.reproducible.txt"
 #     container:
         # "docker://howardxu520/skipper:R_4.1.3_1"

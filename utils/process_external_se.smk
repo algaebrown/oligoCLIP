@@ -23,8 +23,7 @@ rule cutadapt:
         out_file = "stdout/cutadapt.{sample_label}",
         run_time = "6:45:00",
         cores = "4",
-        memory = "10000",
-        job_name = "cutadapt",
+        memory = 10000,
         adaptor1 = adapter_seq,
     benchmark: "benchmarks/cutadapt/{sample_label}.extract.txt"
     conda:
@@ -51,8 +50,7 @@ rule align_reads:
         error_out_file = "error_files/{sample_label}.align_reads_genome.err",
         out_file = "stdout/{sample_label}.align_reads_genome.out",
         run_time = "02:00:00",
-        memory = "40000",
-        job_name = "align_reads",
+        memory = "160000",
         star_sjdb = config['STAR_DIR'],
         outprefix = "output/bams/{sample_label}.",
         cores = "8",
@@ -98,8 +96,7 @@ rule index_bam:
         out_file = "stdout/{anything}_index_bam",
         run_time = "40:00",
         cores = "1",
-        memory = "10000",
-        job_name = "index_bam",
+        memory = 10000,
     conda:
         "envs/samtools.yaml"
     shell:

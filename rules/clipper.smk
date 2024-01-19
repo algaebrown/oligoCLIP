@@ -32,7 +32,10 @@ rule clipper:
         error_out_file = "error_files/clipper.{libname}.{sample_label}",
         out_file="stdout/clipper.{libname}.{sample_label}",
         cores = "10",
+        memory = 40000,
     benchmark: "benchmarks/clipper/clipper.{libname}.{sample_label}"
+    container:
+        "docker://brianyee/clipper:charlene_move_data"
     shell:
         """
         module load clipper/charlene_move_data_branch
@@ -49,6 +52,7 @@ rule count_mapped_reads:
         error_out_file = "error_files/countread.{something}",
         out_file = "stdout/countread.{something}",
         cores = "1",
+        memory = 1000,
     benchmark: "benchmarks/clipper/count_mapped.{something}"
     conda:
         "envs/samtools.yaml"
@@ -73,6 +77,7 @@ rule norm_peaks_to_another_library_inside:
         error_out_file = "error_files/norm_peaks.{libname}.{sample_label}",
         out_file="stdout/norm_peaks.{libname}.{sample_label}",
         cores = "4",
+        memory = 10000,
     benchmark: "benchmarks/clipper/norm_peaks.{libname}.{sample_label}.{bg_sample_label}"
     shell:
         """
@@ -90,8 +95,8 @@ rule norm_peaks_to_another_library_inside:
 rule concat_other_bams_as_complementary_control:
     input:
         other_bams = lambda wildcards: expand("{libname}/bams/{sample_label}.rmDup.Aligned.sortedByCoord.out.bam",
-        libname = ["{libname}"],
-        sample_label = list(set(config['rbps'])-set([wildcards.clip_sample_label])-set([config['AS_INPUT']]))
+            libname = [wildcards.libname],
+            sample_label = list(set(config['rbps'])-set([wildcards.clip_sample_label])-set(config['AS_INPUT']))
         ),
     output:
         combined_bam = temp("CLIPper/CC_bams/{libname}.{clip_sample_label}.bam"),
@@ -102,6 +107,7 @@ rule concat_other_bams_as_complementary_control:
         error_out_file = "error_files/combine_bam_as_CC.{libname}.{clip_sample_label}",
         out_file = "stdout/combine_bam_as_CC.{libname}.{clip_sample_label}",
         cores = "1",
+        memory = 40000,
     benchmark: "benchmarks/clipper/concat_bams.{libname}.{clip_sample_label}"
     conda:
         "envs/samtools.yaml"
@@ -118,7 +124,7 @@ use rule norm_peaks_to_another_library_inside as norm_peaks_to_cc with:
         subsample_bam_in="CLIPper/CC_bams/{libname}.{sample_label}.sorted.bam",
         nread_ip="{libname}/bams/{sample_label}.rmDup.Aligned.sortedByCoord.out.readnum.txt",
         nread_in="CLIPper/CC_bams/{libname}.{sample_label}.sorted.readnum.txt",
-        peak="CLIPper/{libname}.{sample_label}.peaks.bed"
+        peak="CLIPper/{libname}.{sample_label}.peaks.bed",
     output:
         norm_peak=temp("CLIPper_CC/{libname}.{sample_label}.peaks.normed.bed")
     benchmark: "benchmarks/clipper/norm_peaks_cc.{libname}.{sample_label}"
@@ -134,6 +140,7 @@ use rule count_mapped_reads as count_mapped_reads_external with:
         error_out_file = "error_files/countread.{external_label}",
         out_file = "stdout/countread.{external_label}",
         cores = "1",
+        memory = 1000,
     benchmark: "benchmarks/clipper/count_mapped.{external_label}"
     
 
@@ -161,6 +168,7 @@ rule compress_peak:
         error_out_file = "error_files/compress_peak.{something}",
         out_file="stdout/compress_peak.{something}",
         cores = "1",
+        memory = 40000,
     benchmark: "benchmarks/clipper/compress_peaks.{something}"
     shell:
         """
