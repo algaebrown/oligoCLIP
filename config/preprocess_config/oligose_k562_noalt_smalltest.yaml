@@ -1,0 +1,61 @@
+MANIFEST: /tscc/nfs/home/hsher/projects/oligoCLIP/config/fastq_csv/ABC_2rep_small.csv
+barcode_csv: /tscc/nfs/home/hsher/projects/oligoCLIP/config/barcode_csv/ABC_barcode.csv
+WORKDIR: /tscc/nfs/home/hsher/scratch/fuckit
+
+run_clipper: False
+run_skipper: True
+run_comparison: True
+debug: True
+
+external_bam:
+  eCLIP_SLBP_SMInput: 
+    file: /tscc/nfs/home/hsher/scratch/ENCODE_k562_noalt/output/bams/dedup/genome_R2/SLBP_IN_1.genome.Aligned.sort.dedup.R2.bam
+    INFORMATIVE_READ: 2
+
+adaptor_fwd: AGATCGGAAGAGCACACGTC
+tile_length: 10
+QUALITY_CUTOFF: 6
+
+# UMI_TOOLS
+umi_pattern: XXXXXNNNNN
+
+# Resources
+STAR_DIR: /tscc/projects/ps-yeolab3/bay001/annotations/GRCh38/star_2_7_gencode40_sjdb
+SCRIPT_PATH: /tscc/nfs/home/hsher/projects/oligoCLIP/scripts/
+
+
+# region caller
+PARTITION: /tscc/projects/ps-yeolab4/software/skipper/1.0.0/bin/skipper/annotations/gencode.v38.annotation.k562_totalrna.gt1.tiled_partition.bed.gz
+FEATURE_ANNOTATIONS: /tscc/projects/ps-yeolab4/software/skipper/1.0.0/bin/skipper/annotations/gencode.v38.annotation.k562_totalrna.gt1.tiled_partition.features.tsv.gz
+ACCESSION_RANKINGS: /tscc/projects/ps-yeolab4/software/skipper/1.0.0/bin/skipper/annotations/accession_type_ranking.txt
+CHROM_SIZES: /tscc/projects/ps-yeolab3/bay001/annotations/GRCh38/GRCh38_no_alt_analysis_set_GCA_000001405.15.chrom.sizes
+GENOMEFA: /tscc/projects/ps-yeolab3/bay001/annotations/GRCh38/GRCh38_no_alt_analysis_set_GCA_000001405.15.fasta
+
+
+AS_INPUT:  # this must be one of the rows in barcode_csv
+REPEAT_TABLE: /tscc/projects/ps-yeolab3/eboyle/encode/pipeline/05_20220720/repeatmasker.grch38.tsv.gz
+
+
+trackhub_genome: GRCh38
+
+#
+# Single-end: enter 1. Paired-end: enter read (1 or 2) corresponding to crosslink site
+INFORMATIVE_READ: 1
+
+#
+RBP_TO_RUN_MOTIF:
+- RBFOX2
+- PUM2
+- ZC3H11A
+- PRPF8
+
+# CLIPper
+SPECIES: GRCh38v35noalt
+DATADIR: /tscc/nfs/home/hsher/scratch/clipper/clipper/data
+GTF: /tscc/nfs/home/hsher/gencode_coords/gencode.v35.gtf.db
+ANNOTATOR_SPECIES: GRCh38
+
+# omniclip stuffs
+GFF_file: /tscc/nfs/home/hsher/gencode_coords/gencode.v38.primary_assembly.annotation.gff3'
+DB_FILE: /tscc/nfs/home/hsher/scratch/gencode.v38.k562.ominclip.db'
+GENOME_dir: /tscc/nfs/home/hsher/scratch/GRCh38.primary/'

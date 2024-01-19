@@ -1,0 +1,62 @@
+# Basic settings
+COMMENT: This is barcode conjugated to beads instead of antibody
+MANIFEST: /tscc/nfs/home/hsher/projects/oligoCLIP/config/fastq_csv/katie_pe_iteration6_reseq_small.csv
+barcode_csv: /tscc/nfs/home/hsher/projects/oligoCLIP/config/barcode_csv/iter6.csv # reverse complemented sequence.
+WORKDIR: /tscc/nfs/home/hsher/scratch/oligo_PE_iter6_reseq_test
+AS_INPUT:  # this must be one of the rows in barcode_csv
+RBP_TO_RUN_MOTIF:
+- RBFOX2
+- PUM2
+- TIAL1
+- PRPF8
+- QKI
+
+run_clipper: False
+run_skipper: True
+run_comparison: False
+debug: True
+
+external_bam:
+  eCLIP_SLBP_SMInput: 
+    file: /tscc/nfs/home/hsher/scratch/ENCODE_k562/output/bams/dedup/genome_R2/SLBP_IN_1.genome.Aligned.sort.dedup.R2.bam
+    INFORMATIVE_READ: 2
+
+# dependency
+SCRIPT_PATH: /tscc/nfs/home/hsher/projects/oligoCLIP/scripts/
+
+
+# preprocessing options
+adaptor_fwd: AGATCGGAAGAGCACACGTC
+adaptor_rev: AGATCGGAAGAGCGTCGTGT
+tile_length: 10
+QUALITY_CUTOFF: 15
+error_rate: 0.2
+umi_length: 10
+STAR_DIR: /tscc/projects/ps-yeolab3/bay001/annotations/GRCh38/star_2_7_gencode40_sjdb
+
+# skipper annotations
+PARTITION: /tscc/projects/ps-yeolab4/software/skipper/1.0.0/bin/skipper/annotations/gencode.v38.annotation.k562_totalrna.gt1.tiled_partition.bed.gz
+FEATURE_ANNOTATIONS: /tscc/projects/ps-yeolab4/software/skipper/1.0.0/bin/skipper/annotations/gencode.v38.annotation.k562_totalrna.gt1.tiled_partition.features.tsv.gz
+ACCESSION_RANKINGS: /tscc/projects/ps-yeolab3/eboyle/encode/pipeline/01_20211115/input/accession_type_ranking.txt
+REPEAT_TABLE: /tscc/projects/ps-yeolab3/eboyle/encode/pipeline/05_20220720/repeatmasker.grch38.tsv.gz
+
+
+# other annotations
+CHROM_SIZES: /tscc/projects/ps-yeolab3/bay001/annotations/GRCh38/GRCh38_no_alt_analysis_set_GCA_000001405.15.chrom.sizes
+GENOMEFA: /tscc/projects/ps-yeolab3/bay001/annotations/GRCh38/GRCh38_no_alt_analysis_set_GCA_000001405.15.fasta
+
+
+# Single-end: enter 1. Paired-end: enter read (1 or 2) corresponding to crosslink site
+INFORMATIVE_READ: 1
+
+# CLIPper
+SPECIES: GRCh38v35noalt
+DATADIR: /tscc/nfs/home/hsher/scratch/clipper/clipper/data
+GTF: /tscc/nfs/home/hsher/gencode_coords/gencode.v35.gtf.db
+ANNOTATOR_SPECIES: GRCh38
+
+#OmniCLIP
+GFF_file: /tscc/nfs/home/hsher/gencode_coords/gencode.v38.primary_assembly.annotation.gff3
+DB_FILE: /tscc/nfs/home/hsher/scratch/gencode.v38.k562.ominclip.db
+GENOME_dir: /tscc/nfs/home/hsher/scratch/GRCh38.primary/
+

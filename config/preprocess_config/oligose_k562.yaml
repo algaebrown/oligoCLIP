@@ -1,6 +1,6 @@
 MANIFEST: /tscc/nfs/home/hsher/projects/oligoCLIP/config/fastq_csv/ABC_2rep.csv
 barcode_csv: /tscc/nfs/home/hsher/projects/oligoCLIP/config/barcode_csv/ABC_barcode.csv
-WORKDIR: /tscc/nfs/home/hsher/scratch/ABC_2rep
+WORKDIR: /tscc/nfs/home/hsher/scratch/ABC_2rep_test
 
 run_clipper: True
 run_skipper: True

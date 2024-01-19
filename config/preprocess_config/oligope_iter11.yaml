@@ -1,0 +1,65 @@
+# Basic settings
+COMMENT: RBFOX2 singleplex iteration 11
+MANIFEST: /tscc/nfs/home/hsher/projects/oligoCLIP/config/fastq_csv/katie_pe_iteration11.csv
+barcode_csv: /tscc/nfs/home/hsher/projects/oligoCLIP/config/barcode_csv/iter11.csv # reverse complemented sequence.
+WORKDIR: /tscc/nfs/home/hsher/scratch/oligo_PE_iter11
+
+AS_INPUT:
+# this must be one of the rows in barcode_csv
+RBP_TO_RUN_MOTIF:
+
+run_clipper: True
+run_skipper: True
+run_comparison: False
+debug: True
+
+external_bam:
+  eCLIP_SLBP_SMInput: 
+    file: /tscc/nfs/home/hsher/scratch/ENCODE_k562_noalt/output/bams/dedup/genome_R2/SLBP_IN_1.genome.Aligned.sort.dedup.R2.bam
+    INFORMATIVE_READ: 2
+  iter10_IgG_rep1:
+    file: /tscc/nfs/home/hsher/scratch/oligo_PE_iter10_IgG/IgG_1/bams/IgG.rmDup.Aligned.sortedByCoord.out.bam
+    INFORMATIVE_READ: 1
+  iter10_IgG_rep2:
+    file: /tscc/nfs/home/hsher/scratch/oligo_PE_iter10_IgG/IgG_2/bams/IgG.rmDup.Aligned.sortedByCoord.out.bam
+    INFORMATIVE_READ: 1
+# dependency
+SCRIPT_PATH: /tscc/nfs/home/hsher/projects/oligoCLIP/scripts/
+
+
+
+# preprocessing options
+adaptor_fwd: AGATCGGAAGAGCACACGTC
+adaptor_rev: AGATCGGAAGAGCGTCGTGT
+tile_length: 10
+QUALITY_CUTOFF: 15
+error_rate: 0.2
+umi_length: 10
+STAR_DIR: /tscc/projects/ps-yeolab3/bay001/annotations/GRCh38/star_2_7_gencode40_sjdb
+
+# skipper annotations
+PARTITION: /tscc/projects/ps-yeolab4/software/skipper/1.0.0/bin/skipper/annotations/gencode.v38.annotation.k562_totalrna.gt1.tiled_partition.bed.gz
+FEATURE_ANNOTATIONS: /tscc/projects/ps-yeolab4/software/skipper/1.0.0/bin/skipper/annotations/gencode.v38.annotation.k562_totalrna.gt1.tiled_partition.features.tsv.gz
+ACCESSION_RANKINGS: /tscc/projects/ps-yeolab3/eboyle/encode/pipeline/01_20211115/input/accession_type_ranking.txt
+REPEAT_TABLE: /tscc/projects/ps-yeolab3/eboyle/encode/pipeline/05_20220720/repeatmasker.grch38.tsv.gz
+
+
+# other annotations
+CHROM_SIZES: /tscc/projects/ps-yeolab3/bay001/annotations/GRCh38/GRCh38_no_alt_analysis_set_GCA_000001405.15.chrom.sizes
+GENOMEFA: /tscc/projects/ps-yeolab3/bay001/annotations/GRCh38/GRCh38_no_alt_analysis_set_GCA_000001405.15.fasta
+
+# Single-end: enter 1. Paired-end: enter read (1 or 2) corresponding to crosslink site
+INFORMATIVE_READ: 1
+
+# CLIPper
+#python ~/bin/clipperhelper/util/make_custom_species_files.py --gtf /tscc/nfs/home/hsher/gencode_coords/gencode.v35.annotation.gtf --species GRCh38v35noal
+SPECIES: GRCh38v35noalt
+DATADIR: /tscc/nfs/home/hsher/scratch/clipper/clipper/data
+GTF: /tscc/nfs/home/hsher/gencode_coords/gencode.v35.gtf.db
+ANNOTATOR_SPECIES: GRCh38
+
+#OmniCLIP
+GFF_file: /tscc/nfs/home/hsher/gencode_coords/gencode.v38.primary_assembly.annotation.gff3
+DB_FILE: /tscc/nfs/home/hsher/scratch/gencode.v38.k562.ominclip.db
+GENOME_dir: /tscc/nfs/home/hsher/scratch/GRCh38.primary/
+
